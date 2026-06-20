@@ -108,6 +108,8 @@ todolist/
 | user_id | uuid | |
 | name | string | |
 | color | string | Hex color |
+| created_at | timestamp | |
+| updated_at | timestamp | |
 
 ### SavedFilter
 | Field | Type | Notes |
@@ -118,14 +120,19 @@ todolist/
 | icon | string | Emoji |
 | query | json | Serialized filter AST |
 | sort_order | float | |
+| created_at | timestamp | |
+| updated_at | timestamp | |
 
 ### Reminder
 | Field | Type | Notes |
 |---|---|---|
 | id | uuid | |
 | task_id | uuid | FK → Task |
+| user_id | uuid | For RLS policy |
 | remind_at | timestamp | |
 | notified | bool | |
+| created_at | timestamp | |
+| updated_at | timestamp | |
 
 ### Attachment
 | Field | Type | Notes |
@@ -142,6 +149,7 @@ todolist/
 | thumbnail_uri | string | Local thumbnail for images (optional) |
 | duration_seconds | float | For audio (optional) |
 | created_at | timestamp | |
+| updated_at | timestamp | |
 | synced_at | timestamp | |
 
 ### SyncMeta (local only, not synced)
@@ -196,7 +204,7 @@ Web: collapsible left sidebar. Mobile: bottom tab bar + slide-out drawer for pro
 - Triggered by FAB (mobile) or keyboard shortcut `Q` (web).
 - Natural language input via `chrono-node` (date/time) + custom regex:
   - `p1`/`!1` → Priority 1
-  - `#ProjectName` → assign to project
+  - `#ProjectName` → assign to project (no spaces; multi-word projects use CamelCase or hyphen, e.g. `#side-project`)
   - `@labelname` → add label
   - `tomorrow 3pm`, `next monday`, `in 2 hours` → due date/time
 - Example: `"Submit report p1 #work @waiting tomorrow 3pm"` → P1 task in Work, label "waiting", due tomorrow 15:00
