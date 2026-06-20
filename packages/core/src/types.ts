@@ -9,7 +9,7 @@ export interface Task {
   status: TaskStatus;
   priority: Priority;
   dueDate: string | null;   // 'YYYY-MM-DD'
-  dueTime: string | null;   // 'HH:MM'
+  dueTime: string | null;   // 'HH:mm'
   timezone: string | null;
   projectId: string | null;
   parentTaskId: string | null;

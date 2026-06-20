@@ -19,9 +19,9 @@ export interface NlpParseOptions {
 // Matches: p1, p2, p3, p4, !1, !2, !3, !4 as standalone tokens
 const PRIORITY_RE = /(?<!\S)(?:p([1-4])|!([1-4]))(?!\S)/gi;
 // Matches: #slug or #slug-with-hyphens (no spaces)
-const PROJECT_RE = /#([a-z0-9][a-z0-9-]*)/gi;
+const PROJECT_RE = /#([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)/gi;
 // Matches: @label or @label-with-hyphens
-const LABEL_RE = /@([a-z0-9][a-z0-9-]*)/gi;
+const LABEL_RE = /@([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)/gi;
 
 export function parseTaskInput(
   input: string,
@@ -33,7 +33,8 @@ export function parseTaskInput(
   // Extract priority — last match wins (rightmost p1 beats p2 if both present)
   let priority: Priority = 4;
   text = text.replace(PRIORITY_RE, (_, p, bang) => {
-    priority = parseInt(p ?? bang, 10) as Priority;
+    const n = parseInt(p ?? bang, 10);
+    if (n >= 1 && n <= 4) priority = n as Priority;
     return ' ';
   });
 
@@ -52,7 +53,10 @@ export function parseTaskInput(
   });
 
   // Extract date/time via chrono-node (first match only)
-  const parsed = chrono.parse(text, now, { forwardDate: true });
+  const chronoRef: Parameters<typeof chrono.parse>[1] = options.timezone
+    ? { instant: now, timezone: options.timezone }
+    : now;
+  const parsed = chrono.parse(text, chronoRef, { forwardDate: true });
   let dueDate: string | null = null;
   let dueTime: string | null = null;
 

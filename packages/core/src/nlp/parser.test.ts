@@ -90,6 +90,6 @@ describe('parseTaskInput', () => {
 
   it('uses full original input as title when all tokens are stripped but nothing remains', () => {
     const result = parseTaskInput('p1 #work @label', { now });
-    expect(result.title).toBeTruthy();
+    expect(result.title).toBe('p1 #work @label');
   });
 });
