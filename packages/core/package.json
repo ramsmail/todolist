@@ -1,0 +1,20 @@
+{
+  "name": "@todolist/core",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "chrono-node": "^2.7.6",
+    "date-fns": "^3.6.0"
+  },
+  "devDependencies": {
+    "@todolist/config": "workspace:*",
+    "vitest": "^1.6.0"
+  }
+}
