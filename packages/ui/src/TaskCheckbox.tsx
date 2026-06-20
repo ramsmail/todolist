@@ -6,7 +6,7 @@ import Animated, {
   withSpring,
   runOnJS,
 } from 'react-native-reanimated';
-import { colors, priorityColor } from './tokens';
+import { priorityColor } from './tokens';
 
 interface Props {
   priority: 1 | 2 | 3 | 4;

@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function TaskRow({ id, title, priority, dueDate, completed = false, onPress, onComplete }: Props) {
-  const isOverdue = !!dueDate && dueDate < new Date().toISOString().split('T')[0];
+  const isOverdue = !completed && !!dueDate && dueDate < new Date().toISOString().split('T')[0];
 
   return (
     <Pressable style={styles.row} onPress={() => onPress(id)}>

@@ -23,6 +23,7 @@ function statusLabel(s: SyncStatus, lastSyncedAt: Date | null): string {
     const mins = Math.floor((Date.now() - lastSyncedAt.getTime()) / 60000);
     return `Not synced (${mins}m ago)`;
   }
+  if (s === 'stale') return 'Not synced';
   if (lastSyncedAt) {
     return `Synced ${lastSyncedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   }
