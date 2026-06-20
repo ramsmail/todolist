@@ -2,6 +2,7 @@
   "name": "@todolist/config",
   "version": "0.0.1",
   "private": true,
+  "type": "commonjs",
   "exports": {
     "./typescript": "./tsconfig.base.json",
     "./eslint": "./eslint-config/index.js"
