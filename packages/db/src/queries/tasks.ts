@@ -125,14 +125,14 @@ export async function createTask(
 
 export async function completeTask(db: PowerSyncDatabase, id: string): Promise<void> {
   await db.execute(
-    `UPDATE tasks SET status = 'completed', updated_at = ? WHERE id = ?`,
+    `UPDATE tasks SET status = 'completed', updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
     [new Date().toISOString(), id]
   );
 }
 
 export async function updateTaskTitle(db: PowerSyncDatabase, id: string, title: string): Promise<void> {
   await db.execute(
-    `UPDATE tasks SET title = ?, updated_at = ? WHERE id = ?`,
+    `UPDATE tasks SET title = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
     [title, new Date().toISOString(), id]
   );
 }
@@ -144,7 +144,7 @@ export async function updateTaskDue(
   dueTime: string | null
 ): Promise<void> {
   await db.execute(
-    `UPDATE tasks SET due_date = ?, due_time = ?, updated_at = ? WHERE id = ?`,
+    `UPDATE tasks SET due_date = ?, due_time = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
     [dueDate, dueTime, new Date().toISOString(), id]
   );
 }
@@ -155,7 +155,7 @@ export async function updateTaskPriority(
   priority: number
 ): Promise<void> {
   await db.execute(
-    `UPDATE tasks SET priority = ?, updated_at = ? WHERE id = ?`,
+    `UPDATE tasks SET priority = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
     [priority, new Date().toISOString(), id]
   );
 }
@@ -166,7 +166,7 @@ export async function updateTaskProject(
   projectId: string | null
 ): Promise<void> {
   await db.execute(
-    `UPDATE tasks SET project_id = ?, updated_at = ? WHERE id = ?`,
+    `UPDATE tasks SET project_id = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
     [projectId, new Date().toISOString(), id]
   );
 }
