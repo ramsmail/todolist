@@ -1,0 +1,22 @@
+{
+  "name": "@todolist/db",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@powersync/react-native": "^1.7.0",
+    "@powersync/react": "^1.4.0",
+    "fractional-indexing": "^3.2.0"
+  },
+  "devDependencies": {
+    "@todolist/config": "workspace:*",
+    "react": "^18.2.0"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}
