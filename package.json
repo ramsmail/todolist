@@ -1,0 +1,14 @@
+{
+  "name": "todolist",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "dev": "turbo dev"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "typescript": "^5.5.0"
+  }
+}
