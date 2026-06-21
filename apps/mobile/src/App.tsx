@@ -1,10 +1,20 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider }       from 'react-native-safe-area-context';
+import { AuthProvider }           from './auth/AuthContext';
+import { PowerSyncProvider }      from './powersync/PowerSyncProvider';
+import { RootNavigator }          from './navigation/RootNavigator';
 
 export function App() {
   return (
-    <View className="flex-1 bg-[#0A0A0A] items-center justify-center">
-      <Text className="text-white text-xl font-semibold">TodoList</Text>
-    </View>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <PowerSyncProvider>
+            <RootNavigator />
+          </PowerSyncProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
