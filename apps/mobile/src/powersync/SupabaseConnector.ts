@@ -33,7 +33,7 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
             result = await table.upsert({ ...op.opData, id: op.id });
             break;
           case UpdateType.PATCH:
-            result = await table.update(op.opData).eq('id', op.id);
+            result = await table.update(op.opData ?? {}).eq('id', op.id);
             break;
           case UpdateType.DELETE:
             // Soft delete — deleted_at triggers the DB updated_at trigger; don't pass updated_at client-side

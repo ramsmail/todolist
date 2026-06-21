@@ -56,7 +56,7 @@ function DrawerContent(props: DrawerContentComponentProps) {
               <Text style={{ color: colors.textPrimary, fontSize: 15 }}>{p.name}</Text>
               <View style={{
                 width: 8, height: 8, borderRadius: 4,
-                backgroundColor: p.color, marginLeft: 'auto',
+                backgroundColor: p.color ?? undefined, marginLeft: 'auto',
               }} />
             </Pressable>
           ))}
