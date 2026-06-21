@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "TodoList",
+    "slug": "todolist",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0A0A0A"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.yourname.todolist"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0A"
+      },
+      "package": "com.yourname.todolist"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "react-native-reanimated",
+        {}
+      ]
+    ]
+  }
+}
