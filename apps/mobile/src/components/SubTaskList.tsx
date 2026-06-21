@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, TextInput, Pressable, FlatList, StyleSheet,
+  View, Text, TextInput, Pressable, FlatList, StyleSheet, Alert,
 } from 'react-native';
 import { usePowerSync } from '@powersync/react';
 import { useSubtasks, createTask, completeTask } from '@todolist/db';
@@ -13,10 +13,9 @@ interface Props {
 }
 
 interface SubTaskRow {
-  id:       string;
-  title:    string;
-  priority: number;
-  status:   string;
+  id:     string;
+  title:  string;
+  status: string;
 }
 
 export function SubTaskList({ parentTaskId, projectId }: Props) {
@@ -38,7 +37,7 @@ export function SubTaskList({ parentTaskId, projectId }: Props) {
         userId:       session.user.id,
         title:        trimmed,
         priority:     4,
-        status:       'inbox',
+        status:       'active',
         projectId:    projectId ?? null,
         parentTaskId: parentTaskId,
       });
@@ -46,13 +45,14 @@ export function SubTaskList({ parentTaskId, projectId }: Props) {
       setAdding(false);
     } catch (e) {
       console.error('createTask (subtask) failed:', e);
+      Alert.alert('Could not add sub-task', 'Please try again.');
     }
   }, [db, session, newTitle, projectId, parentTaskId]);
 
   const renderItem = useCallback(({ item }: { item: SubTaskRow }) => (
     <View style={styles.row}>
       <TaskCheckbox
-        priority={item.priority as 1 | 2 | 3 | 4}
+        priority={4}
         checked={item.status === 'done'}
         onComplete={() => handleComplete(item.id)}
       />
@@ -104,6 +104,7 @@ export function SubTaskList({ parentTaskId, projectId }: Props) {
           <Pressable
             style={styles.cancelBtn}
             onPress={() => { setAdding(false); setNewTitle(''); }}
+            accessibilityLabel="Cancel"
           >
             <Text style={styles.cancelBtnText}>✕</Text>
           </Pressable>
@@ -116,7 +117,7 @@ export function SubTaskList({ parentTaskId, projectId }: Props) {
 const styles = StyleSheet.create({
   container:    { marginTop: 24 },
   header:       { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  heading:      { ...typography.heading2, color: colors.textPrimary, flex: 1 },
+  heading:      { ...typography.caption, color: colors.textMuted, fontWeight: '600', letterSpacing: 0.6, flex: 1 },
   addBtn:       { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: colors.surface },
   addBtnText:   { color: colors.accent, fontWeight: '600', fontSize: 13 },
   row:          { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, gap: 10 },
