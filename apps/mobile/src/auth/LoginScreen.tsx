@@ -49,6 +49,7 @@ export function LoginScreen({ navigation }: Props) {
           autoComplete="email"
           value={email}
           onChangeText={setEmail}
+          testID="auth-email-input"
         />
 
         <Text className="text-neutral-300 text-sm mb-1">Password</Text>
@@ -60,12 +61,14 @@ export function LoginScreen({ navigation }: Props) {
           autoComplete="password"
           value={password}
           onChangeText={setPassword}
+          testID="auth-password-input"
         />
 
         <Pressable
           className="bg-indigo-500 rounded-xl py-3.5 items-center"
           onPress={handleLogin}
           disabled={loading}
+          testID="auth-signin-button"
         >
           {loading
             ? <ActivityIndicator color="#fff" />
