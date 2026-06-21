@@ -28,6 +28,16 @@ const SecureStoreAdapter = {
     return result;
   },
   setItem: async (key: string, value: string): Promise<void> => {
+    // Clear any pre-existing chunks and bare key before writing to avoid stale
+    // chunk reads if the value length crosses the CHUNK_SIZE boundary.
+    await SecureStore.deleteItemAsync(key).catch(() => {});
+    let ci = 0;
+    while (true) {
+      const existing = await SecureStore.getItemAsync(`${key}.${ci}`);
+      if (existing === null) break;
+      await SecureStore.deleteItemAsync(`${key}.${ci}`);
+      ci++;
+    }
     if (value.length <= CHUNK_SIZE) {
       await SecureStore.setItemAsync(key, value);
       return;
@@ -37,7 +47,6 @@ const SecureStoreAdapter = {
       await SecureStore.setItemAsync(`${key}.${i}`, value.slice(offset, offset + CHUNK_SIZE));
       i++;
     }
-    await SecureStore.deleteItemAsync(key).catch(() => {});
   },
   removeItem: async (key: string): Promise<void> => {
     await SecureStore.deleteItemAsync(key).catch(() => {});
