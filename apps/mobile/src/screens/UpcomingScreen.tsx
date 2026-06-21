@@ -25,7 +25,10 @@ function groupByDate(tasks: TaskRowData[]): Section[] {
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push(task);
   }
-  return Array.from(map.entries()).map(([title, data]) => ({ title, data }));
+  // Sort sections chronologically; 'No date' sorts last via localeCompare
+  return Array.from(map.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([title, data]) => ({ title, data }));
 }
 
 export function UpcomingScreen() {
@@ -70,6 +73,7 @@ export function UpcomingScreen() {
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         renderSectionHeader={renderSectionHeader}
+        contentContainerStyle={sections.length === 0 ? styles.emptyContainer : undefined}
         ListEmptyComponent={<Text style={styles.empty}>No upcoming tasks.</Text>}
         stickySectionHeadersEnabled
       />
@@ -87,5 +91,6 @@ const styles = StyleSheet.create({
   title:         { ...typography.heading1, color: colors.textPrimary },
   sectionHeader: { backgroundColor: colors.surfaceAlt, paddingHorizontal: 16, paddingVertical: 8 },
   sectionTitle:  { ...typography.caption, color: colors.textMuted, fontWeight: '600', letterSpacing: 0.5 },
+  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   empty:         { ...typography.body, color: colors.textMuted, marginTop: 80, textAlign: 'center' },
 });
