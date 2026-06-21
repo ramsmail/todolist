@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { View, ActivityIndicator } from 'react-native';
 import { useAuth }    from '../auth/AuthContext';
 import { AuthStack }  from './AuthStack';
@@ -18,7 +18,7 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={DarkTheme}>
       {session ? <AppDrawer /> : <AuthStack />}
     </NavigationContainer>
   );

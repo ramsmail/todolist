@@ -85,7 +85,7 @@ export function AppDrawer() {
       }}
     >
       <Drawer.Screen name="Main"    component={AppTabs} options={{ title: 'Tasks' }} />
-      <Drawer.Screen name="Project" component={ProjectScreen} />
+      <Drawer.Screen name="Project" component={ProjectScreen} options={{ drawerItemStyle: { display: 'none' } }} />
     </Drawer.Navigator>
   );
 }
