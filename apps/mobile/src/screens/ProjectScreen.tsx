@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, FlatList, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import { useProjectTasks, completeTask, updateTaskDue } from '@todolist/db';
 import { usePowerSync } from '@powersync/react';
@@ -16,6 +16,8 @@ type RouteProps = RouteProp<AppDrawerParamList, 'Project'>;
 export function ProjectScreen() {
   const db    = usePowerSync();
   const route = useRoute<RouteProps>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const nav   = useNavigation<any>();
   const { id: projectId, name } = route.params;
 
   const { data: tasks } = useProjectTasks(projectId);
@@ -31,9 +33,13 @@ export function ProjectScreen() {
     updateTaskDue(db as any, id, tomorrow.toISOString().split('T')[0], null).catch(console.error);
   }, [db]);
 
-  // ProjectScreen has no navigation to TaskDetail (drawer navigator, not stack)
-  // Tapping a task is a no-op for now; Task 6 handles detail via tab stacks
-  const handlePress = useCallback((_id: string) => {}, []);
+  // Cross-navigator deep-link: drawer → tab stack → TaskDetail
+  const handlePress = useCallback((taskId: string) => {
+    nav.navigate('Main', {
+      screen: 'InboxStack',
+      params: { screen: 'TaskDetail', params: { taskId } },
+    });
+  }, [nav]);
 
   const renderItem   = useCallback(({ item }: { item: TaskRowData }) => (
     <SwipeableTaskRow

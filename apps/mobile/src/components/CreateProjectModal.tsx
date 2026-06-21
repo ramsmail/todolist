@@ -27,6 +27,13 @@ export function CreateProjectModal({ visible, onClose }: Props) {
   const onCloseRef = useRef(onClose);
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
+  const resetAndClose = useCallback(() => {
+    setName('');
+    setColor(COLORS[0]);
+    setIcon(ICONS[0]);
+    onCloseRef.current();
+  }, []);
+
   const handleSave = useCallback(async () => {
     const trimmed = name.trim();
     if (!trimmed || !session) return;
@@ -47,19 +54,16 @@ export function CreateProjectModal({ visible, onClose }: Props) {
       setSaving(false);
     }
     if (succeeded) {
-      setName('');
-      setColor(COLORS[0]);
-      setIcon(ICONS[0]);
-      onCloseRef.current();
+      resetAndClose();
     }
-  }, [db, session, name, color, icon]);
+  }, [db, session, name, color, icon, resetAndClose]);
 
   return (
     <Modal
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onRequestClose={onCloseRef.current}
+      onRequestClose={resetAndClose}
     >
       <KeyboardAvoidingView
         style={styles.sheet}
@@ -104,7 +108,7 @@ export function CreateProjectModal({ visible, onClose }: Props) {
         </View>
 
         <View style={styles.actions}>
-          <Pressable style={styles.cancelBtn} onPress={onCloseRef.current}>
+          <Pressable style={styles.cancelBtn} onPress={resetAndClose}>
             <Text style={styles.cancelText}>Cancel</Text>
           </Pressable>
           <Pressable

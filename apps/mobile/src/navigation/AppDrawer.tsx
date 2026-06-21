@@ -61,6 +61,11 @@ function DrawerContent(props: DrawerContentComponentProps) {
             }} />
           </Pressable>
         ))}
+        {(!projects || projects.length === 0) && (
+          <Text style={{ color: colors.textMuted, fontSize: 13, paddingHorizontal: 16, paddingBottom: 4 }}>
+            No projects yet
+          </Text>
+        )}
         <Pressable
           style={{ paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center' }}
           onPress={() => setCreatingProject(true)}
