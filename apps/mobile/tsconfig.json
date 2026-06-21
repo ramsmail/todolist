@@ -2,7 +2,7 @@
   "extends": "@todolist/config/typescript",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "lib": ["ES2020", "DOM"],
+    "lib": ["ES2020"],
     "paths": {
       "@/*": ["./src/*"]
     }
