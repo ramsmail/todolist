@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Modal, View, TextInput, Pressable, Text, StyleSheet,
   KeyboardAvoidingView, Platform, ActivityIndicator,
@@ -20,15 +20,22 @@ export function QuickCaptureModal({ visible, projectId, onClose }: Props) {
   const { session }     = useAuth();
   const [input, setInput] = useState('');
   const [saving, setSaving] = useState(false);
-  const inputRef        = useRef<TextInput>(null);
+  const [error, setError]   = useState<string | null>(null);
+
+  // Stable ref so onClose is never a useCallback dependency (avoids churn)
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   const handleSave = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || !session) return;
 
+    setError(null);
     setSaving(true);
+    let succeeded = false;
     try {
       const parsed = parseTaskInput(trimmed, { now: new Date() });
+      // Note: parsed.projectSlug (#tag) is not yet resolved to an ID — projectId prop takes precedence
       await createTask(db as any, {
         userId:    session.user.id,
         title:     parsed.title,
@@ -40,21 +47,26 @@ export function QuickCaptureModal({ visible, projectId, onClose }: Props) {
         labels:    parsed.labels,
         status:    'inbox',
       });
-      setInput('');
-      onClose();
+      succeeded = true;
     } catch (e) {
       console.error('createTask failed:', e);
+      setError('Could not save task. Please try again.');
     } finally {
       setSaving(false);
     }
-  }, [db, input, session, projectId, onClose]);
+    // Call onClose after finally so setSaving(false) runs on the mounted component
+    if (succeeded) {
+      setInput('');
+      onCloseRef.current();
+    }
+  }, [db, input, session, projectId]);
 
   return (
     <Modal
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      onRequestClose={onCloseRef.current}
     >
       <KeyboardAvoidingView
         style={styles.sheet}
@@ -64,25 +76,27 @@ export function QuickCaptureModal({ visible, projectId, onClose }: Props) {
 
         <Text style={styles.heading}>New task</Text>
         <Text style={styles.hint}>
-          Tip: "Buy milk p1 #work @waiting tomorrow 3pm"
+          Tip: "Buy milk p1 @waiting tomorrow 3pm"
         </Text>
 
+        {error && <Text style={styles.errorText}>{error}</Text>}
+
         <TextInput
-          ref={inputRef}
           style={styles.input}
           placeholder="What needs to be done?"
           placeholderTextColor={colors.textMuted}
           value={input}
-          onChangeText={setInput}
+          onChangeText={text => { setError(null); setInput(text); }}
           autoFocus
-          multiline
-          returnKeyType="done"
-          blurOnSubmit
-          onSubmitEditing={handleSave}
+          // multiline + onSubmitEditing is unreliable on Android; rely on "Add task" button
+          multiline={Platform.OS === 'ios'}
+          returnKeyType={Platform.OS === 'ios' ? 'done' : 'default'}
+          blurOnSubmit={Platform.OS === 'ios'}
+          onSubmitEditing={Platform.OS === 'ios' ? handleSave : undefined}
         />
 
         <View style={styles.actions}>
-          <Pressable style={styles.cancelBtn} onPress={onClose}>
+          <Pressable style={styles.cancelBtn} onPress={onCloseRef.current}>
             <Text style={styles.cancelText}>Cancel</Text>
           </Pressable>
 
@@ -117,6 +131,7 @@ const styles = StyleSheet.create({
   },
   heading: { ...typography.heading2, color: colors.textPrimary, marginBottom: 4 },
   hint: { ...typography.caption, color: colors.textMuted, marginBottom: 16 },
+  errorText: { ...typography.caption, color: colors.error, marginBottom: 12 },
   input: {
     ...typography.body,
     color: colors.textPrimary,

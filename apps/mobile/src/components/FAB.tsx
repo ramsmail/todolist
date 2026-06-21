@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Pressable, Text, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { colors } from '@todolist/ui';
@@ -12,10 +12,13 @@ export function FAB({ onPress }: Props) {
 
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
+  const handlePressIn  = useCallback(() => { scale.value = withSpring(0.92); }, [scale]);
+  const handlePressOut = useCallback(() => { scale.value = withSpring(1); }, [scale]);
+
   return (
     <Pressable
-      onPressIn={() => { scale.value = withSpring(0.92); }}
-      onPressOut={() => { scale.value = withSpring(1); }}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       onPress={onPress}
       style={styles.pressable}
       accessibilityLabel="Add task"
