@@ -38,8 +38,11 @@ export function RegisterScreen({ navigation }: Props) {
     setLoading(true);
     try {
       await signUp(email.trim(), password);
-      Alert.alert('Check your email', 'We sent a confirmation link. Confirm it, then sign in.');
-      navigation.navigate('Login');
+      Alert.alert(
+        'Check your email',
+        'We sent a confirmation link. Confirm it, then sign in.',
+        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+      );
     } catch (e: any) {
       Alert.alert('Sign up failed', e.message ?? 'Unknown error');
     } finally {
