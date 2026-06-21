@@ -1,0 +1,11 @@
+{
+  "extends": "@todolist/config/typescript",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2020"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "babel.config.js", "metro.config.js"]
+}
