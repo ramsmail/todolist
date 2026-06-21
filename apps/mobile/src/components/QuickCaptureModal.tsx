@@ -93,6 +93,7 @@ export function QuickCaptureModal({ visible, projectId, onClose }: Props) {
           returnKeyType={Platform.OS === 'ios' ? 'done' : 'default'}
           blurOnSubmit={Platform.OS === 'ios'}
           onSubmitEditing={Platform.OS === 'ios' ? handleSave : undefined}
+          testID="quick-capture-input"
         />
 
         <View style={styles.actions}>
@@ -104,6 +105,7 @@ export function QuickCaptureModal({ visible, projectId, onClose }: Props) {
             style={[styles.saveBtn, !input.trim() && styles.saveBtnDisabled]}
             onPress={handleSave}
             disabled={!input.trim() || saving}
+            testID="quick-capture-save"
           >
             {saving
               ? <ActivityIndicator color="#fff" size="small" />
