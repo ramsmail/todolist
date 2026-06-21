@@ -17,10 +17,13 @@ export type RootStackParamList = {
   SearchStack:   undefined;
 };
 
+// Shared params for TaskDetail — used in TaskDetailScreen to avoid tying it to one stack
+export type TaskDetailParams = { taskId: string };
+
 // Per-stack param lists — each stack only exposes its own root + TaskDetail
-export type InboxStackParamList    = { Inbox: undefined;    TaskDetail: { taskId: string } };
-export type TodayStackParamList    = { Today: undefined;    TaskDetail: { taskId: string } };
-export type UpcomingStackParamList = { Upcoming: undefined; TaskDetail: { taskId: string } };
+export type InboxStackParamList    = { Inbox: undefined;    TaskDetail: TaskDetailParams };
+export type TodayStackParamList    = { Today: undefined;    TaskDetail: TaskDetailParams };
+export type UpcomingStackParamList = { Upcoming: undefined; TaskDetail: TaskDetailParams };
 export type SearchStackParamList   = { Search: undefined };
 
 const Tab            = createBottomTabNavigator<RootStackParamList>();

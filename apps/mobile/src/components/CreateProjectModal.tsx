@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   Modal, View, Text, TextInput, Pressable, StyleSheet,
-  KeyboardAvoidingView, Platform, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
 } from 'react-native';
 import { usePowerSync } from '@powersync/react';
 import { createProject } from '@todolist/db';
@@ -50,6 +50,7 @@ export function CreateProjectModal({ visible, onClose }: Props) {
       succeeded = true;
     } catch (e) {
       console.error('createProject failed:', e);
+      Alert.alert('Could not create project', 'Please try again.');
     } finally {
       setSaving(false);
     }

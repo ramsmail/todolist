@@ -5,7 +5,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   useTask, updateTaskTitle, updateTaskPriority,
   deleteTask, completeTask,
@@ -13,10 +12,10 @@ import {
 import { usePowerSync } from '@powersync/react';
 import { PriorityBadge, colors, typography } from '@todolist/ui';
 import { SubTaskList } from '../components/SubTaskList';
-import type { InboxStackParamList } from '../navigation/AppTabs';
+// Use the shared TaskDetailParams type so this screen isn't tied to InboxStack alone
+import type { TaskDetailParams } from '../navigation/AppTabs';
 
-type RouteProps = RouteProp<InboxStackParamList, 'TaskDetail'>;
-type NavProps   = NativeStackNavigationProp<InboxStackParamList, 'TaskDetail'>;
+type RouteProps = RouteProp<{ TaskDetail: TaskDetailParams }, 'TaskDetail'>;
 
 const PRIORITIES = [
   { value: 1, label: 'P1' },
@@ -28,7 +27,7 @@ const PRIORITIES = [
 export function TaskDetailScreen() {
   const db    = usePowerSync();
   const route = useRoute<RouteProps>();
-  const nav   = useNavigation<NavProps>();
+  const nav   = useNavigation();
   const { taskId } = route.params;
 
   // useTask returns { data: TaskRecord[] } — take the first row
