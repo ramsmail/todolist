@@ -6,23 +6,27 @@ import { colors } from '@todolist/ui';
 import { InboxScreen }    from '../screens/InboxScreen';
 import { TodayScreen }    from '../screens/TodayScreen';
 import { UpcomingScreen } from '../screens/UpcomingScreen';
+import { SearchScreen }   from '../screens/SearchScreen';
 import { TaskDetailScreen } from '../screens/TaskDetailScreen';
 
 export type RootStackParamList = {
   InboxStack:    undefined;
   TodayStack:    undefined;
   UpcomingStack: undefined;
+  SearchStack:   undefined;
 };
 
-export type TaskStackParamList = {
-  Inbox:      undefined;
-  Today:      undefined;
-  Upcoming:   undefined;
-  TaskDetail: { taskId: string };
-};
+// Per-stack param lists — each stack only exposes its own root + TaskDetail
+export type InboxStackParamList    = { Inbox: undefined;    TaskDetail: { taskId: string } };
+export type TodayStackParamList    = { Today: undefined;    TaskDetail: { taskId: string } };
+export type UpcomingStackParamList = { Upcoming: undefined; TaskDetail: { taskId: string } };
+export type SearchStackParamList   = { Search: undefined };
 
-const Tab   = createBottomTabNavigator<RootStackParamList>();
-const Stack = createNativeStackNavigator<TaskStackParamList>();
+const Tab            = createBottomTabNavigator<RootStackParamList>();
+const InboxStackNav  = createNativeStackNavigator<InboxStackParamList>();
+const TodayStackNav  = createNativeStackNavigator<TodayStackParamList>();
+const UpcomingStackNav = createNativeStackNavigator<UpcomingStackParamList>();
+const SearchStackNav = createNativeStackNavigator<SearchStackParamList>();
 
 const stackScreenOptions = {
   headerShown:  false,
@@ -31,36 +35,44 @@ const stackScreenOptions = {
 };
 
 const taskDetailOptions = {
-  headerShown:      true,
-  title:            'Task',
-  headerStyle:      { backgroundColor: colors.surface },
-  headerTintColor:  colors.textPrimary,
+  headerShown:     true,
+  title:           'Task',
+  headerStyle:     { backgroundColor: colors.surface },
+  headerTintColor: colors.textPrimary,
 };
 
 function InboxStack() {
   return (
-    <Stack.Navigator screenOptions={stackScreenOptions}>
-      <Stack.Screen name="Inbox"      component={InboxScreen} />
-      <Stack.Screen name="TaskDetail" component={TaskDetailScreen} options={taskDetailOptions} />
-    </Stack.Navigator>
+    <InboxStackNav.Navigator screenOptions={stackScreenOptions}>
+      <InboxStackNav.Screen name="Inbox"      component={InboxScreen} />
+      <InboxStackNav.Screen name="TaskDetail" component={TaskDetailScreen} options={taskDetailOptions} />
+    </InboxStackNav.Navigator>
   );
 }
 
 function TodayStack() {
   return (
-    <Stack.Navigator screenOptions={stackScreenOptions}>
-      <Stack.Screen name="Today"      component={TodayScreen} />
-      <Stack.Screen name="TaskDetail" component={TaskDetailScreen} options={taskDetailOptions} />
-    </Stack.Navigator>
+    <TodayStackNav.Navigator screenOptions={stackScreenOptions}>
+      <TodayStackNav.Screen name="Today"      component={TodayScreen} />
+      <TodayStackNav.Screen name="TaskDetail" component={TaskDetailScreen} options={taskDetailOptions} />
+    </TodayStackNav.Navigator>
   );
 }
 
 function UpcomingStack() {
   return (
-    <Stack.Navigator screenOptions={stackScreenOptions}>
-      <Stack.Screen name="Upcoming"   component={UpcomingScreen} />
-      <Stack.Screen name="TaskDetail" component={TaskDetailScreen} options={taskDetailOptions} />
-    </Stack.Navigator>
+    <UpcomingStackNav.Navigator screenOptions={stackScreenOptions}>
+      <UpcomingStackNav.Screen name="Upcoming"   component={UpcomingScreen} />
+      <UpcomingStackNav.Screen name="TaskDetail" component={TaskDetailScreen} options={taskDetailOptions} />
+    </UpcomingStackNav.Navigator>
+  );
+}
+
+function SearchStack() {
+  return (
+    <SearchStackNav.Navigator screenOptions={stackScreenOptions}>
+      <SearchStackNav.Screen name="Search" component={SearchScreen} />
+    </SearchStackNav.Navigator>
   );
 }
 
@@ -75,7 +87,7 @@ export function AppTabs() {
         headerShown: false,
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
         tabBarActiveTintColor:   colors.accent,
-        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarInactiveTintColor: colors.textMuted,
       }}
     >
       <Tab.Screen
@@ -92,6 +104,11 @@ export function AppTabs() {
         name="UpcomingStack"
         component={UpcomingStack}
         options={{ title: 'Upcoming', tabBarIcon: tabIcon('📅') }}
+      />
+      <Tab.Screen
+        name="SearchStack"
+        component={SearchStack}
+        options={{ title: 'Search', tabBarIcon: tabIcon('🔍') }}
       />
     </Tab.Navigator>
   );

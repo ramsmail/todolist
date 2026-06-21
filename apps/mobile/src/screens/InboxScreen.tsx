@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, FlatList, Text, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useInboxTasks, completeTask, updateTaskDue } from '@todolist/db';
@@ -8,9 +9,9 @@ import { colors, typography } from '@todolist/ui';
 import { SwipeableTaskRow, type TaskRowData } from '../components/SwipeableTaskRow';
 import { FAB }               from '../components/FAB';
 import { QuickCaptureModal } from '../components/QuickCaptureModal';
-import type { TaskStackParamList } from '../navigation/AppTabs';
+import type { InboxStackParamList } from '../navigation/AppTabs';
 
-type Nav = NativeStackNavigationProp<TaskStackParamList, 'Inbox'>;
+type Nav = NativeStackNavigationProp<InboxStackParamList, 'Inbox'>;
 
 export function InboxScreen() {
   const db         = usePowerSync();
@@ -27,7 +28,7 @@ export function InboxScreen() {
   const handleReschedule = useCallback((id: string) => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    updateTaskDue(db as any, id, tomorrow.toISOString().split('T')[0]).catch(console.error);
+    updateTaskDue(db as any, id, tomorrow.toISOString().split('T')[0], null).catch(console.error);
   }, [db]);
 
   const renderItem = useCallback(({ item }: { item: TaskRowData }) => (
@@ -41,8 +42,11 @@ export function InboxScreen() {
 
   const keyExtractor = useCallback((item: TaskRowData) => item.id, []);
 
+  const openCapture  = useCallback(() => setCapturing(true), []);
+  const closeCapture = useCallback(() => setCapturing(false), []);
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.header}>
         <Text style={styles.title}>Inbox</Text>
         <Text style={styles.count}>{tasks?.length ?? 0}</Text>
@@ -58,13 +62,10 @@ export function InboxScreen() {
         }
       />
 
-      <FAB onPress={() => setCapturing(true)} />
+      <FAB onPress={openCapture} />
 
-      <QuickCaptureModal
-        visible={capturing}
-        onClose={() => setCapturing(false)}
-      />
-    </View>
+      <QuickCaptureModal visible={capturing} onClose={closeCapture} />
+    </SafeAreaView>
   );
 }
 
