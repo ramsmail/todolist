@@ -1,5 +1,3 @@
-create extension if not exists "uuid-ossp";
-
 -- User settings (one row per user, id = auth.uid())
 create table user_settings (
   id         uuid primary key references auth.users(id) on delete cascade,
@@ -13,7 +11,7 @@ create table user_settings (
 
 -- Projects
 create table projects (
-  id          uuid        primary key default uuid_generate_v4(),
+  id          uuid        primary key default gen_random_uuid(),
   user_id     uuid        not null references auth.users(id) on delete cascade,
   name        text        not null,
   color       text        not null default '#6366F1',
@@ -27,7 +25,7 @@ create table projects (
 
 -- Labels
 create table labels (
-  id         uuid        primary key default uuid_generate_v4(),
+  id         uuid        primary key default gen_random_uuid(),
   user_id    uuid        not null references auth.users(id) on delete cascade,
   name       text        not null,
   color      text        not null default '#6366F1',
@@ -39,7 +37,7 @@ create table labels (
 
 -- Tasks
 create table tasks (
-  id               uuid        primary key default uuid_generate_v4(),
+  id               uuid        primary key default gen_random_uuid(),
   user_id          uuid        not null references auth.users(id) on delete cascade,
   title            text        not null,
   description      text,
@@ -68,7 +66,7 @@ create index tasks_labels_gin_idx on tasks using gin (labels);
 
 -- Saved filters (Phase 2 — created now so sync rules cover it)
 create table saved_filters (
-  id         uuid        primary key default uuid_generate_v4(),
+  id         uuid        primary key default gen_random_uuid(),
   user_id    uuid        not null references auth.users(id) on delete cascade,
   name       text        not null,
   icon       text,
@@ -81,7 +79,7 @@ create table saved_filters (
 
 -- Reminders (Phase 3)
 create table reminders (
-  id              uuid        primary key default uuid_generate_v4(),
+  id              uuid        primary key default gen_random_uuid(),
   task_id         uuid        not null references tasks(id) on delete cascade,
   user_id         uuid        not null references auth.users(id) on delete cascade,
   remind_at_local timestamptz not null,
@@ -95,7 +93,7 @@ create table reminders (
 
 -- Attachments (Phase 3)
 create table attachments (
-  id               uuid        primary key default uuid_generate_v4(),
+  id               uuid        primary key default gen_random_uuid(),
   task_id          uuid        not null references tasks(id) on delete cascade,
   user_id          uuid        not null references auth.users(id) on delete cascade,
   type             text        not null check (type in ('image','audio','file')),
