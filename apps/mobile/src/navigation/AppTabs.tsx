@@ -1,48 +1,98 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text } from 'react-native';
+import { colors } from '@todolist/ui';
 import { InboxScreen }    from '../screens/InboxScreen';
 import { TodayScreen }    from '../screens/TodayScreen';
 import { UpcomingScreen } from '../screens/UpcomingScreen';
-import { SearchScreen }   from '../screens/SearchScreen';
-import { colors }         from '@todolist/ui';
+import { TaskDetailScreen } from '../screens/TaskDetailScreen';
 
-export type AppTabsParamList = {
-  Inbox:    undefined;
-  Today:    undefined;
-  Upcoming: undefined;
-  Search:   undefined;
+export type RootStackParamList = {
+  InboxStack:    undefined;
+  TodayStack:    undefined;
+  UpcomingStack: undefined;
 };
 
-const Tab = createBottomTabNavigator<AppTabsParamList>();
+export type TaskStackParamList = {
+  Inbox:      undefined;
+  Today:      undefined;
+  Upcoming:   undefined;
+  TaskDetail: { taskId: string };
+};
 
-function icon(label: string) {
-  const map: Record<string, string> = {
-    Inbox: '📥', Today: '☀️', Upcoming: '📅', Search: '🔍',
-  };
-  return map[label] ?? '○';
+const Tab   = createBottomTabNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<TaskStackParamList>();
+
+const stackScreenOptions = {
+  headerShown:  false,
+  contentStyle: { backgroundColor: colors.bg },
+  animation:    'slide_from_right' as const,
+};
+
+const taskDetailOptions = {
+  headerShown:      true,
+  title:            'Task',
+  headerStyle:      { backgroundColor: colors.surface },
+  headerTintColor:  colors.textPrimary,
+};
+
+function InboxStack() {
+  return (
+    <Stack.Navigator screenOptions={stackScreenOptions}>
+      <Stack.Screen name="Inbox"      component={InboxScreen} />
+      <Stack.Screen name="TaskDetail" component={TaskDetailScreen} options={taskDetailOptions} />
+    </Stack.Navigator>
+  );
 }
+
+function TodayStack() {
+  return (
+    <Stack.Navigator screenOptions={stackScreenOptions}>
+      <Stack.Screen name="Today"      component={TodayScreen} />
+      <Stack.Screen name="TaskDetail" component={TaskDetailScreen} options={taskDetailOptions} />
+    </Stack.Navigator>
+  );
+}
+
+function UpcomingStack() {
+  return (
+    <Stack.Navigator screenOptions={stackScreenOptions}>
+      <Stack.Screen name="Upcoming"   component={UpcomingScreen} />
+      <Stack.Screen name="TaskDetail" component={TaskDetailScreen} options={taskDetailOptions} />
+    </Stack.Navigator>
+  );
+}
+
+const tabIcon = (label: string) => ({ color }: { color: string }) => (
+  <Text style={{ color, fontSize: 20 }}>{label}</Text>
+);
 
 export function AppTabs() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: () => <Text style={{ fontSize: 18 }}>{icon(route.name)}</Text>,
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
         tabBarActiveTintColor:   colors.accent,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor:  colors.border,
-        },
-        headerStyle:      { backgroundColor: colors.bg },
-        headerTintColor:  colors.textPrimary,
-        headerTitleStyle: { fontWeight: '600' },
-      })}
+        tabBarInactiveTintColor: colors.textSecondary,
+      }}
     >
-      <Tab.Screen name="Inbox"    component={InboxScreen} />
-      <Tab.Screen name="Today"    component={TodayScreen} />
-      <Tab.Screen name="Upcoming" component={UpcomingScreen} />
-      <Tab.Screen name="Search"   component={SearchScreen} />
+      <Tab.Screen
+        name="InboxStack"
+        component={InboxStack}
+        options={{ title: 'Inbox', tabBarIcon: tabIcon('📥') }}
+      />
+      <Tab.Screen
+        name="TodayStack"
+        component={TodayStack}
+        options={{ title: 'Today', tabBarIcon: tabIcon('☀️') }}
+      />
+      <Tab.Screen
+        name="UpcomingStack"
+        component={UpcomingStack}
+        options={{ title: 'Upcoming', tabBarIcon: tabIcon('📅') }}
+      />
     </Tab.Navigator>
   );
 }
