@@ -1,41 +1,44 @@
 import { device, element, by, expect as detoxExpect, waitFor } from 'detox';
 
+/**
+ * Golden path — tests run sequentially and share state intentionally:
+ *   1. Verify login screen (unauthenticated cold launch)
+ *   2. Log in — auth token persisted via expo-secure-store
+ *   3. Create a task (depends on being logged in from test 2)
+ *   4. Swipe-complete the task (depends on task created in test 3)
+ *
+ * Do NOT add beforeEach reloadReactNative — that would reset JS state and
+ * require async auth rehydration before each test, causing intermittent failures.
+ */
 describe('Golden Path', () => {
   beforeAll(async () => {
     await device.launchApp({ newInstance: true });
   });
 
-  beforeEach(async () => {
-    await device.reloadReactNative();
-  });
-
   it('shows the login screen on first launch', async () => {
-    await detoxExpect(element(by.text('Sign in'))).toBeVisible();
+    await detoxExpect(element(by.id('auth-signin-button'))).toBeVisible();
   });
 
   it('logs in and reaches the Inbox tab', async () => {
-    // Fill credentials — Detox uses testID for reliable element lookup
     await element(by.id('auth-email-input')).typeText('test@example.com');
     await element(by.id('auth-password-input')).typeText('testpassword123');
     await element(by.id('auth-signin-button')).tap();
 
-    // Wait for navigation to Inbox
     await waitFor(element(by.text('Inbox')))
       .toBeVisible()
       .withTimeout(10000);
   });
 
   it('creates a task via QuickCaptureModal', async () => {
-    // Tap the FAB
+    // Ensure Inbox is visible before interacting (auth rehydration guard)
+    await waitFor(element(by.text('Inbox')))
+      .toBeVisible()
+      .withTimeout(5000);
+
     await element(by.label('Add task')).tap();
-
-    // Type in the modal input
     await element(by.id('quick-capture-input')).typeText('Buy groceries p2 tomorrow');
-
-    // Tap Add task button
     await element(by.id('quick-capture-save')).tap();
 
-    // Task should appear in the list
     await waitFor(element(by.text('Buy groceries')))
       .toBeVisible()
       .withTimeout(5000);

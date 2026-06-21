@@ -8,12 +8,14 @@ module.exports = {
     'ios.debug': {
       type: 'ios.app',
       binaryPath: 'ios/build/Build/Products/Debug-iphonesimulator/TodoList.app',
-      build: 'xcodebuild -workspace ios/TodoList.xcworkspace -scheme TodoList -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build',
+      // expo prebuild generates ios/ — must run before xcodebuild in a clean checkout
+      build: 'expo prebuild --clean && xcodebuild -workspace ios/TodoList.xcworkspace -scheme TodoList -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build',
     },
     'android.debug': {
       type: 'android.apk',
       binaryPath: 'android/app/build/outputs/apk/debug/app-debug.apk',
-      build: 'cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug && cd ..',
+      // expo prebuild generates android/ — must run before gradlew in a clean checkout
+      build: 'expo prebuild --clean && cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug && cd ..',
     },
   },
   devices: {
