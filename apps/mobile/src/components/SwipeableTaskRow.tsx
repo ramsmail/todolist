@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import Animated, {
@@ -25,16 +25,27 @@ interface Props {
 }
 
 export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule }: Props) {
-  const swipeRef   = useRef<Swipeable>(null);
-  const opacity    = useSharedValue(1);
-  const isOverdue  = task.due_date && task.due_date < new Date().toISOString().split('T')[0];
+  const swipeRef  = useRef<Swipeable>(null);
+  const opacity   = useSharedValue(1);
+  const isOverdue = task.due_date && task.due_date < new Date().toISOString().split('T')[0];
+
+  // Reset opacity when FlatList recycles this cell for a different task
+  useEffect(() => {
+    opacity.value = 1;
+  }, [task.id, opacity]);
+
+  const closeSwipe = useCallback(() => {
+    swipeRef.current?.close();
+  }, []);
 
   const handleComplete = useCallback((id: string) => {
-    opacity.value = withTiming(0, { duration: 250 }, () => runOnJS(onComplete)(id));
-  }, [onComplete, opacity]);
+    opacity.value = withTiming(0, { duration: 250 }, () => {
+      runOnJS(closeSwipe)();
+      runOnJS(onComplete)(id);
+    });
+  }, [onComplete, opacity, closeSwipe]);
 
   const handleSwipeLeft = useCallback(() => {
-    swipeRef.current?.close();
     handleComplete(task.id);
   }, [handleComplete, task.id]);
 
@@ -45,17 +56,20 @@ export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule }: Pr
 
   const rowStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
-  const renderLeftAction = () => (
+  const renderLeftAction = useCallback(() => (
     <View style={styles.actionComplete}>
       <Text style={styles.actionText}>✓ Done</Text>
     </View>
-  );
+  ), []);
 
-  const renderRightAction = () => (
+  const renderRightAction = useCallback(() => (
     <View style={styles.actionReschedule}>
       <Text style={styles.actionText}>Later →</Text>
     </View>
-  );
+  ), []);
+
+  const handleCheckboxComplete = useCallback(() => handleComplete(task.id), [handleComplete, task.id]);
+  const handleRowPress = useCallback(() => onPress(task.id), [onPress, task.id]);
 
   return (
     <Swipeable
@@ -71,9 +85,9 @@ export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule }: Pr
       <Animated.View style={[styles.row, rowStyle]}>
         <TaskCheckbox
           priority={task.priority as 1 | 2 | 3 | 4}
-          onComplete={() => handleComplete(task.id)}
+          onComplete={handleCheckboxComplete}
         />
-        <Pressable style={styles.content} onPress={() => onPress(task.id)}>
+        <Pressable style={styles.content} onPress={handleRowPress}>
           <Text style={styles.title} numberOfLines={2}>{task.title}</Text>
           {task.due_date && (
             <Text style={[styles.due, isOverdue ? styles.overdue : null]}>
