@@ -1,8 +1,9 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Text } from 'react-native';
-import { colors } from '@todolist/ui';
+import { Text, View } from 'react-native';
+import { colors, SyncStatusIndicator } from '@todolist/ui';
+import { useSyncStatus } from '../hooks/useSyncStatus';
 import { InboxScreen }    from '../screens/InboxScreen';
 import { TodayScreen }    from '../screens/TodayScreen';
 import { UpcomingScreen } from '../screens/UpcomingScreen';
@@ -81,35 +82,42 @@ const tabIcon = (label: string) => ({ color }: { color: string }) => (
 );
 
 export function AppTabs() {
+  const { status, lastSyncedAt } = useSyncStatus();
+
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
-        tabBarActiveTintColor:   colors.accent,
-        tabBarInactiveTintColor: colors.textMuted,
-      }}
-    >
-      <Tab.Screen
-        name="InboxStack"
-        component={InboxStack}
-        options={{ title: 'Inbox', tabBarIcon: tabIcon('📥') }}
-      />
-      <Tab.Screen
-        name="TodayStack"
-        component={TodayStack}
-        options={{ title: 'Today', tabBarIcon: tabIcon('☀️') }}
-      />
-      <Tab.Screen
-        name="UpcomingStack"
-        component={UpcomingStack}
-        options={{ title: 'Upcoming', tabBarIcon: tabIcon('📅') }}
-      />
-      <Tab.Screen
-        name="SearchStack"
-        component={SearchStack}
-        options={{ title: 'Search', tabBarIcon: tabIcon('🔍') }}
-      />
-    </Tab.Navigator>
+    <View style={{ flex: 1 }}>
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
+          tabBarActiveTintColor:   colors.accent,
+          tabBarInactiveTintColor: colors.textMuted,
+        }}
+      >
+        <Tab.Screen
+          name="InboxStack"
+          component={InboxStack}
+          options={{ title: 'Inbox', tabBarIcon: tabIcon('📥') }}
+        />
+        <Tab.Screen
+          name="TodayStack"
+          component={TodayStack}
+          options={{ title: 'Today', tabBarIcon: tabIcon('☀️') }}
+        />
+        <Tab.Screen
+          name="UpcomingStack"
+          component={UpcomingStack}
+          options={{ title: 'Upcoming', tabBarIcon: tabIcon('📅') }}
+        />
+        <Tab.Screen
+          name="SearchStack"
+          component={SearchStack}
+          options={{ title: 'Search', tabBarIcon: tabIcon('🔍') }}
+        />
+      </Tab.Navigator>
+      <View style={{ position: 'absolute', top: 8, right: 16, zIndex: 100 }}>
+        <SyncStatusIndicator status={status} lastSyncedAt={lastSyncedAt} />
+      </View>
+    </View>
   );
 }
