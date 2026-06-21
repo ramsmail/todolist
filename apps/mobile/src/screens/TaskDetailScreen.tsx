@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, TextInput, ScrollView, Pressable, StyleSheet, Alert,
 } from 'react-native';
@@ -7,8 +7,8 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
-  useTask, updateTaskTitle, updateTaskDue, updateTaskPriority,
-  updateTaskProject, deleteTask, completeTask,
+  useTask, updateTaskTitle, updateTaskPriority,
+  deleteTask, completeTask,
 } from '@todolist/db';
 import { usePowerSync } from '@powersync/react';
 import { PriorityBadge, colors, typography } from '@todolist/ui';
@@ -31,11 +31,12 @@ export function TaskDetailScreen() {
   const nav   = useNavigation<NavProps>();
   const { taskId } = route.params;
 
-  const { data: task } = useTask(taskId);
+  // useTask returns { data: TaskRecord[] } — take the first row
+  const { data: rows } = useTask(taskId);
+  const task = rows?.[0] ?? null;
 
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft]     = useState('');
-  const titleInputRef                   = useRef<TextInput>(null);
 
   const startEditTitle = useCallback(() => {
     setTitleDraft(task?.title ?? '');
@@ -65,8 +66,13 @@ export function TaskDetailScreen() {
       {
         text: 'Delete', style: 'destructive',
         onPress: async () => {
-          await deleteTask(db as any, taskId).catch(console.error);
-          nav.goBack();
+          try {
+            await deleteTask(db as any, taskId);
+            nav.goBack();
+          } catch (e) {
+            console.error(e);
+            Alert.alert('Delete failed', 'Could not delete this task. Please try again.');
+          }
         },
       },
     ]);
@@ -87,12 +93,10 @@ export function TaskDetailScreen() {
         {/* Title */}
         {editingTitle ? (
           <TextInput
-            ref={titleInputRef}
             style={styles.titleInput}
             value={titleDraft}
             onChangeText={setTitleDraft}
             onBlur={commitTitle}
-            onSubmitEditing={commitTitle}
             autoFocus
             multiline
             returnKeyType="done"
@@ -114,7 +118,10 @@ export function TaskDetailScreen() {
                 onPress={() => handlePriority(p.value)}
                 style={[styles.priorityBtn, task.priority === p.value && styles.priorityBtnActive]}
               >
-                <PriorityBadge priority={p.value} />
+                {p.value === 4
+                  ? <Text style={styles.p4Label}>P4</Text>
+                  : <PriorityBadge priority={p.value as 1 | 2 | 3} />
+                }
               </Pressable>
             ))}
           </View>
@@ -145,20 +152,21 @@ export function TaskDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container:        { flex: 1, backgroundColor: colors.bg },
-  scroll:           { padding: 20, paddingBottom: 40 },
-  notFound:         { ...typography.body, color: colors.textMuted, textAlign: 'center', marginTop: 80 },
-  title:            { ...typography.heading1, color: colors.textPrimary, marginBottom: 24 },
-  titleInput:       { ...typography.heading1, color: colors.textPrimary, marginBottom: 24, borderBottomWidth: 1, borderBottomColor: colors.accent },
-  section:          { marginBottom: 20 },
-  sectionLabel:     { ...typography.caption, color: colors.textMuted, fontWeight: '600', letterSpacing: 0.8, marginBottom: 8 },
-  priorities:       { flexDirection: 'row', gap: 8 },
-  priorityBtn:      { padding: 6, borderRadius: 8, borderWidth: 1, borderColor: 'transparent' },
+  container:         { flex: 1, backgroundColor: colors.bg },
+  scroll:            { padding: 20, paddingBottom: 40 },
+  notFound:          { ...typography.body, color: colors.textMuted, textAlign: 'center', marginTop: 80 },
+  title:             { ...typography.heading1, color: colors.textPrimary, marginBottom: 24 },
+  titleInput:        { ...typography.heading1, color: colors.textPrimary, marginBottom: 24, borderBottomWidth: 1, borderBottomColor: colors.accent },
+  section:           { marginBottom: 20 },
+  sectionLabel:      { ...typography.caption, color: colors.textMuted, fontWeight: '600', letterSpacing: 0.8, marginBottom: 8 },
+  priorities:        { flexDirection: 'row', gap: 8 },
+  priorityBtn:       { padding: 6, borderRadius: 8, borderWidth: 1, borderColor: 'transparent' },
   priorityBtnActive: { borderColor: colors.accent, backgroundColor: colors.surface },
-  dueDate:          { ...typography.body, color: colors.textSecondary },
-  actions:          { marginTop: 32, gap: 12 },
-  completeBtn:      { paddingVertical: 14, borderRadius: 12, backgroundColor: colors.success, alignItems: 'center' },
-  completeBtnText:  { color: '#fff', fontWeight: '600', fontSize: 15 },
-  deleteBtn:        { paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.error, alignItems: 'center' },
-  deleteBtnText:    { color: colors.error, fontWeight: '500', fontSize: 15 },
+  p4Label:           { ...typography.caption, color: colors.textMuted, fontWeight: '600', paddingHorizontal: 2 },
+  dueDate:           { ...typography.body, color: colors.textSecondary },
+  actions:           { marginTop: 32, gap: 12 },
+  completeBtn:       { paddingVertical: 14, borderRadius: 12, backgroundColor: colors.success, alignItems: 'center' },
+  completeBtnText:   { color: '#fff', fontWeight: '600', fontSize: 15 },
+  deleteBtn:         { paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.error, alignItems: 'center' },
+  deleteBtnText:     { color: colors.error, fontWeight: '500', fontSize: 15 },
 });
