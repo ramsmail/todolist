@@ -1,18 +1,19 @@
-# PowerSync Sync Rules
+# PowerSync Sync Streams (edition: 3 — recommended format)
 # Deploy this file in the PowerSync dashboard → Sync Rules tab.
 # Soft-deleted rows (deleted_at IS NOT NULL) are included so clients can
 # remove them from local views. The client filters deleted_at IS NULL in queries.
 
-bucket_definitions:
+config:
+  edition: 3
+
+streams:
   user_data:
-    parameters:
-      - name: user_id
-        value: token_parameters.user_id
-    data:
-      - SELECT * FROM tasks           WHERE user_id = bucket.user_id
-      - SELECT * FROM projects        WHERE user_id = bucket.user_id
-      - SELECT * FROM labels          WHERE user_id = bucket.user_id
-      - SELECT * FROM saved_filters   WHERE user_id = bucket.user_id
-      - SELECT * FROM reminders       WHERE user_id = bucket.user_id
-      - SELECT * FROM attachments     WHERE user_id = bucket.user_id
-      - SELECT * FROM user_settings   WHERE id       = bucket.user_id
+    auto_subscribe: true
+    queries:
+      - SELECT * FROM tasks           WHERE user_id = auth.user_id()
+      - SELECT * FROM projects        WHERE user_id = auth.user_id()
+      - SELECT * FROM labels          WHERE user_id = auth.user_id()
+      - SELECT * FROM saved_filters   WHERE user_id = auth.user_id()
+      - SELECT * FROM reminders       WHERE user_id = auth.user_id()
+      - SELECT * FROM attachments     WHERE user_id = auth.user_id()
+      - SELECT * FROM user_settings   WHERE id       = auth.user_id()
