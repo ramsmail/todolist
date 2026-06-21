@@ -11,7 +11,7 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
   async fetchCredentials() {
     const { data: { session }, error } = await supabase.auth.getSession();
     if (error || !session) {
-      throw new Error('Not authenticated — cannot fetch PowerSync credentials');
+      throw new Error('Not authenticated - cannot fetch PowerSync credentials');
     }
     return {
       endpoint: process.env.EXPO_PUBLIC_POWERSYNC_URL!,
@@ -36,11 +36,13 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
             result = await table.update(op.opData).eq('id', op.id);
             break;
           case UpdateType.DELETE:
-            // Soft delete — set deleted_at so PowerSync propagates the tombstone
+            // Soft delete — deleted_at triggers the DB updated_at trigger; don't pass updated_at client-side
             result = await table
-              .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+              .update({ deleted_at: new Date().toISOString() })
               .eq('id', op.id);
             break;
+          default:
+            throw new Error(`Unknown UpdateType: ${(op as any).op}`);
         }
 
         if (result!.error) throw result!.error;
