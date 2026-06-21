@@ -115,7 +115,8 @@ export function AppTabs() {
           options={{ title: 'Search', tabBarIcon: tabIcon('🔍') }}
         />
       </Tab.Navigator>
-      <View style={{ position: 'absolute', top: 8, right: 16, zIndex: 100 }}>
+      {/* Positioned above the tab bar so it doesn't overlap native stack headers */}
+      <View style={{ position: 'absolute', bottom: 60, right: 16, zIndex: 100 }}>
         <SyncStatusIndicator status={status} lastSyncedAt={lastSyncedAt} />
       </View>
     </View>
