@@ -1,4 +1,4 @@
-import type { PowerSyncDatabase } from '@powersync/react-native';
+import type { AbstractPowerSyncDatabase } from '@powersync/common';
 import { useQuery } from '@powersync/react';
 import { generateKeyBetween } from 'fractional-indexing';
 import type { TaskRecord } from '../schema';
@@ -80,7 +80,7 @@ export function useTask(id: string) {
 // --- Write helpers (called directly with db instance) ---
 
 export async function createTask(
-  db: PowerSyncDatabase,
+  db: AbstractPowerSyncDatabase,
   fields: {
     userId: string;
     title: string;
@@ -123,14 +123,14 @@ export async function createTask(
   return id;
 }
 
-export async function completeTask(db: PowerSyncDatabase, id: string): Promise<void> {
+export async function completeTask(db: AbstractPowerSyncDatabase, id: string): Promise<void> {
   await db.execute(
     `UPDATE tasks SET status = 'completed', updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
     [new Date().toISOString(), id]
   );
 }
 
-export async function updateTaskTitle(db: PowerSyncDatabase, id: string, title: string): Promise<void> {
+export async function updateTaskTitle(db: AbstractPowerSyncDatabase, id: string, title: string): Promise<void> {
   await db.execute(
     `UPDATE tasks SET title = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
     [title, new Date().toISOString(), id]
@@ -138,7 +138,7 @@ export async function updateTaskTitle(db: PowerSyncDatabase, id: string, title: 
 }
 
 export async function updateTaskDue(
-  db: PowerSyncDatabase,
+  db: AbstractPowerSyncDatabase,
   id: string,
   dueDate: string | null,
   dueTime: string | null
@@ -150,7 +150,7 @@ export async function updateTaskDue(
 }
 
 export async function updateTaskPriority(
-  db: PowerSyncDatabase,
+  db: AbstractPowerSyncDatabase,
   id: string,
   priority: number
 ): Promise<void> {
@@ -161,7 +161,7 @@ export async function updateTaskPriority(
 }
 
 export async function updateTaskProject(
-  db: PowerSyncDatabase,
+  db: AbstractPowerSyncDatabase,
   id: string,
   projectId: string | null
 ): Promise<void> {
@@ -171,7 +171,7 @@ export async function updateTaskProject(
   );
 }
 
-export async function deleteTask(db: PowerSyncDatabase, id: string): Promise<void> {
+export async function deleteTask(db: AbstractPowerSyncDatabase, id: string): Promise<void> {
   const now = new Date().toISOString();
   await db.execute(
     `UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE id = ?`,

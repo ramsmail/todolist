@@ -1,4 +1,4 @@
-import type { PowerSyncDatabase } from '@powersync/react-native';
+import type { AbstractPowerSyncDatabase } from '@powersync/common';
 import { useQuery } from '@powersync/react';
 import { generateKeyBetween } from 'fractional-indexing';
 import type { ProjectRecord } from '../schema';
@@ -12,7 +12,7 @@ export function useProjects() {
 }
 
 export async function createProject(
-  db: PowerSyncDatabase,
+  db: AbstractPowerSyncDatabase,
   fields: { userId: string; name: string; color?: string; icon?: string; afterSortOrder?: string | null }
 ): Promise<string> {
   const id = crypto.randomUUID();
@@ -26,7 +26,7 @@ export async function createProject(
   return id;
 }
 
-export async function deleteProject(db: PowerSyncDatabase, id: string): Promise<void> {
+export async function deleteProject(db: AbstractPowerSyncDatabase, id: string): Promise<void> {
   const now = new Date().toISOString();
   await db.execute(
     `UPDATE projects SET deleted_at = ?, updated_at = ? WHERE id = ?`,
