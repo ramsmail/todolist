@@ -4,6 +4,9 @@ const nextConfig = {
     // @powersync/web and wa-sqlite are browser-only (WASM/Web Workers).
     // Excluding them from the RSC server bundle prevents __dirname errors.
     serverComponentsExternalPackages: ['@powersync/web', '@journeyapps/wa-sqlite'],
+    // Allow instrumentation.ts to run (Next.js 14.1+ auto-detects it, but flag
+    // is kept as documentation that the file is intentional).
+    instrumentationHook: true,
   },
   transpilePackages: [
     '@todolist/core',

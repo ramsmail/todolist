@@ -1,43 +1,27 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: { headers: request.headers },
-  });
+// Lightweight middleware: only next/server is imported — no @supabase/supabase-js
+// which bundles ncc-compiled packages (cookie, etc.) that reference __dirname and
+// crash on Vercel's V8 Edge Runtime. Full token verification happens in server
+// components and API routes that run on Node.js where __dirname is available.
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const isPublic = pathname.startsWith('/login') || pathname.startsWith('/api/auth');
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll: (cookiesToSet: any[]) => {
-          cookiesToSet.forEach(({ name, value }: any) => request.cookies.set(name, value));
-          response = NextResponse.next({ request: { headers: request.headers } });
-          cookiesToSet.forEach(({ name, value, options }: any) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
+  // Supabase stores session cookies as sb-<project-ref>-auth-token
+  const isAuthenticated = request.cookies.getAll().some(
+    (c) => c.name.startsWith('sb-') && c.name.endsWith('-auth-token') && c.value.length > 0
   );
 
-  const { data: { user } } = await (supabase.auth as unknown as {
-    getUser(): Promise<{ data: { user: { id: string } | null } }>
-  }).getUser();
-  const { pathname } = request.nextUrl;
-
-  const isPublic = pathname.startsWith('/login') || pathname.startsWith('/api/auth');
-  if (!user && !isPublic) {
+  if (!isAuthenticated && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  if (user && pathname === '/login') {
+  if (isAuthenticated && pathname === '/login') {
     return NextResponse.redirect(new URL('/inbox', request.url));
   }
 
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {
