@@ -64,7 +64,7 @@ function DrawerContent(props: DrawerContentComponentProps) {
       )}
 
       <View style={{ marginTop: 'auto', padding: 16, borderTopWidth: 1, borderTopColor: colors.border }}>
-        <Pressable onPress={signOut}>
+        <Pressable onPress={() => { signOut().catch(console.error); }}>
           <Text style={{ color: colors.error, fontSize: 15 }}>Sign out</Text>
         </Pressable>
       </View>
