@@ -31,7 +31,7 @@ export function ProjectPicker({ value, onChange }: Props) {
       >
         {current ? (
           <>
-            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: current.color }} />
+            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: current.color ?? '#6366F1' }} />
             {current.name}
           </>
         ) : (
@@ -62,7 +62,7 @@ export function ProjectPicker({ value, onChange }: Props) {
               onClick={() => { onChange(p.id); setOpen(false); }}
               className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface hover:text-text-primary transition-colors"
             >
-              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color ?? '#6366F1' }} />
               {p.name}
             </button>
           ))}

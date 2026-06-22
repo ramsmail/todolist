@@ -27,7 +27,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             {project && (
               <span
                 className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: project.color }}
+                style={{ backgroundColor: project.color ?? '#6366F1' }}
                 aria-hidden="true"
               />
             )}

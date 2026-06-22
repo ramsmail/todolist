@@ -9,8 +9,8 @@ export async function createServerSupabaseClient() {
     {
       cookies: {
         getAll: () => cookieStore.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) => {
+        setAll: (cookiesToSet: any[]) => {
+          cookiesToSet.forEach(({ name, value, options }: any) => {
             cookieStore.set(name, value, options);
           });
         },

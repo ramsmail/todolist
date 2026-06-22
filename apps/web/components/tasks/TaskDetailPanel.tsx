@@ -31,7 +31,7 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
   const [addingSub,     setAddingSub]     = useState(false);
 
   useEffect(() => {
-    if (task) setTitleDraft(task.title);
+    if (task) setTitleDraft(task.title ?? '');
   }, [task?.id, task?.title]);
 
   useEffect(() => {
