@@ -8,3 +8,5 @@ dist/
 *.db-wal
 .worktrees/
 .next/
+.vercel
+.env*
