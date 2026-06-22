@@ -2,19 +2,17 @@
 const nextConfig = {
   experimental: {
     // @powersync/web and wa-sqlite are browser-only (WASM/Web Workers).
-    // Excluding them from the RSC server bundle prevents __dirname errors.
+    // Excluding them from the RSC server bundle prevents __dirname errors
+    // and avoids loading WASM/Worker code in a Node.js SSR context.
+    // NOTE: @supabase/supabase-js must NOT be listed here — marking it external
+    // causes webpack to emit `e.exports=import("@supabase/supabase-js")` (a
+    // Promise) in server bundles, breaking SSR prerendering with "Element type
+    // is invalid: got undefined". Instead, webpack bundles it and DefinePlugin
+    // below replaces __dirname with "/" in its ncc-compiled sub-packages.
     serverComponentsExternalPackages: [
       '@powersync/web',
       '@journeyapps/wa-sqlite',
-      // @supabase/supabase-js is bundled by webpack it transitively pulls in
-      // ncc-compiled packages (cookie, ua-parser-js, @opentelemetry) that ship
-      // their own webpack mini-runtimes containing `n.ab = __dirname + "/"`.
-      // Marking it external tells webpack to require() it from node_modules at
-      // runtime (CJS context) where __dirname is always defined by Node.js.
-      '@supabase/supabase-js',
     ],
-    // Allow instrumentation.ts to run (Next.js 14.1+ auto-detects it, but flag
-    // is kept as documentation that the file is intentional).
     instrumentationHook: true,
   },
   transpilePackages: [
@@ -37,8 +35,11 @@ const nextConfig = {
     if (!isServer) {
       config.resolve.fallback = { ...config.resolve.fallback, fs: false };
     }
-    // Some bundled packages (via their own webpack mini-runtime) reference __dirname.
-    // In Vercel's server environment this variable is not always available, so inject it.
+    // @supabase/supabase-js bundles ncc-compiled packages (cookie, ua-parser-js,
+    // @opentelemetry) that contain `n.ab = __dirname + "/"` in their own webpack
+    // mini-runtimes. These crash on Edge Runtime where __dirname is undefined.
+    // DefinePlugin replaces __dirname with "/" in all webpack-processed code,
+    // eliminating the crash without needing to mark the package as external.
     config.plugins.push(
       new webpack.DefinePlugin({
         __dirname: JSON.stringify('/'),
