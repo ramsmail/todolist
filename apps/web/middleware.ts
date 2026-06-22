@@ -1,11 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Lightweight middleware: only next/server is imported — no @supabase/supabase-js
-// which bundles ncc-compiled packages (cookie, etc.) that reference __dirname and
-// crash on Vercel's V8 Edge Runtime. Full token verification happens in server
-// components and API routes that run on Node.js where __dirname is available.
+// Lightweight middleware: gates routes by checking for the presence of a
+// Supabase auth cookie. Full token verification happens in server components and
+// API routes. Keeping it dependency-light keeps the edge bundle small.
 export function middleware(request: NextRequest) {
-  console.log('[middleware] path=' + request.nextUrl.pathname);
   const { pathname } = request.nextUrl;
   const isPublic = pathname.startsWith('/login') || pathname.startsWith('/api/auth');
 
