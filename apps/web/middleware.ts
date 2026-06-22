@@ -23,9 +23,9 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // @ts-expect-error supabase-js@2.108 narrowed auth to SupabaseAuthClient which omits getUser
-  // in its TypeScript type; the method exists at runtime via GoTrueClient inheritance.
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await (supabase.auth as unknown as {
+    getUser(): Promise<{ data: { user: { id: string } | null } }>
+  }).getUser();
   const { pathname } = request.nextUrl;
 
   const isPublic = pathname.startsWith('/login') || pathname.startsWith('/api/auth');
