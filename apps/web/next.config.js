@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // @powersync/web and wa-sqlite are browser-only (WASM/Web Workers).
+  // Excluding them from the server bundle prevents __dirname errors in the ESM server context.
+  serverExternalPackages: ['@powersync/web', '@journeyapps/wa-sqlite'],
   transpilePackages: [
     '@todolist/core',
     '@todolist/db',
-    '@powersync/web',
-    '@journeyapps/wa-sqlite',
+    '@powersync/react',
   ],
   async headers() {
     return [
@@ -17,8 +19,10 @@ const nextConfig = {
       },
     ];
   },
-  webpack(config) {
-    config.resolve.fallback = { ...config.resolve.fallback, fs: false };
+  webpack(config, { isServer }) {
+    if (!isServer) {
+      config.resolve.fallback = { ...config.resolve.fallback, fs: false };
+    }
     return config;
   },
 };
