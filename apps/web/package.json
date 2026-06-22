@@ -11,11 +11,11 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@journeyapps/wa-sqlite": "*",
     "@powersync/react": "^1.4.0",
     "@powersync/web": "^1.0.0",
-    "@journeyapps/wa-sqlite": "*",
+    "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.44.0",
-    "@supabase/ssr": "^0.5.0",
     "@tanstack/react-virtual": "^3.10.0",
     "@todolist/core": "workspace:*",
     "@todolist/db": "workspace:*",
