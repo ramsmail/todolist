@@ -5,6 +5,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 // crash on Vercel's V8 Edge Runtime. Full token verification happens in server
 // components and API routes that run on Node.js where __dirname is available.
 export function middleware(request: NextRequest) {
+  console.log('[middleware] path=' + request.nextUrl.pathname);
   const { pathname } = request.nextUrl;
   const isPublic = pathname.startsWith('/login') || pathname.startsWith('/api/auth');
 
