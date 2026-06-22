@@ -10,3 +10,6 @@ dist/
 .next/
 .vercel
 .env*
+
+# Visual brainstorm companion
+.superpowers/
