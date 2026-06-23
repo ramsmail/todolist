@@ -71,3 +71,77 @@ describe('deleteSavedFilter', () => {
     expect(params).toContain('id-3');
   });
 });
+
+import { buildFilterSQL } from './savedFilters';
+
+describe('buildFilterSQL', () => {
+  it('always excludes completed and cancelled tasks', () => {
+    const { sql } = buildFilterSQL({});
+    expect(sql).toContain("NOT IN ('completed', 'cancelled')");
+    expect(sql).toContain('deleted_at IS NULL');
+  });
+
+  it('filters by priority with IN clause', () => {
+    const { sql, params } = buildFilterSQL({ priority: [1, 2] });
+    expect(sql).toContain('priority IN (?, ?)');
+    expect(params).toContain(1);
+    expect(params).toContain(2);
+  });
+
+  it('filters by specific projectId', () => {
+    const { sql, params } = buildFilterSQL({ projectId: 'p1' });
+    expect(sql).toContain('project_id = ?');
+    expect(params).toContain('p1');
+  });
+
+  it('filters for no-project when projectId is null', () => {
+    const { sql, params } = buildFilterSQL({ projectId: null });
+    expect(sql).toContain('project_id IS NULL');
+    expect(params).not.toContain(null);
+  });
+
+  it('filters by labels with OR logic using json_each', () => {
+    const { sql, params } = buildFilterSQL({ labels: ['home', 'work'] });
+    expect(sql).toContain('json_each');
+    expect(sql).toContain('OR');
+    expect(params).toContain('home');
+    expect(params).toContain('work');
+  });
+
+  it('filters for today using SQLite date() function', () => {
+    const { sql, params } = buildFilterSQL({ dueDateRange: 'today' });
+    expect(sql).toContain("date('now')");
+    expect(params).toHaveLength(0);
+  });
+
+  it('filters for this_week as a rolling +1 to +7 days window', () => {
+    const { sql } = buildFilterSQL({ dueDateRange: 'this_week' });
+    expect(sql).toContain("+1 day");
+    expect(sql).toContain("+7 days");
+  });
+
+  it('filters for next_week as a rolling +8 to +14 days window', () => {
+    const { sql } = buildFilterSQL({ dueDateRange: 'next_week' });
+    expect(sql).toContain("+8 days");
+    expect(sql).toContain("+14 days");
+  });
+
+  it('filters overdue tasks', () => {
+    const { sql } = buildFilterSQL({ dueDateRange: 'overdue' });
+    expect(sql).toContain("due_date < date('now')");
+    expect(sql).toContain('IS NOT NULL');
+  });
+
+  it('filters tasks with no date', () => {
+    const { sql } = buildFilterSQL({ dueDateRange: 'no_date' });
+    expect(sql).toContain('due_date IS NULL');
+  });
+
+  it('ANDs multiple criteria together', () => {
+    const { sql, params } = buildFilterSQL({ priority: [1], projectId: 'p1' });
+    expect(sql).toContain('priority IN');
+    expect(sql).toContain('project_id = ?');
+    expect(params).toContain(1);
+    expect(params).toContain('p1');
+  });
+});
