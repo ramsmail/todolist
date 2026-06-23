@@ -44,3 +44,23 @@ export interface Label {
   updatedAt: string;
   deletedAt: string | null;
 }
+
+export type FilterQuery = {
+  priority?: Priority[];
+  labels?: string[];
+  projectId?: string | null;
+  dueDateRange?: 'today' | 'this_week' | 'next_week' | 'overdue' | 'no_date';
+};
+
+export function serializeFilterQuery(query: FilterQuery): string {
+  return JSON.stringify(query);
+}
+
+export function isEmptyFilterQuery(query: FilterQuery): boolean {
+  return (
+    (!query.priority || query.priority.length === 0) &&
+    (!query.labels || query.labels.length === 0) &&
+    query.projectId === undefined &&
+    query.dueDateRange === undefined
+  );
+}
