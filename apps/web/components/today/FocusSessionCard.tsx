@@ -15,7 +15,7 @@ export function FocusSessionCard({ focusTasks }: Props) {
   const qLen = isRunning ? queue.length : focusTasks.length;
 
   return (
-    <div className="bg-surface-alt rounded-2xl p-4 flex flex-col gap-3">
+    <div className="focus-session-card rounded-2xl p-4 flex flex-col gap-3">
       <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">Focus Session</p>
       <p className="text-5xl font-mono font-bold text-text-primary leading-none">{fmt(secondsLeft)}</p>
       <p className="text-xs text-text-muted">

@@ -4,6 +4,16 @@
 @tailwind utilities;
 
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background: #0A0A0A; }
+html, body { margin: 0; padding: 0; background: #FAFAF8; }
 html { scrollbar-gutter: stable; }
 .scrollable { scrollbar-gutter: stable; }
+.focus-session-card {
+  background: #2D3748;
+  color: #F9FAFB;
+}
+.focus-session-card p {
+  color: inherit;
+}
+.focus-session-card .text-text-muted {
+  color: #CBD5E0;
+}
