@@ -11,6 +11,7 @@ const NAV = [
   { href: '/inbox',    label: 'Inbox',    icon: '📥' },
   { href: '/today',    label: 'Today',    icon: '☀️' },
   { href: '/upcoming', label: 'Upcoming', icon: '📅' },
+  { href: '/logbook',  label: 'Logbook',  icon: '✓' },
   { href: '/search',   label: 'Search',   icon: '🔍' },
 ];
 
