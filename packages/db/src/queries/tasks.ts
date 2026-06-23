@@ -1,6 +1,7 @@
 import type { AbstractPowerSyncDatabase } from '@powersync/common';
 import { useQuery } from '@powersync/react';
 import { generateKeyBetween } from 'fractional-indexing';
+import { parseRule, computeNext } from '@todolist/core';
 import type { TaskRecord } from '../schema';
 
 // --- Read helpers (used in hooks) ---
@@ -130,10 +131,54 @@ export async function createTask(
 }
 
 export async function completeTask(db: AbstractPowerSyncDatabase, id: string): Promise<void> {
-  await db.execute(
-    `UPDATE tasks SET status = 'completed', updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
-    [new Date().toISOString(), id]
+  const now = new Date().toISOString();
+  const task = await db.getOptional<TaskRecord>(
+    `SELECT * FROM tasks WHERE id = ? AND deleted_at IS NULL`,
+    [id]
   );
+  if (!task) return;
+
+  const rule = task.recurrence_rule ? parseRule(task.recurrence_rule) : null;
+
+  // Non-recurring (or undated): plain completion.
+  if (!rule || !task.due_date) {
+    await db.execute(
+      `UPDATE tasks SET status = 'completed', updated_at = ? WHERE id = ?`,
+      [now, id]
+    );
+    return;
+  }
+
+  // Recurring: snapshot the completed occurrence, then advance the original.
+  const anchor = task.recurrence_start ?? task.due_date;
+  const next = computeNext(rule, task.due_date, anchor);
+  const snapshotId = crypto.randomUUID();
+
+  await db.writeTransaction(async (tx) => {
+    await tx.execute(
+      `INSERT INTO tasks
+         (id, user_id, title, description, status, priority, due_date, due_time, timezone,
+          project_id, parent_task_id, recurrence_rule, recurrence_start,
+          labels, sort_order, created_at, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [
+        snapshotId, task.user_id, task.title, task.description ?? null, 'completed',
+        task.priority, task.due_date, task.due_time, task.timezone,
+        task.project_id, null, null, null,
+        task.labels, task.sort_order, now, now,
+      ]
+    );
+    await tx.execute(
+      `UPDATE tasks SET due_date = ?, updated_at = ? WHERE id = ?`,
+      [next, now, id]
+    );
+    // Reset checked-off sub-tasks for the new occurrence.
+    await tx.execute(
+      `UPDATE tasks SET status = 'active', updated_at = ?
+       WHERE parent_task_id = ? AND status = 'completed' AND deleted_at IS NULL`,
+      [now, id]
+    );
+  });
 }
 
 export async function updateTaskTitle(db: AbstractPowerSyncDatabase, id: string, title: string): Promise<void> {
