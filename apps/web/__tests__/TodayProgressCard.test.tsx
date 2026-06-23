@@ -32,8 +32,8 @@ describe('TodayProgressCard', () => {
   });
 
   it('uses singular "task" when exactly one task remains', () => {
-    // Mock 6 PM (0.75 of day), 3/4 tasks completed
-    vi.setSystemTime(new Date(2024, 0, 1, 18, 0, 0));
+    // Mock 9 PM (0.875 of day), 3/4 tasks completed (0.75 of tasks)
+    vi.setSystemTime(new Date(2024, 0, 1, 21, 0, 0));
     render(<TodayProgressCard completed={3} total={4} />);
     expect(screen.getByText('1 task left to hit your goal.')).toBeInTheDocument();
   });
