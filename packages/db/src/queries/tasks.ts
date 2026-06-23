@@ -35,6 +35,15 @@ export const UPCOMING_QUERY = `
   ORDER BY due_date, priority
 `;
 
+export const LOGBOOK_QUERY = `
+  SELECT id, title, priority, due_date, status, updated_at, project_id, labels
+  FROM tasks
+  WHERE status = 'completed'
+    AND deleted_at IS NULL
+  ORDER BY updated_at DESC
+  LIMIT 200
+`;
+
 // --- React hooks ---
 
 export function useInboxTasks() {
@@ -47,6 +56,10 @@ export function useTodayTasks() {
 
 export function useUpcomingTasks() {
   return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule'>>(UPCOMING_QUERY);
+}
+
+export function useLogbook() {
+  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'status' | 'updated_at' | 'project_id' | 'labels'>>(LOGBOOK_QUERY);
 }
 
 export function useProjectTasks(projectId: string) {
