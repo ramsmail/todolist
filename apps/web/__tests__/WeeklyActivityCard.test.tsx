@@ -20,10 +20,12 @@ describe('WeeklyActivityCard', () => {
 
   it('renders day labels M-F and bar heights based on activity', () => {
     render(<WeeklyActivityCard />);
-    const labels = ['M', 'T', 'W', 'T', 'F'];
+    const labels = ['M', 'T', 'W', 'F'];
     labels.forEach(label => {
-      expect(screen.getByText(label)).toBeInTheDocument();
+      const elements = screen.getAllByText(label);
+      expect(elements.length).toBeGreaterThan(0);
     });
+    expect(screen.getAllByText('T')).toHaveLength(2);
     // Verify aria-labels for task counts are present
     expect(screen.getByLabelText(/M: \d+ tasks completed/)).toBeInTheDocument();
     expect(screen.getByLabelText(/F: \d+ tasks completed/)).toBeInTheDocument();
