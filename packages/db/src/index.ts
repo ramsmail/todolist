@@ -6,3 +6,4 @@ export * from './queries/labels';
 export * from './queries/labelUtils';
 export * from './queries/savedFilters';
 export * from './queries/streak';
+export * from './queries/weeklyActivity';
