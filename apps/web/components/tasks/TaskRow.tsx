@@ -39,7 +39,7 @@ export const TaskRow = memo(function TaskRow({
 
   return (
     <div
-      className="flex items-start gap-3 px-4 py-3.5 border-b border-border hover:bg-surface-alt/40 group cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
+      className="flex items-start gap-3 px-4 py-4 border-b border-border hover:bg-surface-alt/40 group cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-inset min-h-[80px]"
       role="listitem"
       tabIndex={readOnly ? undefined : (tabIndex ?? 0)}
       data-task-id={readOnly ? undefined : task.id}
