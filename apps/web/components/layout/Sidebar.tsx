@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useProjects, useLabels } from '@todolist/db';
+import { useProjects, useLabels, useSavedFilters } from '@todolist/db';
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 import { createClient } from '@/lib/supabase/client';
 import { useState } from 'react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { FilterBuilderModal } from '@/components/filters/FilterBuilderModal';
 
 const NAV = [
   { href: '/inbox',    label: 'Inbox',    icon: '📥' },
@@ -23,7 +25,10 @@ export function Sidebar({ onNewProject }: Props) {
   const router          = useRouter();
   const { data: projects } = useProjects();
   const { data: labels } = useLabels();
+  const { userId } = useCurrentUser();
+  const { data: savedFilters } = useSavedFilters(userId ?? '');
   const [signingOut, setSigningOut] = useState(false);
+  const [filterModal, setFilterModal] = useState<{ open: boolean; filter?: any }>({ open: false });
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -135,6 +140,36 @@ export function Sidebar({ onNewProject }: Props) {
         >
           + Manage labels
         </Link>
+
+        <p className="px-3 pt-4 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider">
+          Filters
+        </p>
+        <ul className="space-y-0.5" role="list">
+          {savedFilters.map(f => {
+            const active = pathname === `/filters/${f.id}`;
+            return (
+              <li key={f.id as string}>
+                <Link
+                  href={`/filters/${f.id}`}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors
+                    ${active
+                      ? 'bg-surface text-text-primary font-medium'
+                      : 'text-text-secondary hover:bg-surface hover:text-text-primary'}`}
+                  aria-current={active ? 'page' : undefined}
+                >
+                  <span aria-hidden="true">{(f.icon as string) || '⊟'}</span>
+                  <span className="truncate">{f.name as string}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+        <button
+          onClick={() => setFilterModal({ open: true })}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-accent hover:bg-surface transition-colors mt-1"
+        >
+          + New filter
+        </button>
       </div>
 
       {/* Bottom: sync + sign out */}
@@ -148,6 +183,12 @@ export function Sidebar({ onNewProject }: Props) {
           Sign out
         </button>
       </div>
+
+      <FilterBuilderModal
+        open={filterModal.open}
+        onClose={() => setFilterModal({ open: false })}
+        filter={filterModal.filter}
+      />
     </nav>
   );
 }
