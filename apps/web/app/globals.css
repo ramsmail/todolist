@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background: #FAFAF8; }
+html, body { margin: 0; padding: 0; background: #FFFFFF; }
 html { scrollbar-gutter: stable; }
 .scrollable { scrollbar-gutter: stable; }
 .focus-session-card {

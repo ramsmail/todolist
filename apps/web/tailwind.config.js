@@ -13,7 +13,7 @@ module.exports = {
         p2:            '#F97316',
         p3:            '#3B82F6',
         p4:            '#9CA3AF',
-        bg:            '#FAFAF8',
+        bg:            '#FFFFFF',
         surface:       '#FFFFFF',
         'surface-alt': '#F3F2F0',
         border:        '#E5E3E1',
@@ -23,7 +23,7 @@ module.exports = {
         success:       '#10B981',
         warning:       '#F59E0B',
         error:         '#EF4444',
-        sidebar:       '#F9F9F7',
+        sidebar:       '#F0EDE9',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
