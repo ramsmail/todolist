@@ -2,76 +2,151 @@
 
 import { useState } from 'react';
 import { usePowerSync } from '@powersync/react';
-import { useTodayTasks, completeTask } from '@todolist/db';
+import {
+  useTodayTasks, useTodayStats, useProjects, completeTask, toggleFocus,
+} from '@todolist/db';
+import { FocusSessionProvider } from '@/lib/focus/FocusSessionContext';
 import { TaskRow } from '@/components/tasks/TaskRow';
-import { QuickCaptureModal } from '@/components/tasks/QuickCaptureModal';
+import { FocusTaskCard } from '@/components/today/FocusTaskCard';
+import { RightPanel } from '@/components/today/RightPanel';
+import { FocusSessionCard } from '@/components/today/FocusSessionCard';
+import { TodayProgressCard } from '@/components/today/TodayProgressCard';
+import { WeeklyActivityCard } from '@/components/today/WeeklyActivityCard';
 import { TaskDetailPanel } from '@/components/tasks/TaskDetailPanel';
+import { QuickCaptureModal } from '@/components/tasks/QuickCaptureModal';
 
 export default function TodayPage() {
-  const db              = usePowerSync();
-  const { data: tasks } = useTodayTasks();
+  const db                  = usePowerSync();
+  const { data: tasks }     = useTodayTasks();
+  const { data: statsRows } = useTodayStats();
+  const { data: projects }  = useProjects();
   const [capture,  setCapture]  = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
 
-  const today   = new Date().toISOString().split('T')[0];
-  const overdue = tasks.filter(t => t.due_date && t.due_date < today);
-  const dueToday = tasks.filter(t => t.due_date === today);
+  const stats     = statsRows[0] ?? { total: 0, completed: 0 };
+  const projectOf = (id: string | null) => projects.find(p => p.id === id);
 
-  const handleComplete = async (id: string) => { await completeTask(db as any, id); };
+  const focusTasks = tasks.filter(t => t.in_focus === 1);
+  const laterTasks = tasks.filter(t => t.in_focus !== 1);
 
-  const renderSection = (title: string, items: typeof tasks, titleClass = '') => (
-    items.length > 0 && (
-      <section aria-labelledby={`section-${title}`}>
-        <h2
-          id={`section-${title}`}
-          className={`px-6 py-2 text-xs font-semibold uppercase tracking-wider border-b border-border ${titleClass || 'text-text-muted'}`}
-        >
-          {title}
-        </h2>
-        <div role="list">
-          {items.map(task => (
-            <TaskRow
-              key={task.id}
-              task={task as any}
-              onPress={setDetailId}
-              onComplete={handleComplete}
-            />
-          ))}
-        </div>
-      </section>
-    )
-  );
+  const today   = new Date();
+  const dateStr = today.toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric',
+  });
+
+  const handleComplete    = async (id: string) => { await completeTask(db as any, id); };
+  const handleToggleFocus = async (id: string) => { await toggleFocus(db as any, id); };
 
   return (
-    <div className="flex h-full">
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h1 className="text-text-primary text-xl font-bold">Today</h1>
-          <button
-            onClick={() => setCapture(true)}
-            className="bg-accent text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-accent-dark transition-colors"
-          >
-            + Add task
-          </button>
-        </div>
+    <FocusSessionProvider>
+      <div className="flex h-full">
+        {/* Main content */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+          {/* Header */}
+          <div className="px-6 pt-8 pb-4">
+            <h1 className="text-text-primary text-3xl font-bold">Today</h1>
+            <p className="text-text-muted text-sm mt-1">
+              {dateStr} · {tasks.length} task{tasks.length !== 1 ? 's' : ''} · {focusTasks.length} in focus
+            </p>
+          </div>
 
-        <div className="flex-1 overflow-y-auto">
+          {/* Add task bar */}
+          <div className="px-6 pb-4">
+            <button
+              onClick={() => setCapture(true)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border text-text-muted text-sm hover:border-accent/40 hover:bg-surface transition-colors text-left"
+            >
+              <span>+</span>
+              <span>Add a task — try "Draft update Fri 9am #project !high"</span>
+            </button>
+          </div>
+
           {tasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full gap-2">
+            <div className="flex flex-col items-center justify-center flex-1 gap-2">
               <p className="text-text-primary font-semibold text-lg">All done for today 🎉</p>
               <p className="text-text-muted text-sm">Nothing due today or overdue</p>
             </div>
           ) : (
             <>
-              {renderSection('Overdue', overdue, 'text-p1')}
-              {renderSection('Today', dueToday)}
+              {/* IN FOCUS */}
+              {focusTasks.length > 0 && (
+                <section className="px-6 pb-4" aria-labelledby="section-in-focus">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-accent" aria-hidden="true" />
+                    <h2 id="section-in-focus" className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+                      In Focus
+                    </h2>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {focusTasks.map(task => {
+                      const proj = projectOf(task.project_id);
+                      return (
+                        <FocusTaskCard
+                          key={task.id}
+                          task={{
+                            ...task,
+                            project_name:  proj?.name  ?? null,
+                            project_color: proj?.color ?? null,
+                          }}
+                          onPress={setDetailId}
+                          onComplete={handleComplete}
+                          onToggleFocus={handleToggleFocus}
+                        />
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {/* LATER TODAY */}
+              {laterTasks.length > 0 && (
+                <section className="px-6 pb-4" aria-labelledby="section-later">
+                  <h2 id="section-later" className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
+                    Later Today
+                  </h2>
+                  <div role="list">
+                    {laterTasks.map(task => (
+                      <div key={task.id} className="flex items-center gap-2 group relative">
+                        <span
+                          className="text-text-muted opacity-0 group-hover:opacity-100 cursor-grab text-sm flex-shrink-0 select-none"
+                          aria-hidden="true"
+                        >
+                          ⠿
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <TaskRow
+                            task={task as any}
+                            onPress={setDetailId}
+                            onComplete={handleComplete}
+                          />
+                        </div>
+                        <button
+                          onClick={() => handleToggleFocus(task.id)}
+                          className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity text-text-muted hover:text-text-primary flex-shrink-0 text-sm focus:outline-none focus:opacity-100"
+                          aria-label={`Add ${task.title} to focus`}
+                          title="Add to focus"
+                        >
+                          📌
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
             </>
           )}
         </div>
+
+        {/* Right panel */}
+        <RightPanel>
+          <FocusSessionCard focusTasks={focusTasks.map(t => ({ id: t.id, title: t.title }))} />
+          <TodayProgressCard completed={stats.completed} total={stats.total} />
+          <WeeklyActivityCard />
+        </RightPanel>
       </div>
 
       <TaskDetailPanel taskId={detailId} onClose={() => setDetailId(null)} />
       <QuickCaptureModal open={capture} onClose={() => setCapture(false)} />
-    </div>
+    </FocusSessionProvider>
   );
 }
