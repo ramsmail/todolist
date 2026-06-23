@@ -3,9 +3,10 @@ import { useQuery } from '@powersync/react';
 import { generateKeyBetween } from 'fractional-indexing';
 import type { SavedFilterRecord } from '../schema';
 
-export function useSavedFilters() {
+export function useSavedFilters(userId: string) {
   return useQuery<SavedFilterRecord>(
-    `SELECT * FROM saved_filters WHERE deleted_at IS NULL ORDER BY sort_order`
+    `SELECT * FROM saved_filters WHERE user_id = ? AND deleted_at IS NULL ORDER BY sort_order`,
+    [userId]
   );
 }
 
@@ -16,7 +17,8 @@ export async function createSavedFilter(
   const id  = crypto.randomUUID();
   const now = new Date().toISOString();
   const last = await db.getOptional<{ sort_order: string }>(
-    `SELECT sort_order FROM saved_filters WHERE deleted_at IS NULL ORDER BY sort_order DESC LIMIT 1`
+    `SELECT sort_order FROM saved_filters WHERE user_id = ? AND deleted_at IS NULL ORDER BY sort_order DESC LIMIT 1`,
+    [fields.userId]
   );
   const sortOrder = generateKeyBetween(last?.sort_order ?? null, null);
   await db.execute(

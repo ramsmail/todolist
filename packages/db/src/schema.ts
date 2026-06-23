@@ -68,7 +68,7 @@ const saved_filters = new Table(
     updated_at: column.text,
     deleted_at: column.text,
   },
-  { indexes: { by_sort: ['sort_order'] } }
+  { indexes: { by_user: ['user_id'], by_sort: ['sort_order'] } }
 );
 
 export const AppSchema = new Schema({ tasks, projects, labels, saved_filters });
