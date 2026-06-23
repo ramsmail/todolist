@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useProjects } from '@todolist/db';
+import { useProjects, useLabels } from '@todolist/db';
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 import { createClient } from '@/lib/supabase/client';
 import { useState } from 'react';
@@ -22,6 +22,7 @@ export function Sidebar({ onNewProject }: Props) {
   const pathname        = usePathname();
   const router          = useRouter();
   const { data: projects } = useProjects();
+  const { data: labels } = useLabels();
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = async () => {
@@ -101,6 +102,39 @@ export function Sidebar({ onNewProject }: Props) {
         >
           + New project
         </button>
+
+        <p className="px-3 pt-4 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider">
+          Labels
+        </p>
+        <ul className="space-y-0.5" role="list">
+          {labels.filter(l => l.name).map((l) => {
+            const labelName = l.name as string;
+            const active = pathname === `/labels/${encodeURIComponent(labelName)}`;
+            const labelColor = l.color ?? '#6366F1';
+            return (
+              <li key={l.id}>
+                <Link
+                  href={`/labels/${encodeURIComponent(labelName)}`}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors
+                    ${active
+                      ? 'bg-surface text-text-primary font-medium'
+                      : 'text-text-secondary hover:bg-surface hover:text-text-primary'}`}
+                  aria-current={active ? 'page' : undefined}
+                >
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: labelColor }} aria-hidden="true" />
+                  <span className="truncate">{labelName}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+        <Link
+          href="/labels"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-accent hover:bg-surface transition-colors mt-1"
+        >
+          + Manage labels
+        </Link>
       </div>
 
       {/* Bottom: sync + sign out */}
