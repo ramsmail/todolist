@@ -1,4 +1,6 @@
 // packages/core/src/recurrence/recurrence.ts
+import { addDays, addWeeks, getDay, parseISO, format } from 'date-fns';
+
 export type Weekday = 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'SU';
 export type Freq = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
@@ -61,4 +63,56 @@ export function describeRule(r: RecurrenceRule): string {
     return `${base} on ${days}`;
   }
   return base;
+}
+
+// date-fns getDay: 0=Sun..6=Sat → our index 0=Mon..6=Sun
+const dayToIdx = (d: number) => (d + 6) % 7;
+
+function ymd(year: number, month0: number, day: number): Date {
+  const last = new Date(year, month0 + 1, 0).getDate();
+  return new Date(year, month0, Math.min(day, last));
+}
+
+export function computeNext(r: RecurrenceRule, fromDate: string, anchor: string): string {
+  const from = parseISO(fromDate);
+  switch (r.freq) {
+    case 'daily':
+      return format(addDays(from, r.interval), 'yyyy-MM-dd');
+
+    case 'weekly': {
+      const days =
+        r.byDay && r.byDay.length ? r.byDay : [WD_ORDER[dayToIdx(getDay(parseISO(anchor)))]];
+      const idxs = days.map((d) => WD_ORDER.indexOf(d)).sort((a, b) => a - b);
+      const fromIdx = dayToIdx(getDay(from));
+      const nextSame = idxs.find((i) => i > fromIdx);
+      if (nextSame !== undefined) {
+        return format(addDays(from, nextSame - fromIdx), 'yyyy-MM-dd');
+      }
+      const mondayOfWeek = addDays(from, -fromIdx);
+      const target = addWeeks(mondayOfWeek, r.interval);
+      return format(addDays(target, idxs[0]), 'yyyy-MM-dd');
+    }
+
+    case 'monthly': {
+      const targetDay = parseISO(anchor).getDate();
+      const total = from.getFullYear() * 12 + from.getMonth() + r.interval;
+      return format(ymd(Math.floor(total / 12), total % 12, targetDay), 'yyyy-MM-dd');
+    }
+
+    case 'yearly': {
+      const a = parseISO(anchor);
+      return format(ymd(from.getFullYear() + r.interval, a.getMonth(), a.getDate()), 'yyyy-MM-dd');
+    }
+  }
+}
+
+export function firstOccurrence(r: RecurrenceRule, from: Date): string {
+  if (r.freq === 'weekly' && r.byDay && r.byDay.length) {
+    const idxs = r.byDay.map((d) => WD_ORDER.indexOf(d)).sort((a, b) => a - b);
+    const fromIdx = dayToIdx(getDay(from));
+    const same = idxs.find((i) => i >= fromIdx);
+    const targetIdx = same !== undefined ? same : idxs[0] + 7;
+    return format(addDays(from, targetIdx - fromIdx), 'yyyy-MM-dd');
+  }
+  return format(from, 'yyyy-MM-dd');
 }
