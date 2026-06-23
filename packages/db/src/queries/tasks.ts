@@ -6,7 +6,7 @@ import type { TaskRecord } from '../schema';
 // --- Read helpers (used in hooks) ---
 
 export const INBOX_QUERY = `
-  SELECT id, title, priority, due_date, due_time, status, sort_order, labels
+  SELECT id, title, priority, due_date, due_time, status, sort_order, labels, recurrence_rule
   FROM tasks
   WHERE project_id IS NULL
     AND parent_task_id IS NULL
@@ -16,7 +16,7 @@ export const INBOX_QUERY = `
 `;
 
 export const TODAY_QUERY = `
-  SELECT id, title, priority, due_date, project_id, status
+  SELECT id, title, priority, due_date, project_id, status, labels, recurrence_rule
   FROM tasks
   WHERE due_date <= date('now')
     AND status NOT IN ('completed', 'cancelled')
@@ -25,7 +25,7 @@ export const TODAY_QUERY = `
 `;
 
 export const UPCOMING_QUERY = `
-  SELECT id, title, priority, due_date, project_id, status
+  SELECT id, title, priority, due_date, project_id, status, labels, recurrence_rule
   FROM tasks
   WHERE due_date > date('now')
     AND due_date <= date('now', '+7 days')
@@ -37,20 +37,20 @@ export const UPCOMING_QUERY = `
 // --- React hooks ---
 
 export function useInboxTasks() {
-  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'due_time' | 'status' | 'sort_order' | 'labels'>>(INBOX_QUERY);
+  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'due_time' | 'status' | 'sort_order' | 'labels' | 'recurrence_rule'>>(INBOX_QUERY);
 }
 
 export function useTodayTasks() {
-  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status'>>(TODAY_QUERY);
+  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule'>>(TODAY_QUERY);
 }
 
 export function useUpcomingTasks() {
-  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status'>>(UPCOMING_QUERY);
+  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule'>>(UPCOMING_QUERY);
 }
 
 export function useProjectTasks(projectId: string) {
-  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'status' | 'sort_order'>>(
-    `SELECT id, title, priority, due_date, status, sort_order FROM tasks
+  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'status' | 'sort_order' | 'labels' | 'recurrence_rule'>>(
+    `SELECT id, title, priority, due_date, status, sort_order, labels, recurrence_rule FROM tasks
      WHERE project_id = ?
        AND parent_task_id IS NULL
        AND status NOT IN ('completed', 'cancelled')
@@ -93,16 +93,20 @@ export async function createTask(
     parentTaskId?: string | null;
     labels?: string[];
     afterSortOrder?: string | null;
+    recurrenceRule?: string | null;
   }
 ): Promise<string> {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const sortOrder = generateKeyBetween(fields.afterSortOrder ?? null, null);
+  const recurrenceRule = fields.recurrenceRule ?? null;
+  const recurrenceStart = recurrenceRule ? (fields.dueDate ?? null) : null;
   await db.execute(
     `INSERT INTO tasks
        (id, user_id, title, status, priority, due_date, due_time, timezone,
-        project_id, parent_task_id, labels, sort_order, created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        project_id, parent_task_id, recurrence_rule, recurrence_start,
+        labels, sort_order, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id,
       fields.userId,
@@ -114,6 +118,8 @@ export async function createTask(
       fields.timezone ?? null,
       fields.projectId ?? null,
       fields.parentTaskId ?? null,
+      recurrenceRule,
+      recurrenceStart,
       JSON.stringify(fields.labels ?? []),
       sortOrder,
       now,
@@ -146,6 +152,19 @@ export async function updateTaskDue(
   await db.execute(
     `UPDATE tasks SET due_date = ?, due_time = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
     [dueDate, dueTime, new Date().toISOString(), id]
+  );
+}
+
+export async function updateTaskRecurrence(
+  db: AbstractPowerSyncDatabase,
+  id: string,
+  rule: string | null,
+  start: string | null
+): Promise<void> {
+  await db.execute(
+    `UPDATE tasks SET recurrence_rule = ?, recurrence_start = ?, updated_at = ?
+     WHERE id = ? AND deleted_at IS NULL`,
+    [rule, start, new Date().toISOString(), id]
   );
 }
 
