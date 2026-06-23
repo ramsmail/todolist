@@ -1,6 +1,6 @@
 // packages/core/src/recurrence/recurrence.test.ts
 import { describe, it, expect } from 'vitest';
-import { parseRule, serializeRule } from './recurrence';
+import { parseRule, serializeRule, describeRule } from './recurrence';
 
 describe('parseRule / serializeRule', () => {
   it('round-trips daily', () => {
@@ -22,5 +22,20 @@ describe('parseRule / serializeRule', () => {
     expect(parseRule('')).toBeNull();
     expect(parseRule('FREQ=HOURLY')).toBeNull();
     expect(parseRule('INTERVAL=2')).toBeNull();
+  });
+});
+
+describe('describeRule', () => {
+  it('describes presets', () => {
+    expect(describeRule({ freq: 'daily', interval: 1 })).toBe('Every day');
+    expect(describeRule({ freq: 'monthly', interval: 1 })).toBe('Every month');
+  });
+  it('describes weekdays preset', () => {
+    expect(describeRule({ freq: 'weekly', interval: 1, byDay: ['MO', 'TU', 'WE', 'TH', 'FR'] }))
+      .toBe('Every weekday');
+  });
+  it('describes interval + weekdays', () => {
+    expect(describeRule({ freq: 'weekly', interval: 2, byDay: ['MO', 'WE'] }))
+      .toBe('Every 2 weeks on Mon, Wed');
   });
 });

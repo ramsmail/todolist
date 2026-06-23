@@ -42,3 +42,23 @@ export function serializeRule(r: RecurrenceRule): string {
   }
   return out.join(';');
 }
+
+const WD_LABEL: Record<Weekday, string> = {
+  MO: 'Mon', TU: 'Tue', WE: 'Wed', TH: 'Thu', FR: 'Fri', SA: 'Sat', SU: 'Sun',
+};
+const UNIT: Record<Freq, string> = { daily: 'day', weekly: 'week', monthly: 'month', yearly: 'year' };
+
+export function describeRule(r: RecurrenceRule): string {
+  const isWeekdays =
+    r.freq === 'weekly' &&
+    r.byDay?.length === 5 &&
+    (['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[]).every((d) => r.byDay!.includes(d));
+  if (isWeekdays && r.interval === 1) return 'Every weekday';
+
+  const base = r.interval === 1 ? `Every ${UNIT[r.freq]}` : `Every ${r.interval} ${UNIT[r.freq]}s`;
+  if (r.freq === 'weekly' && r.byDay && r.byDay.length) {
+    const days = WD_ORDER.filter((d) => r.byDay!.includes(d)).map((d) => WD_LABEL[d]).join(', ');
+    return `${base} on ${days}`;
+  }
+  return base;
+}
