@@ -13,6 +13,9 @@ export function DatePicker({ value, onChange }: Props) {
     value ? new Date(value + 'T00:00:00') : new Date()
   );
   const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
 
   const displayValue = value
     ? new Date(value + 'T00:00:00').toLocaleDateString('en-US', {
@@ -64,8 +67,22 @@ export function DatePicker({ value, onChange }: Props) {
   };
 
   useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + 8,
+        left: rect.left,
+      });
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const isClickOnButton = buttonRef.current?.contains(target);
+      const isClickOnDropdown = dropdownRef.current?.contains(target);
+
+      if (!isClickOnButton && !isClickOnDropdown) {
         setIsOpen(false);
       }
     };
@@ -81,8 +98,9 @@ export function DatePicker({ value, onChange }: Props) {
   });
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="w-full">
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-left flex items-center justify-between"
@@ -94,7 +112,15 @@ export function DatePicker({ value, onChange }: Props) {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 bg-surface border border-border rounded-xl shadow-lg p-4 z-50 min-w-[320px]">
+        <div
+          ref={dropdownRef}
+          className="fixed bg-surface border border-border rounded-xl shadow-lg p-4 z-50 min-w-[320px]"
+          style={{
+            top: `${dropdownPos.top}px`,
+            left: `${Math.max(8, dropdownPos.left)}px`,
+            right: '8px',
+          }}
+        >
           <div className="space-y-3">
             {/* Month/Year Header */}
             <div className="flex items-center justify-between">
