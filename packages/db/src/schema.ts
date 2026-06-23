@@ -45,8 +45,21 @@ const projects = new Table(
   { indexes: { by_name: ['name'] } }
 );
 
-export const AppSchema = new Schema({ tasks, projects });
+const labels = new Table(
+  {
+    user_id:    column.text,
+    name:       column.text,
+    color:      column.text,
+    created_at: column.text,
+    updated_at: column.text,
+    deleted_at: column.text,
+  },
+  { indexes: { by_name: ['name'] } }
+);
+
+export const AppSchema = new Schema({ tasks, projects, labels });
 
 export type Database      = (typeof AppSchema)['types'];
 export type TaskRecord    = Database['tasks'];
 export type ProjectRecord = Database['projects'];
+export type LabelRecord   = Database['labels'];
