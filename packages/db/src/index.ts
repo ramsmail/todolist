@@ -4,3 +4,4 @@ export * from './queries/tasks';
 export * from './queries/projects';
 export * from './queries/labels';
 export * from './queries/labelUtils';
+export * from './queries/savedFilters';
