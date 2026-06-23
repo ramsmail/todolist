@@ -14,13 +14,13 @@ vi.mock('@/lib/supabase/client', () => ({
   }),
 }));
 
-// Mock @todolist/db createTask
+// Mock @todolist/db createTask and ensureLabels
 vi.mock('@todolist/db', async () => {
   const actual = await vi.importActual<any>('@todolist/db');
-  return { ...actual, createTask: vi.fn().mockResolvedValue('new-id') };
+  return { ...actual, createTask: vi.fn().mockResolvedValue('new-id'), ensureLabels: vi.fn().mockResolvedValue(undefined) };
 });
 
-import { createTask } from '@todolist/db';
+import { createTask, ensureLabels } from '@todolist/db';
 
 describe('QuickCaptureModal', () => {
   beforeEach(() => {
@@ -56,5 +56,23 @@ describe('QuickCaptureModal', () => {
     const call = (createTask as any).mock.calls[0][1];
     expect(call.title).toBe('Buy milk');
     expect(call.priority).toBe(1);
+  });
+
+  it('passes recurrenceRule and ensures labels on save', async () => {
+    const onClose = vi.fn();
+    render(<QuickCaptureModal open={true} onClose={onClose} />);
+    fireEvent.change(screen.getByPlaceholderText('What needs to be done?'), {
+      target: { value: 'Water plants @home every day' },
+    });
+    fireEvent.click(screen.getByText('Add task'));
+    await waitFor(() => expect(createTask).toHaveBeenCalled());
+
+    // Verify ensureLabels was called with ['home']
+    expect(ensureLabels).toHaveBeenCalledWith(expect.anything(), 'user-1', ['home']);
+
+    // Verify createTask was called with recurrenceRule and labels
+    const call = (createTask as any).mock.calls[0][1];
+    expect(call.labels).toEqual(['home']);
+    expect(call.recurrenceRule).toBeDefined();
   });
 });

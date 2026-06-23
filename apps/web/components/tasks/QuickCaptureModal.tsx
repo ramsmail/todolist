@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { usePowerSync } from '@powersync/react';
 import { parseTaskInput } from '@todolist/core';
-import { createTask } from '@todolist/db';
+import { createTask, ensureLabels } from '@todolist/db';
 import { createClient } from '@/lib/supabase/client';
 
 interface Props {
@@ -45,16 +45,18 @@ export function QuickCaptureModal({ open, projectId, onClose }: Props) {
       if (!user) throw new Error('Not authenticated');
 
       const parsed = parseTaskInput(trimmed, { now: new Date() });
+      if (parsed.labels.length) await ensureLabels(db as any, user.id, parsed.labels);
       await createTask(db as any, {
-        userId:    user.id,
-        title:     parsed.title,
-        priority:  parsed.priority,
-        dueDate:   parsed.dueDate,
-        dueTime:   parsed.dueTime,
-        timezone:  Intl.DateTimeFormat().resolvedOptions().timeZone,
-        projectId: projectId ?? null,
-        labels:    parsed.labels,
-        status:    'inbox',
+        userId:         user.id,
+        title:          parsed.title,
+        priority:       parsed.priority,
+        dueDate:        parsed.dueDate,
+        dueTime:        parsed.dueTime,
+        timezone:       Intl.DateTimeFormat().resolvedOptions().timeZone,
+        projectId:      projectId ?? null,
+        labels:         parsed.labels,
+        recurrenceRule: parsed.recurrenceRule,
+        status:         'inbox',
       });
       onClose();
     } catch (e: any) {
