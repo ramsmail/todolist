@@ -75,6 +75,11 @@ export const TaskRow = memo(function TaskRow({ task, onPress, onComplete }: Prop
       >
         P{task.priority}
       </span>
+
+      {/* Chevron affordance */}
+      <span className="text-text-muted group-hover:text-text-primary flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        →
+      </span>
     </div>
   );
 });
