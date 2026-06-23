@@ -19,6 +19,7 @@ const tasks = new Table(
     created_at:       column.text,
     updated_at:       column.text,
     deleted_at:       column.text,
+    in_focus:         column.integer,
   },
   {
     indexes: {
