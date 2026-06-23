@@ -17,7 +17,7 @@ export const INBOX_QUERY = `
 `;
 
 export const TODAY_QUERY = `
-  SELECT id, title, priority, due_date, project_id, status, labels, recurrence_rule
+  SELECT id, title, priority, due_date, due_time, project_id, status, labels, recurrence_rule, in_focus
   FROM tasks
   WHERE due_date <= date('now')
     AND status NOT IN ('completed', 'cancelled')
@@ -35,6 +35,15 @@ export const UPCOMING_QUERY = `
   ORDER BY due_date, priority
 `;
 
+export const LOGBOOK_QUERY = `
+  SELECT id, title, priority, due_date, status, updated_at, project_id, labels
+  FROM tasks
+  WHERE status = 'completed'
+    AND deleted_at IS NULL
+  ORDER BY updated_at DESC
+  LIMIT 200
+`;
+
 // --- React hooks ---
 
 export function useInboxTasks() {
@@ -42,11 +51,48 @@ export function useInboxTasks() {
 }
 
 export function useTodayTasks() {
-  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule'>>(TODAY_QUERY);
+  return useQuery<Pick<TaskRecord,
+    'id' | 'title' | 'priority' | 'due_date' | 'due_time' | 'project_id' |
+    'status' | 'labels' | 'recurrence_rule' | 'in_focus'
+  >>(TODAY_QUERY);
+}
+
+export const FOCUS_TASKS_QUERY = `
+  SELECT id, title, priority, due_date, due_time, project_id, status, labels, recurrence_rule, in_focus
+  FROM tasks
+  WHERE in_focus = 1
+    AND due_date <= date('now')
+    AND status NOT IN ('completed', 'cancelled')
+    AND deleted_at IS NULL
+  ORDER BY priority, sort_order
+`;
+
+export function useFocusTasks() {
+  return useQuery<Pick<TaskRecord,
+    'id' | 'title' | 'priority' | 'due_date' | 'due_time' | 'project_id' |
+    'status' | 'labels' | 'recurrence_rule' | 'in_focus'
+  >>(FOCUS_TASKS_QUERY);
+}
+
+export const TODAY_STATS_QUERY = `
+  SELECT
+    COUNT(*) as total,
+    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
+  FROM tasks
+  WHERE due_date = date('now')
+    AND deleted_at IS NULL
+`;
+
+export function useTodayStats() {
+  return useQuery<{ total: number; completed: number }>(TODAY_STATS_QUERY);
 }
 
 export function useUpcomingTasks() {
   return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule'>>(UPCOMING_QUERY);
+}
+
+export function useLogbook() {
+  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'status' | 'updated_at' | 'project_id' | 'labels'>>(LOGBOOK_QUERY);
 }
 
 export function useProjectTasks(projectId: string) {
@@ -232,6 +278,16 @@ export async function updateTaskProject(
   await db.execute(
     `UPDATE tasks SET project_id = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
     [projectId, new Date().toISOString(), id]
+  );
+}
+
+export async function toggleFocus(db: AbstractPowerSyncDatabase, id: string): Promise<void> {
+  await db.execute(
+    `UPDATE tasks
+     SET in_focus = CASE WHEN in_focus = 1 THEN 0 ELSE 1 END,
+         updated_at = ?
+     WHERE id = ? AND deleted_at IS NULL`,
+    [new Date().toISOString(), id]
   );
 }
 

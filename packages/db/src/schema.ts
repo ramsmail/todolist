@@ -19,6 +19,7 @@ const tasks = new Table(
     created_at:       column.text,
     updated_at:       column.text,
     deleted_at:       column.text,
+    in_focus:         column.integer,
   },
   {
     indexes: {
@@ -57,9 +58,24 @@ const labels = new Table(
   { indexes: { by_name: ['name'] } }
 );
 
-export const AppSchema = new Schema({ tasks, projects, labels });
+const saved_filters = new Table(
+  {
+    user_id:    column.text,
+    name:       column.text,
+    icon:       column.text,
+    query:      column.text,   // JSON-serialised FilterQuery
+    sort_order: column.text,
+    created_at: column.text,
+    updated_at: column.text,
+    deleted_at: column.text,
+  },
+  { indexes: { by_user: ['user_id'], by_sort: ['sort_order'] } }
+);
 
-export type Database      = (typeof AppSchema)['types'];
-export type TaskRecord    = Database['tasks'];
-export type ProjectRecord = Database['projects'];
-export type LabelRecord   = Database['labels'];
+export const AppSchema = new Schema({ tasks, projects, labels, saved_filters });
+
+export type Database          = (typeof AppSchema)['types'];
+export type TaskRecord        = Database['tasks'];
+export type ProjectRecord     = Database['projects'];
+export type LabelRecord       = Database['labels'];
+export type SavedFilterRecord = Database['saved_filters'];

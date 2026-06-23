@@ -178,7 +178,7 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
                 type="date"
                 value={task.due_date ?? ''}
                 onChange={handleDueDate}
-                className="bg-surface border border-border rounded-xl px-3 py-2 text-text-primary text-sm focus:outline-none focus:border-accent"
+                className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
               />
             </div>
 

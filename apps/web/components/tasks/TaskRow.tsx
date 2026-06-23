@@ -17,16 +17,21 @@ export interface TaskRowItem {
 }
 
 interface Props {
-  task:       TaskRowItem;
-  onPress:    (id: string) => void;
-  onComplete: (id: string) => void;
+  task:         TaskRowItem;
+  onPress:      (id: string) => void;
+  onComplete:   (id: string) => void;
+  readOnly?:    boolean;
+  completedAt?: string;
+  tabIndex?:    number;
 }
 
 function isOverdue(dueDate: string) {
   return dueDate < new Date().toISOString().split('T')[0];
 }
 
-export const TaskRow = memo(function TaskRow({ task, onPress, onComplete }: Props) {
+export const TaskRow = memo(function TaskRow({
+  task, onPress, onComplete, readOnly = false, completedAt, tabIndex,
+}: Props) {
   const { data: allLabels } = useLabels();
   const colorOf = (name: string) =>
     allLabels.find((l) => l.name === name)?.color ?? '#9CA3AF';
@@ -34,15 +39,19 @@ export const TaskRow = memo(function TaskRow({ task, onPress, onComplete }: Prop
 
   return (
     <div
-      className="flex items-start gap-3 px-4 py-3.5 border-b border-border hover:bg-surface-alt/40 group cursor-pointer transition-colors"
+      className="flex items-start gap-3 px-4 py-4 border-b border-border hover:bg-surface-alt/40 group cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-inset min-h-[80px]"
       role="listitem"
+      tabIndex={readOnly ? undefined : (tabIndex ?? 0)}
+      data-task-id={readOnly ? undefined : task.id}
     >
       {/* Checkbox */}
       <button
-        onClick={e => { e.stopPropagation(); onComplete(task.id); }}
-        className="mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 hover:bg-surface transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
+        onClick={e => { e.stopPropagation(); if (!readOnly) onComplete(task.id); }}
+        disabled={readOnly}
+        className={`mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 transition-colors focus:outline-none focus:ring-2 focus:ring-accent
+          ${readOnly ? 'opacity-40 cursor-default' : 'hover:bg-surface'}`}
         style={{ borderColor: PRIORITY_COLOR[task.priority] ?? '#9CA3AF' }}
-        aria-label={`Complete ${task.title}`}
+        aria-label={readOnly ? `${task.title} (completed)` : `Complete ${task.title}`}
       />
 
       {/* Content */}
@@ -60,11 +69,15 @@ export const TaskRow = memo(function TaskRow({ task, onPress, onComplete }: Prop
             {names.map((n) => <LabelChip key={n} name={n} color={colorOf(n)} />)}
           </div>
         )}
-        {task.due_date && (
+        {completedAt ? (
+          <p className="text-xs mt-0.5 text-text-muted">
+            Completed {completedAt.split('T')[0]}
+          </p>
+        ) : task.due_date ? (
           <p className={`text-xs mt-0.5 ${isOverdue(task.due_date) ? 'text-p1' : 'text-text-muted'}`}>
             {task.due_date}
           </p>
-        )}
+        ) : null}
       </button>
 
       {/* Priority badge */}
@@ -74,6 +87,11 @@ export const TaskRow = memo(function TaskRow({ task, onPress, onComplete }: Prop
         aria-label={`Priority ${task.priority}`}
       >
         P{task.priority}
+      </span>
+
+      {/* Chevron affordance */}
+      <span className="text-text-muted group-hover:text-text-primary flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        →
       </span>
     </div>
   );
