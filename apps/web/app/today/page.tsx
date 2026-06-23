@@ -139,7 +139,7 @@ export default function TodayPage() {
 
         {/* Right panel */}
         <RightPanel>
-          <FocusSessionCard focusTasks={focusTasks.map(t => ({ id: t.id, title: t.title }))} />
+          <FocusSessionCard focusTasks={focusTasks.filter(t => t.title).map(t => ({ id: t.id, title: t.title! }))} />
           <TodayProgressCard completed={stats.completed} total={stats.total} />
           <WeeklyActivityCard />
         </RightPanel>

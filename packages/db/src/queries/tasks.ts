@@ -17,7 +17,7 @@ export const INBOX_QUERY = `
 `;
 
 export const TODAY_QUERY = `
-  SELECT id, title, priority, due_date, project_id, status, labels, recurrence_rule
+  SELECT id, title, priority, due_date, project_id, status, labels, recurrence_rule, in_focus
   FROM tasks
   WHERE due_date <= date('now')
     AND status NOT IN ('completed', 'cancelled')
@@ -51,7 +51,7 @@ export function useInboxTasks() {
 }
 
 export function useTodayTasks() {
-  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule'>>(TODAY_QUERY);
+  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule' | 'in_focus'>>(TODAY_QUERY);
 }
 
 export function useUpcomingTasks() {
@@ -82,6 +82,52 @@ export function useSubtasks(parentTaskId: string) {
      ORDER BY sort_order`,
     [parentTaskId]
   );
+}
+
+export function useTodayStats() {
+  return useQuery<{ total: number; completed: number }>(
+    `SELECT
+       COUNT(*) as total,
+       SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
+     FROM tasks
+     WHERE due_date <= date('now')
+       AND status NOT IN ('cancelled')
+       AND deleted_at IS NULL`
+  );
+}
+
+export function useWeeklyActivity() {
+  const mondayStr = (() => {
+    const today = new Date();
+    const dow = today.getDay();
+    const diff = today.getDate() - (dow === 0 ? 6 : dow - 1);
+    const monday = new Date(today.getFullYear(), today.getMonth(), diff);
+    return monday.toISOString().split('T')[0];
+  })();
+
+  const data = useQuery<{ day: string; count: number }>(
+    `SELECT
+       date(?, 'localtime') as day,
+       COUNT(CASE WHEN status = 'completed' THEN 1 END) as count
+     FROM tasks
+     WHERE due_date >= ?
+       AND due_date < date('now', '+1 day')
+       AND deleted_at IS NULL
+     GROUP BY day`,
+    [mondayStr, mondayStr]
+  );
+
+  const days: { day: string; count: number }[] = [];
+  const today = new Date();
+  for (let i = 0; i < 5; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1) + i);
+    const dayStr = d.toISOString().split('T')[0];
+    const existing = data.data?.find(r => r.day === dayStr);
+    days.push({ day: dayStr, count: existing?.count ?? 0 });
+  }
+
+  return days;
 }
 
 export function useTask(id: string) {
@@ -253,5 +299,13 @@ export async function deleteTask(db: AbstractPowerSyncDatabase, id: string): Pro
   await db.execute(
     `UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE id = ?`,
     [now, now, id]
+  );
+}
+
+export async function toggleFocus(db: AbstractPowerSyncDatabase, id: string): Promise<void> {
+  const now = new Date().toISOString();
+  await db.execute(
+    `UPDATE tasks SET in_focus = CASE WHEN in_focus = 1 THEN 0 ELSE 1 END, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
+    [now, id]
   );
 }

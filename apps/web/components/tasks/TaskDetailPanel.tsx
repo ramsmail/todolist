@@ -10,6 +10,7 @@ import {
 } from '@todolist/db';
 import { ProjectPicker } from '@/components/projects/ProjectPicker';
 import { RecurrencePicker } from './RecurrencePicker';
+import { DatePicker } from './DatePicker';
 import { createClient } from '@/lib/supabase/client';
 
 const PRIORITY_COLOR: Record<number, string> = {
@@ -58,11 +59,6 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
   const handleProject = useCallback(async (projectId: string | null) => {
     if (!task) return;
     await updateTaskProject(db as any, task.id, projectId);
-  }, [db, task]);
-
-  const handleDueDate = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!task) return;
-    await updateTaskDue(db as any, task.id, e.target.value || null, null);
   }, [db, task]);
 
   const handleRecurrence = useCallback(async (rule: string | null) => {
@@ -174,11 +170,11 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
             {/* Due date */}
             <div>
               <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Due date</p>
-              <input
-                type="date"
-                value={task.due_date ?? ''}
-                onChange={handleDueDate}
-                className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+              <DatePicker
+                value={task.due_date ?? null}
+                onChange={async (date) => {
+                  await updateTaskDue(db as any, task.id, date, null);
+                }}
               />
             </div>
 
