@@ -12,6 +12,7 @@ describe('parseTaskInput', () => {
       labels: [],
       dueDate: null,
       dueTime: null,
+      recurrenceRule: null,
     });
   });
 
@@ -91,5 +92,41 @@ describe('parseTaskInput', () => {
   it('uses full original input as title when all tokens are stripped but nothing remains', () => {
     const result = parseTaskInput('p1 #work @label', { now });
     expect(result.title).toBe('p1 #work @label');
+  });
+
+  it('parses "every day" into a daily rule and infers due date = today', () => {
+    expect(parseTaskInput('Water plants every day', { now })).toMatchObject({
+      title: 'Water plants',
+      recurrenceRule: 'FREQ=DAILY',
+      dueDate: '2026-06-20',
+    });
+  });
+
+  it('parses "every weekday"', () => {
+    expect(parseTaskInput('Stand-up every weekday', { now })).toMatchObject({
+      title: 'Stand-up',
+      recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR',
+    });
+  });
+
+  it('parses "every monday, wednesday" in canonical order', () => {
+    expect(parseTaskInput('Gym every monday, wednesday', { now })).toMatchObject({
+      title: 'Gym',
+      recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO,WE',
+    });
+  });
+
+  it('parses "every 2 weeks"', () => {
+    expect(parseTaskInput('Pay cleaner every 2 weeks', { now })).toMatchObject({
+      title: 'Pay cleaner',
+      recurrenceRule: 'FREQ=WEEKLY;INTERVAL=2',
+    });
+  });
+
+  it('keeps explicit due date alongside recurrence', () => {
+    expect(parseTaskInput('Report every month', { now })).toMatchObject({
+      recurrenceRule: 'FREQ=MONTHLY',
+      dueDate: '2026-06-20',
+    });
   });
 });

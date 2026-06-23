@@ -1,10 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    // @powersync/web and wa-sqlite are browser-only (WASM/Web Workers).
+    // Keep them out of the RSC server bundle so WASM/Worker code never loads
+    // in a Node.js SSR context.
+    serverComponentsExternalPackages: [
+      '@powersync/web',
+      '@journeyapps/wa-sqlite',
+    ],
+  },
   transpilePackages: [
     '@todolist/core',
     '@todolist/db',
-    '@powersync/web',
-    '@journeyapps/wa-sqlite',
+    '@powersync/react',
   ],
   async headers() {
     return [
@@ -17,8 +25,10 @@ const nextConfig = {
       },
     ];
   },
-  webpack(config) {
-    config.resolve.fallback = { ...config.resolve.fallback, fs: false };
+  webpack(config, { isServer }) {
+    if (!isServer) {
+      config.resolve.fallback = { ...config.resolve.fallback, fs: false };
+    }
     return config;
   },
 };

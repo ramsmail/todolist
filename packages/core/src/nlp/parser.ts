@@ -1,6 +1,7 @@
 import * as chrono from 'chrono-node';
 import { format } from 'date-fns';
 import type { Priority } from '../types';
+import { parseRule, firstOccurrence, type Weekday } from '../recurrence/recurrence';
 
 export interface NlpParseResult {
   title: string;
@@ -9,6 +10,7 @@ export interface NlpParseResult {
   labels: string[];
   dueDate: string | null;
   dueTime: string | null;
+  recurrenceRule: string | null;
 }
 
 export interface NlpParseOptions {
@@ -22,6 +24,54 @@ const PRIORITY_RE = /(?<!\S)(?:p([1-4])|!([1-4]))(?!\S)/gi;
 const PROJECT_RE = /#([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)/gi;
 // Matches: @label or @label-with-hyphens
 const LABEL_RE = /@([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)/gi;
+
+const DOW: Record<string, Weekday> = {
+  monday: 'MO', mon: 'MO', tuesday: 'TU', tue: 'TU', tues: 'TU',
+  wednesday: 'WE', wed: 'WE', thursday: 'TH', thu: 'TH', thurs: 'TH',
+  friday: 'FR', fri: 'FR', saturday: 'SA', sat: 'SA', sunday: 'SU', sun: 'SU',
+};
+const WD_CANON: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+
+function extractRecurrence(input: string): { rule: string | null; rest: string } {
+  let text = input;
+
+  const everyN = text.match(/\bevery\s+(\d+)\s+(days?|weeks?|months?|years?)\b/i);
+  if (everyN) {
+    const n = parseInt(everyN[1], 10);
+    const u = everyN[2].toLowerCase();
+    const freq = u.startsWith('day') ? 'DAILY' : u.startsWith('week') ? 'WEEKLY'
+      : u.startsWith('month') ? 'MONTHLY' : 'YEARLY';
+    const rule = `FREQ=${freq}` + (n > 1 ? `;INTERVAL=${n}` : '');
+    return { rule, rest: text.replace(everyN[0], ' ') };
+  }
+
+  const weekdayRe = /\b(every\s+weekday|weekdays)\b/i;
+  if (weekdayRe.test(text)) {
+    return { rule: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR', rest: text.replace(weekdayRe, ' ') };
+  }
+
+  const dowRe = /\bevery\s+((?:mon|tue|tues|wed|thu|thurs|fri|sat|sun)[a-z]*(?:\s*(?:,|and)\s*(?:mon|tue|tues|wed|thu|thurs|fri|sat|sun)[a-z]*)*)\b/i;
+  const dow = text.match(dowRe);
+  if (dow) {
+    const tokens = dow[1].toLowerCase().split(/\s*(?:,|and)\s*/).map((t) => t.trim()).filter(Boolean);
+    const days = tokens.map((t) => DOW[t]).filter(Boolean) as Weekday[];
+    if (days.length) {
+      const ordered = WD_CANON.filter((d) => days.includes(d));
+      return { rule: `FREQ=WEEKLY;BYDAY=${ordered.join(',')}`, rest: text.replace(dow[0], ' ') };
+    }
+  }
+
+  const simple: Array<[RegExp, string]> = [
+    [/\b(daily|every\s+day)\b/i, 'FREQ=DAILY'],
+    [/\b(weekly|every\s+week)\b/i, 'FREQ=WEEKLY'],
+    [/\b(monthly|every\s+month)\b/i, 'FREQ=MONTHLY'],
+    [/\b(yearly|annually|every\s+year)\b/i, 'FREQ=YEARLY'],
+  ];
+  for (const [re, rule] of simple) {
+    if (re.test(text)) return { rule, rest: text.replace(re, ' ') };
+  }
+  return { rule: null, rest: text };
+}
 
 export function parseTaskInput(
   input: string,
@@ -52,6 +102,11 @@ export function parseTaskInput(
     return ' ';
   });
 
+  // Extract recurrence before chrono so "every monday" isn't read as a one-off date
+  const rec = extractRecurrence(text);
+  const recurrenceRule = rec.rule;
+  text = rec.rest;
+
   // Extract date/time via chrono-node (first match only)
   const chronoRef: Parameters<typeof chrono.parse>[1] = options.timezone
     ? { instant: now, timezone: options.timezone }
@@ -70,7 +125,13 @@ export function parseTaskInput(
     }
   }
 
+  // If recurring with no explicit date, anchor to the first occurrence on/after now
+  if (recurrenceRule && !dueDate) {
+    const parsedRule = parseRule(recurrenceRule);
+    if (parsedRule) dueDate = firstOccurrence(parsedRule, now);
+  }
+
   // Clean up extra whitespace; fall back to original input if nothing remains
   const title = text.replace(/\s+/g, ' ').trim() || input.trim();
-  return { title, priority, projectSlug, labels, dueDate, dueTime };
+  return { title, priority, projectSlug, labels, dueDate, dueTime, recurrenceRule };
 }

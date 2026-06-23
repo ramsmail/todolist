@@ -1,4 +1,6 @@
 import { memo } from 'react';
+import { useLabels } from '@todolist/db';
+import { LabelChip } from './LabelChip';
 
 const PRIORITY_COLOR: Record<number, string> = {
   1: '#EF4444', 2: '#F97316', 3: '#3B82F6', 4: '#9CA3AF',
@@ -10,6 +12,8 @@ export interface TaskRowItem {
   priority: number;
   due_date: string | null;
   status:   string;
+  labels?:  string | null;
+  recurrence_rule?: string | null;
 }
 
 interface Props {
@@ -23,6 +27,11 @@ function isOverdue(dueDate: string) {
 }
 
 export const TaskRow = memo(function TaskRow({ task, onPress, onComplete }: Props) {
+  const { data: allLabels } = useLabels();
+  const colorOf = (name: string) =>
+    allLabels.find((l) => l.name === name)?.color ?? '#9CA3AF';
+  const names: string[] = task.labels ? JSON.parse(task.labels) : [];
+
   return (
     <div
       className="flex items-start gap-3 px-4 py-3.5 border-b border-border hover:bg-surface-alt/40 group cursor-pointer transition-colors"
@@ -43,6 +52,14 @@ export const TaskRow = memo(function TaskRow({ task, onPress, onComplete }: Prop
         aria-label={`Open task: ${task.title}`}
       >
         <p className="text-text-primary text-sm truncate">{task.title}</p>
+        {(names.length > 0 || task.recurrence_rule) && (
+          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+            {task.recurrence_rule && (
+              <span className="text-xs text-text-muted" aria-label="Recurring" title="Repeats">↻</span>
+            )}
+            {names.map((n) => <LabelChip key={n} name={n} color={colorOf(n)} />)}
+          </div>
+        )}
         {task.due_date && (
           <p className={`text-xs mt-0.5 ${isOverdue(task.due_date) ? 'text-p1' : 'text-text-muted'}`}>
             {task.due_date}

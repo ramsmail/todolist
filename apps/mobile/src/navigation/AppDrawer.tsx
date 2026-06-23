@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   createDrawerNavigator,
   DrawerContentScrollView,
@@ -11,6 +11,7 @@ import { ProjectScreen }  from '../screens/ProjectScreen';
 import { useProjects }    from '@todolist/db';
 import { useAuth }        from '../auth/AuthContext';
 import { colors }         from '@todolist/ui';
+import { CreateProjectModal } from '../components/CreateProjectModal';
 
 export type AppDrawerParamList = {
   Main:    undefined;
@@ -23,6 +24,7 @@ function DrawerContent(props: DrawerContentComponentProps) {
   const { data: projects } = useProjects();
   const { signOut }        = useAuth();
   const nav                = props.navigation;
+  const [creatingProject, setCreatingProject] = useState(false);
 
   return (
     <DrawerContentScrollView
@@ -38,36 +40,47 @@ function DrawerContent(props: DrawerContentComponentProps) {
 
       <DrawerItemList {...props} />
 
-      {projects && projects.length > 0 && (
-        <View style={{ marginTop: 16 }}>
-          <Text style={{
-            color: colors.textMuted, fontSize: 11, fontWeight: '600',
-            paddingHorizontal: 16, paddingBottom: 8, letterSpacing: 0.8,
-          }}>
-            PROJECTS
+      <View style={{ marginTop: 16 }}>
+        <Text style={{
+          color: colors.textMuted, fontSize: 11, fontWeight: '600',
+          paddingHorizontal: 16, paddingBottom: 8, letterSpacing: 0.8,
+        }}>
+          PROJECTS
+        </Text>
+        {projects && projects.map(p => (
+          <Pressable
+            key={p.id}
+            style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 }}
+            onPress={() => nav.navigate('Project', { id: p.id, name: p.name })}
+          >
+            <Text style={{ fontSize: 16, marginRight: 10 }}>{p.icon}</Text>
+            <Text style={{ color: colors.textPrimary, fontSize: 15 }}>{p.name}</Text>
+            <View style={{
+              width: 8, height: 8, borderRadius: 4,
+              backgroundColor: p.color ?? undefined, marginLeft: 'auto',
+            }} />
+          </Pressable>
+        ))}
+        {(!projects || projects.length === 0) && (
+          <Text style={{ color: colors.textMuted, fontSize: 13, paddingHorizontal: 16, paddingBottom: 4 }}>
+            No projects yet
           </Text>
-          {projects.map(p => (
-            <Pressable
-              key={p.id}
-              style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 }}
-              onPress={() => nav.navigate('Project', { id: p.id, name: p.name })}
-            >
-              <Text style={{ fontSize: 16, marginRight: 10 }}>{p.icon}</Text>
-              <Text style={{ color: colors.textPrimary, fontSize: 15 }}>{p.name}</Text>
-              <View style={{
-                width: 8, height: 8, borderRadius: 4,
-                backgroundColor: p.color ?? undefined, marginLeft: 'auto',
-              }} />
-            </Pressable>
-          ))}
-        </View>
-      )}
+        )}
+        <Pressable
+          style={{ paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center' }}
+          onPress={() => setCreatingProject(true)}
+        >
+          <Text style={{ color: colors.accent, fontSize: 14, fontWeight: '500' }}>+ New project</Text>
+        </Pressable>
+      </View>
 
       <View style={{ marginTop: 'auto', padding: 16, borderTopWidth: 1, borderTopColor: colors.border }}>
         <Pressable onPress={() => { signOut().catch(console.error); }}>
           <Text style={{ color: colors.error, fontSize: 15 }}>Sign out</Text>
         </Pressable>
       </View>
+
+      <CreateProjectModal visible={creatingProject} onClose={() => setCreatingProject(false)} />
     </DrawerContentScrollView>
   );
 }

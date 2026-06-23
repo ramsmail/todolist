@@ -8,3 +8,8 @@ dist/
 *.db-wal
 .worktrees/
 .next/
+.vercel
+.env*
+
+# Visual brainstorm companion
+.superpowers/
