@@ -1,0 +1,282 @@
+From the output you pasted, it looks like Claude Code (or a similar coding agent) has already generated the files. What's left is wiring your actual cloud services together.
+
+Here's the practical sequence.
+
+## 1. Create a Supabase Project
+
+If you haven't already:
+
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard?utm_source=chatgpt.com)
+2. Create a project
+3. Wait for database provisioning
+4. Note:
+
+   * Project URL
+   * Project Reference ID
+   * Anon Key
+
+You can find these under:
+
+**Settings → API**
+
+and
+
+**Settings → General**
+
+---
+
+## 2. Install Supabase CLI
+
+Ubuntu:
+
+```bash
+npm install -g supabase
+```
+
+Verify:
+
+```bash
+supabase --version
+```
+
+---
+
+## 3. Login to Supabase
+
+```bash
+supabase login
+```
+
+A browser window opens.
+
+Generate an access token from:
+
+[Supabase Account Tokens](https://supabase.com/dashboard/account/tokens?utm_source=chatgpt.com)
+
+Paste the token.
+
+---
+
+## 4. Link Local Project to Supabase
+
+Your instructions say:
+
+```bash
+cd /home/rameshv/Repos/Projects/todolist/.worktrees/phase1a
+
+supabase link --project-ref <your-project-ref>
+```
+
+Example:
+
+```bash
+supabase link --project-ref abcdefghijklmnop
+```
+
+The project ref is the short identifier shown in Settings → General.
+
+This creates:
+
+```text
+supabase/.temp/
+```
+
+and links your local migrations to the cloud database.
+
+---
+
+## 5. Push Migrations
+
+Run:
+
+```bash
+supabase db push
+```
+
+This applies the migration files that the agent generated.
+
+Expected output:
+
+```text
+Applying migration ...
+Applying migration ...
+Finished.
+```
+
+---
+
+## 6. Verify Tables
+
+Open:
+
+**Supabase Dashboard → Table Editor**
+
+You should see:
+
+```text
+tasks
+projects
+labels
+user_settings
+saved_filters
+reminders
+attachments
+```
+
+Also check:
+
+**Authentication → Policies**
+
+or
+
+**Database → Policies**
+
+to ensure RLS policies were created.
+
+---
+
+## 7. Create PowerSync Account
+
+Go to:
+
+[PowerSync Cloud](https://www.powersync.com/?utm_source=chatgpt.com)
+
+Create an instance.
+
+You will receive something like:
+
+```text
+https://myinstance.powersync.journeyapps.com
+```
+
+Save this URL.
+
+---
+
+## 8. Deploy Sync Rules
+
+Your agent generated:
+
+```text
+powersync/sync-rules.yaml
+```
+
+Open that file.
+
+Copy everything.
+
+Then:
+
+1. PowerSync Dashboard
+2. Sync Rules
+3. Paste contents
+4. Deploy
+
+If deployment fails, paste the YAML here and I can review it.
+
+---
+
+## 9. Configure PowerSync ↔ Supabase
+
+In PowerSync you'll need:
+
+```text
+Supabase URL
+Supabase Service Role Key
+```
+
+Get these from:
+
+**Supabase → Settings → API**
+
+Important:
+
+Use the **Service Role Key**, not the Anon Key, when configuring the PowerSync backend connection.
+
+---
+
+## 10. Create Test User
+
+Supabase:
+
+```text
+Authentication
+→ Users
+→ Add User
+```
+
+Example:
+
+```text
+test@example.com
+Password123!
+```
+
+---
+
+## 11. Run the Spike
+
+Replace placeholders:
+
+```bash
+SUPABASE_URL=https://your-project.supabase.co \
+SUPABASE_ANON_KEY=your-anon-key \
+POWERSYNC_URL=https://your-instance.powersync.journeyapps.com \
+SUPABASE_EMAIL=test@example.com \
+SUPABASE_PASSWORD=Password123! \
+pnpm --filter @todolist/spike start
+```
+
+---
+
+## 12. What Success Looks Like
+
+You should see something similar to:
+
+```text
+Creating task...
+Waiting for sync...
+Reading from PowerSync...
+✓ Spike passed — PowerSync ↔ Supabase sync is working
+```
+
+---
+
+## How PowerSync Actually Fits In
+
+Think of the architecture like this:
+
+```text
+Flutter / React App
+        │
+        ▼
+    PowerSync
+   (local SQLite)
+        │
+        ▼
+    PowerSync Sync
+        │
+        ▼
+     Supabase
+   (Postgres)
+```
+
+Your app talks primarily to **PowerSync's local database**.
+
+PowerSync then:
+
+* downloads data from Supabase
+* stores it locally in SQLite
+* syncs changes when online
+* gives offline-first behavior
+
+This is why PowerSync is popular for task managers, CRMs, field-service apps, and banking-style mobile applications where offline access matters.
+
+If you show me:
+
+1. The contents of `powersync/sync-rules.yaml`
+2. Your project structure
+3. Whether the frontend is React, React Native, Flutter, or Electron
+
+I can explain exactly how the generated code is using PowerSync and whether the architecture the agent chose is a good one.
+

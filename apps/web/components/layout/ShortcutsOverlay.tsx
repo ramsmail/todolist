@@ -21,7 +21,7 @@ export function ShortcutsOverlay() {
         <h2 id="shortcuts-title" className="text-2xl font-bold mb-4">
           Keyboard Shortcuts
         </h2>
-        <div className="space-y-4 max-h-96 overflow-y-auto">
+        <div className="space-y-4 max-h-96 overflow-y-auto scrollable">
           <div className="flex justify-between items-center py-2 border-b">
             <span className="text-gray-700">Quick Capture</span>
             <kbd className="px-2 py-1 bg-gray-200 rounded">Cmd+Enter</kbd>

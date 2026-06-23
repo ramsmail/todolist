@@ -41,7 +41,7 @@ export default function TodayPage() {
     <FocusSessionProvider>
       <div className="flex h-full">
         {/* Main content */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto scrollable">
           {/* Header */}
           <div className="px-6 pt-8 pb-4">
             <h1 className="text-text-primary text-3xl font-bold">Today</h1>

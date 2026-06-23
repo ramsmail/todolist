@@ -73,7 +73,7 @@ export function Sidebar({ onNewProject }: Props) {
       </ul>
 
       {/* Projects */}
-      <div className="mt-4 px-2 flex-1 overflow-y-auto">
+      <div className="mt-4 px-2 flex-1 overflow-y-auto scrollable">
         <p className="px-3 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider">
           Projects
         </p>

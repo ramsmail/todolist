@@ -102,7 +102,7 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
 
       {/* Panel */}
       <aside
-        className="fixed right-0 top-0 h-full w-[480px] bg-surface-alt border-l border-border z-40 flex flex-col shadow-2xl overflow-y-auto"
+        className="fixed right-0 top-0 h-full w-[480px] bg-surface-alt border-l border-border z-40 flex flex-col shadow-2xl overflow-y-auto scrollable"
         role="complementary"
         aria-label="Task detail"
       >

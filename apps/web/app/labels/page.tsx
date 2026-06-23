@@ -23,7 +23,7 @@ export default function ManageLabelsPage() {
   };
 
   return (
-    <div className="flex-1 h-screen overflow-y-auto">
+    <div className="flex-1 h-screen overflow-y-auto scrollable">
       <header className="px-6 py-5 border-b border-border">
         <h1 className="text-text-primary text-xl font-bold">Manage labels</h1>
       </header>

@@ -45,7 +45,7 @@ export default function LogbookPage() {
           <p className="text-text-muted text-sm">Tasks you finish will appear here.</p>
         </div>
       ) : (
-        <div className="overflow-y-auto flex-1">
+        <div className="overflow-y-auto flex-1 scrollable">
           {(['today', 'this_week', 'earlier'] as const).map((b) => {
             if (buckets[b].length === 0) return null;
             return (
