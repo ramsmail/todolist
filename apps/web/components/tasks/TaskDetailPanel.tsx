@@ -6,8 +6,10 @@ import {
   useTask, useSubtasks,
   updateTaskTitle, updateTaskPriority, updateTaskProject,
   updateTaskDue, deleteTask, createTask, completeTask,
+  updateTaskRecurrence,
 } from '@todolist/db';
 import { ProjectPicker } from '@/components/projects/ProjectPicker';
+import { RecurrencePicker } from './RecurrencePicker';
 import { createClient } from '@/lib/supabase/client';
 
 const PRIORITY_COLOR: Record<number, string> = {
@@ -61,6 +63,12 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
   const handleDueDate = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!task) return;
     await updateTaskDue(db as any, task.id, e.target.value || null, null);
+  }, [db, task]);
+
+  const handleRecurrence = useCallback(async (rule: string | null) => {
+    if (!task) return;
+    const start = rule ? (task.due_date ?? new Date().toISOString().split('T')[0]) : null;
+    await updateTaskRecurrence(db as any, task.id, rule, start);
   }, [db, task]);
 
   const handleDelete = useCallback(async () => {
@@ -172,6 +180,12 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
                 onChange={handleDueDate}
                 className="bg-surface border border-border rounded-xl px-3 py-2 text-text-primary text-sm focus:outline-none focus:border-accent"
               />
+            </div>
+
+            {/* Repeat */}
+            <div>
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Repeat</p>
+              <RecurrencePicker value={task.recurrence_rule ?? null} onChange={handleRecurrence} />
             </div>
 
             {/* Project */}
