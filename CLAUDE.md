@@ -45,6 +45,13 @@ See [`docs/SCHEMA_SYNC_STRATEGY.md`](docs/SCHEMA_SYNC_STRATEGY.md) for detailed 
 - **Tombstones:** PowerSync automatically handles soft deletes — do NOT add manual `deleted_at` filters on top of it (double-filtering causes silent data loss, not errors)
 - **Missing sync rules fail silently:** A new table that doesn't get a corresponding sync rule in `powersync/` exists in Postgres but never appears on-device. If a feature seems to "not save," check sync rules before blaming app code
 
+## Security
+
+- **Middleware checks presence; server components must verify.** `middleware.ts` is not an auth gate — every route handler and server component that uses `user.id` must independently call Supabase session verification. A missing verification call silently reopens the hole middleware was supposed to close.
+- **Postgres RLS is the actual security boundary, not `packages/db` filters.** App-layer `WHERE user_id = ...` in query code is a UX convenience. If RLS is missing on a table, a query bug becomes a data leak, not a UI bug. Verify RLS policies before shipping any new table.
+- **Sync rules are an authorization surface.** A permissive or missing `WHERE user_id = request.user_id()` clause in `powersync/sync-rules.yaml` silently ships other users' rows to every client — it doesn't look like an API route, so it's easy to miss in security review.
+- **Server-side validation is the enforcement point for writes.** Client logic in `packages/core` can be bypassed by a modified client. Rely on Postgres constraints, RLS, or sync rule write filters for anything security-critical.
+
 ## Middleware
 
 `apps/web/middleware.ts` does **cookie-presence checks only** — no JWT verification, no DB calls. Real auth verification happens in server components / route handlers. This is intentional, not an oversight. Do not add verification logic to middleware.
@@ -69,6 +76,12 @@ See [`docs/SCHEMA_SYNC_STRATEGY.md`](docs/SCHEMA_SYNC_STRATEGY.md) for detailed 
 - **Run checks before "done":** Don't just assert it works — show lint + typecheck + test output
 - **Commit messages:** Conventional commits style (`feat:`, `fix:`, `chore:`, etc.) for potential changelog tooling
 - **Verify against Postgres:** Schema/type changes must be verified against actual migrations, not just TS edits (types can be wrong and still compile)
+
+## Reliability
+
+- **Silent failures are the highest-risk bug class in this stack.** Missing sync rule, double-filtered tombstones, missing RLS, bypassed PowerSync path — all fail by doing nothing, not by crashing. When testing, confirm the expected row *actually arrived*; don't just check that the request succeeded.
+- **Offline-first means conflict resolution must be designed, not assumed.** Two devices can write the same task while offline. Decide a strategy (last-write-wins, field-level merge) and write a test that exercises the conflict, not just the happy single-device path.
+- **Turbo cache correctness matters for CI reliability.** Misconfigured `inputs`/`outputs` in `turbo.json` silently skip dependent builds. Verify cache scoping whenever new build targets are added.
 
 ## Deployment (Vercel) — READ BEFORE DEBUGGING DEPLOY ERRORS
 
@@ -115,3 +128,5 @@ vercel build --prod
 - ❌ Don't touch `supabase/migrations/` and `powersync/` in separate, unrelated commits — schema changes should touch both together
 - ❌ Don't manually filter `deleted_at IS NULL` on PowerSync queries (PowerSync already excludes tombstones)
 - ❌ Don't let `packages/core` import from `packages/db` (breaks the boundary)
+- ❌ Don't query Supabase directly from a component "for fresh data" — adjust sync rules instead; direct calls defeat the offline-first read path and add latency that shouldn't exist
+- ❌ Don't treat "it compiles" as evidence the schema is correct — TypeScript cannot see missing sync rules or missing Postgres columns

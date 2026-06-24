@@ -28,6 +28,11 @@ See [`docs/SCHEMA_SYNC_STRATEGY.md`](../../docs/SCHEMA_SYNC_STRATEGY.md) for det
 - Check existing query functions in this package for established patterns before writing a new one
 - Use `column.text`, `column.integer`, etc. from `@powersync/common` for type safety
 
+## Security Notes
+
+- **RLS is the real guard.** Query functions in this package filter by `user_id` for UX, but Postgres Row-Level Security is the actual data boundary. Verify that RLS policies exist and are correct before adding a new table — if RLS is missing, a query bug here becomes a data leak, not a UI bug.
+- **Sync rules control what each user's device receives.** Before writing a query function for a new table, confirm its sync rule in `powersync/sync-rules.yaml` has a proper `WHERE user_id = request.user_id()` clause. An overly permissive sync rule ships other users' rows to every client.
+
 ## Testing
 
 **Schema/type changes:**
