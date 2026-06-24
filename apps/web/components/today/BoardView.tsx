@@ -67,11 +67,23 @@ export function BoardView({ tasks, projects, onTaskDetail }: Props) {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
-    // Update priority if dragging between columns
+    // Get max sort_order in target column
+    const targetColumnTasks = columns[targetPriority as 1 | 2 | 3] || [];
+    const maxSortOrder = targetColumnTasks.reduce((max, t) => Math.max(max, t.sort_order), 0);
+    const newSortOrder = maxSortOrder + 1;
+
     if (task.priority !== targetPriority) {
+      // Cross-column drag: update both priority and sort_order
       await db.execute(
-        'UPDATE tasks SET priority = ? WHERE id = ?',
-        [targetPriority, taskId]
+        'UPDATE tasks SET priority = ?, sort_order = ? WHERE id = ?',
+        [targetPriority, newSortOrder, taskId]
+      );
+    } else {
+      // Within-column drag: update sort_order only
+      // Tasks are appended to the end; full reordering would require position tracking
+      await db.execute(
+        'UPDATE tasks SET sort_order = ? WHERE id = ?',
+        [newSortOrder, taskId]
       );
     }
 
