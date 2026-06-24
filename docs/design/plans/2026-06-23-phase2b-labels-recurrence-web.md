@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, date-fns, chrono-node, PowerSync (`@powersync/common` / `@powersync/react`), Next.js 14 App Router, Vitest + React Testing Library, Playwright.
 
-**Companion spec:** `docs/superpowers/specs/2026-06-23-phase2b-labels-recurrence-design.md`
+**Companion spec:** `docs/design/specs/2026-06-23-phase2b-labels-recurrence-design.md`
 
 ---
 

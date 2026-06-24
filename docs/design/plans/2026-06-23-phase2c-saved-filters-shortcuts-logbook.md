@@ -8,7 +8,7 @@
 
 **Tech Stack:** Next.js 14 App Router, PowerSync (`@powersync/react`), `tinykeys` (new, < 1 KB), Tailwind, Vitest + RTL, Playwright.
 
-**Spec:** `docs/superpowers/specs/2026-06-23-phase2c-design.md`
+**Spec:** `docs/design/specs/2026-06-23-phase2c-design.md`
 
 ---
 

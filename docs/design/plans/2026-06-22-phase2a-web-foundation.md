@@ -8,7 +8,7 @@
 
 **Tech Stack:** Next.js 14 (App Router), `@powersync/web`, `@powersync/react`, `@supabase/ssr`, `@supabase/supabase-js`, `@tanstack/react-virtual`, Tailwind CSS, `@todolist/core`, `@todolist/db`, Vitest, React Testing Library, axe-core, Playwright.
 
-**Design spec:** `docs/superpowers/specs/2026-06-22-phase2a-web-foundation-design.md`
+**Design spec:** `docs/design/specs/2026-06-22-phase2a-web-foundation-design.md`
 
 ---
 

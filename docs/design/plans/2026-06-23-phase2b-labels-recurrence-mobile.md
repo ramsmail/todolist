@@ -10,7 +10,7 @@
 
 **Prerequisite:** The web plan (`2026-06-23-phase2b-labels-recurrence-web.md`), Phases A & B (shared `core` + `db`), must be merged or present on the branch. This plan imports `useLabels`, `useTasksByLabel`, `createLabel`, `updateLabel`, `deleteLabel`, `ensureLabels`, `updateTaskRecurrence`, `parseRule`, `serializeRule`, `describeRule`, `WD_ORDER`, and `NlpParseResult.recurrenceRule` from those packages.
 
-**Companion spec:** `docs/superpowers/specs/2026-06-23-phase2b-labels-recurrence-design.md`
+**Companion spec:** `docs/design/specs/2026-06-23-phase2b-labels-recurrence-design.md`
 
 **Note on testing:** The mobile app has no unit-test harness (only a Detox-style `e2e/golden-path.e2e.ts`). Mobile UI tasks below verify via `tsc --noEmit` type-checks and manual smoke; the shared logic is already unit-tested in the web plan. Do not invent `vitest`/`jest` commands for `apps/mobile`.
 

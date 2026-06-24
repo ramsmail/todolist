@@ -1,60 +1,117 @@
 # TodoList — Project Notes for Claude
 
-Monorepo (pnpm workspaces + turbo). Web app lives in `apps/web` (Next.js 14, App Router), shared code in `packages/*`. Deployed to Vercel.
+Productivity app. Monorepo (pnpm workspaces + Turbo) with Next.js 14 web app, Expo mobile app, and shared code in `packages/*`. Deployed on Vercel.
+
+## Stack
+
+- **Web:** Next.js 14 (App Router), `apps/web`
+- **Mobile:** Expo (React Native), `apps/mobile`
+- **Shared:** `packages/*` (pnpm workspaces + Turbo)
+- **Backend:** Supabase (Postgres, auth, storage)
+- **Sync:** PowerSync for offline-first sync; OPFS adapter on both web and mobile; local SQLite is the source of truth for reads
+- **Styling:** NativeWind v4.0.36 on both platforms
+- **Deployment:** Vercel; Node 24 pinned (`.nvmrc` + `package.json` engines + Vercel dashboard)
+
+## Commands
+
+```bash
+pnpm dev              # Start web app (localhost:3000)
+pnpm test             # Run unit tests (apps/web/__tests__)
+pnpm test:watch       # Watch tests
+pnpm test:e2e         # Playwright E2E tests (apps/web/e2e)
+pnpm lint             # Lint all packages
+pnpm typecheck        # TypeScript check (recommended after multi-file changes)
+pnpm build            # Full Turbo build (run before any deploy-relevant change is marked done)
+npm run check-versions # Verify Node version consistency
+```
+
+## Schema Changes — Read Before Touching Any Table
+
+There are three representations of the data model that **must stay in sync**:
+
+1. **`supabase/migrations/`** — Postgres schema (source of truth)
+2. **`powersync/sync-rules.yaml`** — PowerSync sync rules (which columns/tables replicate to clients)
+3. **`packages/db/`** — TypeScript schema + queries
+
+**Workflow:** Update migrations first → sync rules → `packages/db` types, in that order.
+
+⚠️ **Critical:** Never edit `packages/db` types without checking if sync rules also need updating. A missing sync rule means a column exists in Postgres but never reaches clients — fails silently.
+
+See [`docs/SCHEMA_SYNC_STRATEGY.md`](docs/SCHEMA_SYNC_STRATEGY.md) for detailed change workflows with checklists.
+
+## PowerSync-Specific Rules
+
+- **Writes:** Go through PowerSync's local-first write path, not direct Supabase calls (except established patterns — check `packages/db` first)
+- **Tombstones:** PowerSync automatically handles soft deletes — do NOT add manual `deleted_at` filters on top of it (double-filtering causes silent data loss, not errors)
+- **Missing sync rules fail silently:** A new table that doesn't get a corresponding sync rule in `powersync/` exists in Postgres but never appears on-device. If a feature seems to "not save," check sync rules before blaming app code
+
+## Middleware
+
+`apps/web/middleware.ts` does **cookie-presence checks only** — no JWT verification, no DB calls. Real auth verification happens in server components / route handlers. This is intentional, not an oversight. Do not add verification logic to middleware.
+
+## Monorepo Boundaries
+
+- **`packages/core`** — Business logic (recurrence, filters, task rules). No React, no DB client imports. If it starts importing `packages/db`, stop and reconsider.
+- **`packages/db`** — Database schema + queries. Only package that imports PowerSync/Supabase. All app reads go through this.
+- **`packages/ui`** — Shared components (both web and mobile). NativeWind classes only. No platform-specific imports.
+- **`packages/config`** — Lint/tooling config only.
+- **Don't cross-import:** No imports between `apps/web` ↔ `apps/mobile`. All shared code goes through `packages/*`.
+
+## Folder Structure
+
+- **`docs/design/`** — Phase specs and implementation plans (check for existing spec before starting a feature)
+- **`docs/SCHEMA_SYNC_STRATEGY.md`** — How to safely add tables/columns
+- **Package-specific guides:** `packages/db/CLAUDE.md`, `packages/core/CLAUDE.md`, `packages/ui/CLAUDE.md` — read these before working in that package
+
+## Workflow Expectations
+
+- **Plan first:** For anything touching multiple files or the schema, plan first and wait for approval before implementing
+- **Run checks before "done":** Don't just assert it works — show lint + typecheck + test output
+- **Commit messages:** Conventional commits style (`feat:`, `fix:`, `chore:`, etc.) for potential changelog tooling
+- **Verify against Postgres:** Schema/type changes must be verified against actual migrations, not just TS edits (types can be wrong and still compile)
 
 ## Deployment (Vercel) — READ BEFORE DEBUGGING DEPLOY ERRORS
 
-The Vercel **project framework preset MUST be `nextjs`**. If it is ever `null`
-("Other"), Vercel will not run the Next.js builder: it ships the *transpiled*
-`middleware.ts` with a live `import 'next/server'` plus a raw traced
-`node_modules/next`, instead of the properly webpack-bundled middleware. At edge
-runtime `next/dist/compiled/ua-parser-js/ua-parser.js` then executes
-`__nccwpck_require__.ab = __dirname + "/"` and crashes with:
+### The __dirname / framework=null Bug
+
+The Vercel **project framework preset MUST be `nextjs`**. If it's ever `null` ("Other"), Vercel ships the transpiled `middleware.ts` with a live `import 'next/server'` plus raw `node_modules/next`, instead of properly bundling it. At edge runtime, `ua-parser-js` executes `__nccwpck_require__.ab = __dirname + "/"` and crashes:
 
 ```
 [ReferenceError: __dirname is not defined]   (source: edge-middleware)
 MIDDLEWARE_INVOCATION_FAILED → HTTP 500 on every route
 ```
 
-**This is a project-config bug, not a code bug.** No amount of editing
-`middleware.ts`, `next.config.js`, externals, or `__dirname` polyfills can fix it,
-because Vercel isn't bundling the middleware at all — and `next/server` itself
-pulls in `ua-parser-js` regardless of what you import.
+**This is a project-config bug, not code.** No polyfills fix it because Vercel isn't bundling the middleware at all.
 
-Fix / verify the preset:
-
+**Fix:** Verify the preset is `nextjs`:
 ```bash
-# inspect
 curl -s -H "Authorization: Bearer $TOKEN" \
   "https://api.vercel.com/v9/projects/<projectId>?teamId=<teamId>" | jq .framework
-# must print "nextjs"; if null, PATCH it:
+# If null, PATCH it:
 curl -s -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   "https://api.vercel.com/v9/projects/<projectId>?teamId=<teamId>" -d '{"framework":"nextjs"}'
 ```
 
-To reproduce a Vercel build locally and inspect the real edge artifact (this is
-how the bug was found — `next build` alone hides it because it always bundles
-correctly):
-
+**Reproduce locally:**
 ```bash
-set -a; . apps/web/.env.local; set +a   # supply build-time env
+set -a; . apps/web/.env.local; set +a
 vercel pull --yes --environment=production
 vercel build --prod
-# A healthy middleware function is a single self-contained bundle:
-#   .vercel/output/functions/middleware.func/index.js   (~85 KB, 0 __dirname, no node_modules)
-# A broken one has:
-#   .vercel/output/functions/middleware.func/apps/web/middleware.js + traced node_modules/  ← framework=null
+# Healthy: .vercel/output/functions/middleware.func/index.js (~85 KB, no __dirname)
+# Broken: .vercel/output/functions/middleware.func/apps/web/middleware.js + traced node_modules/
 ```
 
-### Other deploy gotchas
-- **Never upload `.worktrees/` to Vercel.** It's git-ignored, but CLI deploys
-  without a `.vercelignore` upload it anyway — ~1.6 GB of node_modules plus a
-  `package.json` that collides on the `@todolist/web` name. `.vercelignore`
-  excludes it; keep that file.
-- `next build` always bundles middleware correctly, so it will **not** reproduce
-  deploy-only failures. Use `vercel build` to see what actually ships.
+### Other Deploy Gotchas
 
-## Conventions
-- Node 22 locally; the Vercel project is pinned to a Node major in project settings.
-- Middleware is intentionally dependency-light (cookie presence check only); full
-  auth verification happens in server components / API routes.
+- **Never upload `.worktrees/` to Vercel:** It's git-ignored, but CLI deploys without `.vercelignore` upload it anyway (~1.6 GB of node_modules + colliding `@todolist/web` package.json). The `.vercelignore` file excludes it; keep it.
+- **`next build` hides deploy-only bugs:** `next build` always bundles middleware correctly locally. Use `vercel build` to see what actually ships to production.
+- **Node version mismatch:** Run `npm run check-versions` before pushing to catch Node version drift between `.nvmrc` and `package.json`.
+
+## What NOT to Do
+
+- ❌ Don't add auth verification logic to middleware
+- ❌ Don't bypass PowerSync to write directly to Supabase from client code
+- ❌ Don't add top-level deps to `apps/web` or `apps/mobile` without checking if they belong in a shared `packages/*`
+- ❌ Don't touch `supabase/migrations/` and `powersync/` in separate, unrelated commits — schema changes should touch both together
+- ❌ Don't manually filter `deleted_at IS NULL` on PowerSync queries (PowerSync already excludes tombstones)
+- ❌ Don't let `packages/core` import from `packages/db` (breaks the boundary)
