@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useViewMode } from '@/hooks/useViewMode';
 
 describe('useViewMode', () => {
@@ -30,5 +30,13 @@ describe('useViewMode', () => {
     localStorage.setItem('today-view-mode', 'invalid');
     const { result } = renderHook(() => useViewMode());
     expect(result.current.mode).toBe('list');
+  });
+
+  it('should have mounted state available to prevent hydration mismatch', () => {
+    const { result } = renderHook(() => useViewMode());
+    // After effect runs, mounted should be true
+    expect(result.current.mounted).toBe(true);
+    // Verify mounted is part of the return value
+    expect(typeof result.current.mounted).toBe('boolean');
   });
 });
