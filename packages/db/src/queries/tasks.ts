@@ -57,7 +57,12 @@ export function useInboxTasks() {
 }
 
 export function useTodayTasks() {
-  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule' | 'in_focus' | 'sort_order'>>(TODAY_QUERY);
+  const query = useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule' | 'in_focus' | 'sort_order'>>(TODAY_QUERY);
+  const count = useMemo(() => {
+    return query.data?.length ?? 0;
+  }, [query.data]);
+
+  return { ...query, count };
 }
 
 export function useUpcomingTasks() {
