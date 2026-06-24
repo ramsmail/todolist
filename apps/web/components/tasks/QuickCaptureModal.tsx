@@ -5,6 +5,7 @@ import { usePowerSync } from '@powersync/react';
 import { parseTaskInput } from '@todolist/core';
 import { createTask, ensureLabels } from '@todolist/db';
 import { createClient } from '@/lib/supabase/client';
+import { DatePicker } from './DatePicker';
 
 interface Props {
   open:       boolean;
@@ -14,14 +15,16 @@ interface Props {
 
 export function QuickCaptureModal({ open, projectId, onClose }: Props) {
   const db      = usePowerSync();
-  const [input,  setInput]  = useState('');
-  const [saving, setSaving] = useState(false);
-  const [error,  setError]  = useState<string | null>(null);
+  const [input,   setInput]   = useState('');
+  const [dueDate, setDueDate] = useState<string | null>(null);
+  const [saving,  setSaving]  = useState(false);
+  const [error,   setError]   = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
       setInput('');
+      setDueDate(null);
       setError(null);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -46,11 +49,12 @@ export function QuickCaptureModal({ open, projectId, onClose }: Props) {
 
       const parsed = parseTaskInput(trimmed, { now: new Date() });
       if (parsed.labels.length) await ensureLabels(db as any, user.id, parsed.labels);
+      // An explicitly picked date wins; otherwise fall back to one parsed from the title.
       await createTask(db as any, {
         userId:         user.id,
         title:          parsed.title,
         priority:       parsed.priority,
-        dueDate:        parsed.dueDate,
+        dueDate:        dueDate ?? parsed.dueDate,
         dueTime:        parsed.dueTime,
         timezone:       Intl.DateTimeFormat().resolvedOptions().timeZone,
         projectId:      projectId ?? null,
@@ -64,7 +68,7 @@ export function QuickCaptureModal({ open, projectId, onClose }: Props) {
     } finally {
       setSaving(false);
     }
-  }, [db, input, projectId, onClose]);
+  }, [db, input, dueDate, projectId, onClose]);
 
   if (!open) return null;
 
@@ -98,6 +102,13 @@ export function QuickCaptureModal({ open, projectId, onClose }: Props) {
           placeholder="What needs to be done?"
           className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-primary text-sm placeholder-text-muted focus:outline-none focus:border-accent mb-4"
         />
+
+        <div className="mb-4">
+          <label className="block text-text-secondary text-xs font-medium mb-1.5">
+            Due date
+          </label>
+          <DatePicker value={dueDate} onChange={setDueDate} />
+        </div>
 
         {error && <p className="text-error text-xs mb-3">{error}</p>}
 
