@@ -88,10 +88,7 @@ export function QuickCaptureModal({ open, projectId, onClose }: Props) {
 
       {/* Sheet */}
       <div className="relative w-full max-w-xl bg-surface-alt rounded-2xl p-6 shadow-2xl">
-        <h2 className="text-text-primary font-semibold text-lg mb-1">New task</h2>
-        <p className="text-text-muted text-xs mb-4">
-          Tip: "Submit report p1 #work @waiting tomorrow 3pm"
-        </p>
+        <h2 className="text-text-primary font-semibold text-lg mb-4">New task</h2>
 
         <input
           ref={inputRef}
@@ -100,8 +97,28 @@ export function QuickCaptureModal({ open, projectId, onClose }: Props) {
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') handleSave(); }}
           placeholder="What needs to be done?"
-          className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-primary text-sm placeholder-text-muted focus:outline-none focus:border-accent mb-4"
+          className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-primary text-sm placeholder-text-muted focus:outline-none focus:border-accent mb-3"
         />
+
+        {/* Smart-input hint: the title field understands inline syntax. */}
+        <div className="mb-4 rounded-xl bg-surface border border-border px-3 py-2.5">
+          <p className="text-xs text-text-secondary">
+            <span aria-hidden="true">💡 </span>
+            Try:{' '}
+            <span className="text-text-primary font-medium">
+              "Submit report p1 #work tomorrow 3pm"
+            </span>
+          </p>
+          <p className="mt-1.5 text-[11px] text-text-muted">
+            <span className="text-text-secondary font-medium">p1–p4</span> priority
+            {' · '}
+            <span className="text-text-secondary font-medium">#project</span>
+            {' · '}
+            <span className="text-text-secondary font-medium">@label</span>
+            {' · '}
+            natural dates
+          </p>
+        </div>
 
         <div className="mb-4">
           <label className="block text-text-secondary text-xs font-medium mb-1.5">
