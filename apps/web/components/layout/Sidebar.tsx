@@ -19,9 +19,10 @@ const NAV = [
 
 interface Props {
   onNewProject: () => void;
+  onQuickAdd:   () => void;
 }
 
-export function Sidebar({ onNewProject }: Props) {
+export function Sidebar({ onNewProject, onQuickAdd }: Props) {
   const pathname        = usePathname();
   const router          = useRouter();
   const { data: projects } = useProjects();
@@ -47,6 +48,17 @@ export function Sidebar({ onNewProject }: Props) {
       {/* App name */}
       <div className="px-4 py-5 border-b border-border">
         <span className="text-text-primary font-bold text-lg tracking-tight">TodoList</span>
+      </div>
+
+      {/* Quick add */}
+      <div className="px-2 mt-3">
+        <button
+          onClick={onQuickAdd}
+          className="w-full flex items-center gap-2 bg-accent text-white font-semibold rounded-xl px-3 py-2.5 text-sm hover:bg-accent-dark transition-colors"
+        >
+          <span aria-hidden="true" className="text-base leading-none">+</span>
+          Quick add
+        </button>
       </div>
 
       {/* Core nav */}

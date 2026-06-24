@@ -28,7 +28,10 @@ export function ClientLayout({ children }: PropsWithChildren) {
       <ShortcutProvider>
         <KeyboardShortcuts onOpenQuickCapture={() => setShowCapture(true)}>
           <div className="flex h-screen bg-bg overflow-hidden">
-            <Sidebar onNewProject={() => setShowCreate(true)} />
+            <Sidebar
+              onNewProject={() => setShowCreate(true)}
+              onQuickAdd={() => setShowCapture(true)}
+            />
             <main className="flex-1 overflow-y-auto scrollable">
               {children}
             </main>
