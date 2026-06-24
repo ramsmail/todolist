@@ -294,6 +294,22 @@ export async function updateTaskProject(
   );
 }
 
+// Move a task to a (possibly new) priority bucket and position. `sortOrder`
+// is a fractional-indexing key produced by the caller (see `generateKeyBetween`).
+// Used by the Kanban board for both cross-column (priority change) and
+// within-column (reorder) drags.
+export async function moveTask(
+  db: AbstractPowerSyncDatabase,
+  id: string,
+  priority: number,
+  sortOrder: string
+): Promise<void> {
+  await db.execute(
+    `UPDATE tasks SET priority = ?, sort_order = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
+    [priority, sortOrder, new Date().toISOString(), id]
+  );
+}
+
 export async function deleteTask(db: AbstractPowerSyncDatabase, id: string): Promise<void> {
   const now = new Date().toISOString();
   await db.execute(

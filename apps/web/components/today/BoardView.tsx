@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { usePowerSync } from '@powersync/react';
 import { generateKeyBetween } from 'fractional-indexing';
-import { completeTask, toggleFocus } from '@todolist/db';
+import { completeTask, toggleFocus, moveTask } from '@todolist/db';
 import { BoardTaskCard } from './BoardTaskCard';
 import { KanbanColumn } from './KanbanColumn';
 
@@ -72,25 +72,23 @@ export function BoardView({ tasks, projects, onTaskDetail, onAddTask }: Props) {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
-    // Get sort_order for appending to target column using fractional indexing
+    // Append to the bottom of the target column. `generateKeyBetween` produces a
+    // fractional-indexing key after the current last card (or the first key if empty).
+    // Note: drop is column-level, so this appends rather than inserting at a
+    // pointer position — within-column reordering to a specific slot is not yet
+    // supported (tracked separately).
     const targetColumnTasks = columns[targetPriority as 1 | 2 | 3] || [];
     const lastTask = targetColumnTasks[targetColumnTasks.length - 1];
     const newSortOrder = generateKeyBetween(lastTask?.sort_order ?? null, null);
 
-    if (task.priority !== targetPriority) {
-      // Cross-column drag: update both priority and sort_order
-      await db.execute(
-        'UPDATE tasks SET priority = ?, sort_order = ? WHERE id = ?',
-        [targetPriority, newSortOrder, taskId]
-      );
-    } else {
-      // Within-column drag: update sort_order only
-      // Tasks are appended to the end; full reordering would require position tracking
-      await db.execute(
-        'UPDATE tasks SET sort_order = ? WHERE id = ?',
-        [newSortOrder, taskId]
-      );
+    // No-op if dropped back into the same column at the same trailing position.
+    if (task.priority === targetPriority && lastTask?.id === task.id) {
+      setDraggedTaskId(null);
+      return;
     }
+
+    // All writes go through the packages/db layer (carries the deleted_at guard).
+    await moveTask(db, taskId, targetPriority, newSortOrder);
 
     setDraggedTaskId(null);
   };
