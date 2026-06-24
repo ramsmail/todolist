@@ -25,9 +25,10 @@ interface Props {
   tasks: Task[];
   projects: Array<{ id: string; name: string; color: string }>;
   onTaskDetail: (id: string) => void;
+  onAddTask: () => void;
 }
 
-export function BoardView({ tasks, projects, onTaskDetail }: Props) {
+export function BoardView({ tasks, projects, onTaskDetail, onAddTask }: Props) {
   const db = usePowerSync();
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
@@ -107,7 +108,7 @@ export function BoardView({ tasks, projects, onTaskDetail }: Props) {
       {/* Add task bar */}
       <div className="px-6 pb-4">
         <button
-          onClick={() => onTaskDetail('')}
+          onClick={() => onAddTask()}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border text-text-muted text-sm hover:border-accent/40 hover:bg-surface transition-colors text-left"
         >
           <span>+</span>

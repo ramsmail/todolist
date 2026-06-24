@@ -74,6 +74,7 @@ export default function TodayPage() {
                 color: p.color ?? '#808080',
               }))}
               onTaskDetail={setDetailId}
+              onAddTask={() => setCapture(true)}
             />
           ) : (
             <>
