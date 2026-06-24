@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { usePowerSync } from '@powersync/react';
+import { generateKeyBetween } from 'fractional-indexing';
 import { completeTask, toggleFocus } from '@todolist/db';
 import { BoardTaskCard } from './BoardTaskCard';
 import { KanbanColumn } from './KanbanColumn';
@@ -10,7 +11,7 @@ interface Task {
   id: string;
   title: string | null;
   priority: number;
-  sort_order: number;
+  sort_order: string | null;
   due_date: string | null;
   due_time?: string | null;
   labels?: string | null;
@@ -41,11 +42,14 @@ export function BoardView({ tasks, projects, onTaskDetail }: Props) {
     }
   });
 
-  // Sort tasks within each column by sort_order
+  // Sort tasks within each column by sort_order (lexicographic for fractional indexing)
   Object.keys(columns).forEach(key => {
-    columns[parseInt(key) as keyof typeof columns].sort(
-      (a, b) => a.sort_order - b.sort_order
-    );
+    const priority = parseInt(key) as keyof typeof columns;
+    columns[priority].sort((a, b) => {
+      const aOrder = a.sort_order ?? '';
+      const bOrder = b.sort_order ?? '';
+      return aOrder.localeCompare(bOrder);
+    });
   });
 
   const handleDragStart = (taskId: string) => (e: React.DragEvent) => {
@@ -67,10 +71,10 @@ export function BoardView({ tasks, projects, onTaskDetail }: Props) {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
-    // Get max sort_order in target column
+    // Get sort_order for appending to target column using fractional indexing
     const targetColumnTasks = columns[targetPriority as 1 | 2 | 3] || [];
-    const maxSortOrder = targetColumnTasks.reduce((max, t) => Math.max(max, t.sort_order), 0);
-    const newSortOrder = maxSortOrder + 1;
+    const lastTask = targetColumnTasks[targetColumnTasks.length - 1];
+    const newSortOrder = generateKeyBetween(lastTask?.sort_order ?? null, null);
 
     if (task.priority !== targetPriority) {
       // Cross-column drag: update both priority and sort_order

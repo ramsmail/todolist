@@ -17,7 +17,7 @@ export const INBOX_QUERY = `
 `;
 
 export const TODAY_QUERY = `
-  SELECT id, title, priority, due_date, project_id, status, labels, recurrence_rule, in_focus
+  SELECT id, title, priority, due_date, project_id, status, labels, recurrence_rule, in_focus, sort_order
   FROM tasks
   WHERE due_date <= date('now')
     AND status NOT IN ('completed', 'cancelled')
@@ -51,7 +51,7 @@ export function useInboxTasks() {
 }
 
 export function useTodayTasks() {
-  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule' | 'in_focus'>>(TODAY_QUERY);
+  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule' | 'in_focus' | 'sort_order'>>(TODAY_QUERY);
 }
 
 export function useUpcomingTasks() {
