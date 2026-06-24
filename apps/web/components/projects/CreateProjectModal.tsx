@@ -15,22 +15,42 @@ interface Props {
 
 export function CreateProjectModal({ open, onClose }: Props) {
   const db         = usePowerSync();
-  const [name,  setName]  = useState('');
-  const [color, setColor] = useState(COLORS[0]);
-  const [icon,  setIcon]  = useState(ICONS[0]);
+  const [formData, setFormData] = useState({
+    name: '',
+    color: COLORS[0],
+    icon: ICONS[0],
+    description: '',
+    category: 'Personal',
+    due_date: '',
+  });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const handleCreate = async () => {
-    if (!name.trim()) return;
+    if (!formData.name.trim()) return;
     setSaving(true);
     setError(null);
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      await createProject(db as any, { userId: user.id, name: name.trim(), color, icon });
-      setName(''); setColor(COLORS[0]); setIcon(ICONS[0]);
+      await createProject(db as any, {
+        userId: user.id,
+        name: formData.name.trim(),
+        color: formData.color,
+        icon: formData.icon,
+        description: formData.description,
+        category: formData.category,
+        due_date: formData.due_date,
+      });
+      setFormData({
+        name: '',
+        color: COLORS[0],
+        icon: ICONS[0],
+        description: '',
+        category: 'Personal',
+        due_date: '',
+      });
       onClose();
     } catch (e: any) {
       setError(e.message ?? 'Failed to create project');
@@ -54,8 +74,8 @@ export function CreateProjectModal({ open, onClose }: Props) {
         <input
           type="text"
           autoFocus
-          value={name}
-          onChange={e => setName(e.target.value)}
+          value={formData.name}
+          onChange={e => setFormData({ ...formData, name: e.target.value })}
           onKeyDown={e => e.key === 'Enter' && handleCreate()}
           placeholder="Project name"
           className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-primary text-sm placeholder-text-muted focus:outline-none focus:border-accent mb-4"
@@ -66,11 +86,11 @@ export function CreateProjectModal({ open, onClose }: Props) {
           {COLORS.map(c => (
             <button
               key={c}
-              onClick={() => setColor(c)}
-              className={`w-7 h-7 rounded-full transition-transform ${color === c ? 'ring-2 ring-white ring-offset-2 ring-offset-surface-alt scale-110' : ''}`}
+              onClick={() => setFormData({ ...formData, color: c })}
+              className={`w-7 h-7 rounded-full transition-transform ${formData.color === c ? 'ring-2 ring-white ring-offset-2 ring-offset-surface-alt scale-110' : ''}`}
               style={{ backgroundColor: c }}
               aria-label={`Color ${c}`}
-              aria-pressed={color === c}
+              aria-pressed={formData.color === c}
             />
           ))}
         </div>
@@ -80,14 +100,59 @@ export function CreateProjectModal({ open, onClose }: Props) {
           {ICONS.map(i => (
             <button
               key={i}
-              onClick={() => setIcon(i)}
-              className={`text-xl p-1.5 rounded-lg border transition-colors ${icon === i ? 'border-accent bg-surface' : 'border-transparent hover:bg-surface'}`}
+              onClick={() => setFormData({ ...formData, icon: i })}
+              className={`text-xl p-1.5 rounded-lg border transition-colors ${formData.icon === i ? 'border-accent bg-surface' : 'border-transparent hover:bg-surface'}`}
               aria-label={`Icon ${i}`}
-              aria-pressed={icon === i}
+              aria-pressed={formData.icon === i}
             >
               {i}
             </button>
           ))}
+        </div>
+
+        {/* Description */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-text-primary mb-2">
+            Description (optional)
+          </label>
+          <textarea
+            value={formData.description || ''}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            placeholder="What is this project about?"
+            className="w-full px-3 py-2 border border-border rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+            rows={3}
+          />
+        </div>
+
+        {/* Category */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-text-primary mb-2">
+            Category
+          </label>
+          <select
+            value={formData.category || 'Personal'}
+            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            className="w-full px-3 py-2 border border-border rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+          >
+            <option value="Business">Business</option>
+            <option value="Learning">Learning</option>
+            <option value="Habit">Habit</option>
+            <option value="Personal">Personal</option>
+            <option value="Backlog">Backlog</option>
+          </select>
+        </div>
+
+        {/* Due Date */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-text-primary mb-2">
+            Due Date (optional)
+          </label>
+          <input
+            type="date"
+            value={formData.due_date || ''}
+            onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+            className="w-full px-3 py-2 border border-border rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+          />
         </div>
 
         {error && <p className="text-error text-xs mb-3">{error}</p>}
@@ -98,7 +163,7 @@ export function CreateProjectModal({ open, onClose }: Props) {
           </button>
           <button
             onClick={handleCreate}
-            disabled={!name.trim() || saving}
+            disabled={!formData.name.trim() || saving}
             className="flex-[2] bg-accent text-white font-semibold rounded-xl py-2.5 text-sm hover:bg-accent-dark transition-colors disabled:opacity-40"
           >
             {saving ? 'Creating…' : 'Create'}
