@@ -35,6 +35,9 @@ const projects = new Table(
   {
     user_id:     column.text,
     name:        column.text,
+    description: column.text,
+    category:    column.text,
+    due_date:    column.text,
     color:       column.text,
     icon:        column.text,
     is_archived: column.integer,
@@ -43,7 +46,7 @@ const projects = new Table(
     updated_at:  column.text,
     deleted_at:  column.text,
   },
-  { indexes: { by_name: ['name'] } }
+  { indexes: { by_name: ['name'], by_category: ['category'] } }
 );
 
 const labels = new Table(
