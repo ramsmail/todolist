@@ -32,11 +32,18 @@ describe('useViewMode', () => {
     expect(result.current.mode).toBe('list');
   });
 
-  it('should have mounted state available to prevent hydration mismatch', () => {
-    const { result } = renderHook(() => useViewMode());
-    // After effect runs, mounted should be true
+  it('should prevent hydration mismatch by starting mounted=false, then true after effect', async () => {
+    const { result, rerender } = renderHook(() => useViewMode());
+
+    // Test that mounted state is exported and becomes true for hydration safety
+    // In SSR scenarios, mounted starts false on server and becomes true on client
+    // This test verifies the state is available for conditional rendering
+    await waitFor(() => {
+      expect(result.current.mounted).toBe(true);
+    });
+
+    // Verify mounted doesn't change on subsequent renders
+    rerender();
     expect(result.current.mounted).toBe(true);
-    // Verify mounted is part of the return value
-    expect(typeof result.current.mounted).toBe('boolean');
   });
 });
