@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useProjects, useLabels, useSavedFilters } from '@todolist/db';
+import { useProjects, useLabels, useSavedFilters, useInboxTasks, useTodayTasks } from '@todolist/db';
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 import { createClient } from '@/lib/supabase/client';
 import { useState } from 'react';
@@ -25,9 +25,11 @@ interface Props {
 export function Sidebar({ onNewProject, onQuickAdd }: Props) {
   const pathname        = usePathname();
   const router          = useRouter();
+  const { data: inboxTasks, count: inboxCount } = useInboxTasks();
   const { data: projects } = useProjects();
   const { data: labels } = useLabels();
   const { userId } = useCurrentUser();
+  const { data: todayTasks, count: todayCount } = useTodayTasks();
   const { data: savedFilters } = useSavedFilters(userId ?? '');
   const [signingOut, setSigningOut] = useState(false);
   const [filterModal, setFilterModal] = useState<{ open: boolean; filter?: any }>({ open: false });
