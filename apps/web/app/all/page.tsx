@@ -31,7 +31,7 @@ export default function AllTasksPage() {
           <h1 className="text-text-primary text-3xl font-bold">All Tasks</h1>
           <p className="text-text-muted text-sm mt-1">{tasks.length} active</p>
         </div>
-        <div className="flex-1 overflow-y-auto scrollable" role="list">
+        <div className="flex-1 overflow-y-auto scrollable px-6 pt-6 pb-6 space-y-2" role="list">
           {tasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-2">
               <p className="text-text-primary font-semibold text-lg">No active tasks</p>
@@ -44,6 +44,7 @@ export default function AllTasksPage() {
                 task={task as any}
                 onPress={setDetailId}
                 onComplete={handleComplete}
+                draggable={true}
               />
             ))
           )}

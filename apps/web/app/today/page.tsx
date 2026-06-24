@@ -101,33 +101,28 @@ export default function TodayPage() {
               {/* LATER TODAY */}
               {laterTasks.length > 0 && (
                 <section className="px-6 pb-4" aria-labelledby="section-later">
-                  <h2 id="section-later" className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
+                  <h2 id="section-later" className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
                     Later Today
                   </h2>
-                  <div role="list">
+                  <div role="list" className="space-y-2 px-0">
                     {laterTasks.map(task => (
-                      <div key={task.id} className="flex items-center gap-2 group relative">
-                        <span
-                          className="text-text-muted opacity-0 group-hover:opacity-100 cursor-grab text-sm flex-shrink-0 select-none"
-                          aria-hidden="true"
-                        >
-                          ⠿
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <TaskRow
-                            task={task as any}
-                            onPress={setDetailId}
-                            onComplete={handleComplete}
-                          />
+                      <div key={task.id} className="group relative">
+                        <div className="absolute right-3 top-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                          <button
+                            onClick={() => handleToggleFocus(task.id)}
+                            className="text-text-muted hover:text-text-primary flex-shrink-0 text-sm focus:outline-none"
+                            aria-label={`Add ${task.title} to focus`}
+                            title="Add to focus"
+                          >
+                            📌
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleToggleFocus(task.id)}
-                          className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity text-text-muted hover:text-text-primary flex-shrink-0 text-sm focus:outline-none focus:opacity-100"
-                          aria-label={`Add ${task.title} to focus`}
-                          title="Add to focus"
-                        >
-                          📌
-                        </button>
+                        <TaskRow
+                          task={task as any}
+                          onPress={setDetailId}
+                          onComplete={handleComplete}
+                          draggable={true}
+                        />
                       </div>
                     ))}
                   </div>

@@ -23,6 +23,9 @@ interface Props {
   readOnly?:    boolean;
   completedAt?: string;
   tabIndex?:    number;
+  draggable?:   boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?:   (e: React.DragEvent) => void;
 }
 
 function isOverdue(dueDate: string) {
@@ -30,7 +33,7 @@ function isOverdue(dueDate: string) {
 }
 
 export const TaskRow = memo(function TaskRow({
-  task, onPress, onComplete, readOnly = false, completedAt, tabIndex,
+  task, onPress, onComplete, readOnly = false, completedAt, tabIndex, draggable = false, onDragStart, onDragEnd,
 }: Props) {
   const { data: allLabels } = useLabels();
   const colorOf = (name: string) =>
@@ -39,11 +42,28 @@ export const TaskRow = memo(function TaskRow({
 
   return (
     <div
-      className="flex items-start gap-3 px-4 py-4 border-b border-border hover:bg-surface-alt/40 group cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-inset min-h-[80px]"
+      className={`flex items-start gap-3 px-4 py-4 rounded-xl border border-border bg-surface hover:bg-surface-alt hover:shadow-sm group transition-all min-h-[80px] ${draggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}
       role="listitem"
       tabIndex={readOnly ? undefined : (tabIndex ?? 0)}
       data-task-id={readOnly ? undefined : task.id}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
     >
+      {/* Drag handle */}
+      {draggable && (
+        <div className="text-text-muted/50 hover:text-text-muted flex-shrink-0 mt-0.5">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <circle cx="9" cy="5" r="1.5" />
+            <circle cx="9" cy="12" r="1.5" />
+            <circle cx="9" cy="19" r="1.5" />
+            <circle cx="15" cy="5" r="1.5" />
+            <circle cx="15" cy="12" r="1.5" />
+            <circle cx="15" cy="19" r="1.5" />
+          </svg>
+        </div>
+      )}
+
       {/* Checkbox */}
       <button
         onClick={e => { e.stopPropagation(); if (!readOnly) onComplete(task.id); }}

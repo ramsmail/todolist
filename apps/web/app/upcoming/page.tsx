@@ -53,13 +53,14 @@ export default function UpcomingPage() {
                 >
                   {formatDate(date)}
                 </h2>
-                <div role="list">
+                <div role="list" className="px-6 pt-4 pb-6 space-y-2">
                   {groupTasks.map(task => (
                     <TaskRow
                       key={task.id}
                       task={task}
                       onPress={setDetailId}
                       onComplete={handleComplete}
+                      draggable={true}
                     />
                   ))}
                 </div>
