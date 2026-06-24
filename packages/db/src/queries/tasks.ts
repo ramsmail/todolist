@@ -1,5 +1,6 @@
 import type { AbstractPowerSyncDatabase } from '@powersync/common';
 import { useQuery } from '@powersync/react';
+import { useMemo } from 'react';
 import { generateKeyBetween } from 'fractional-indexing';
 import { parseRule, computeNext } from '@todolist/core';
 import type { TaskRecord } from '../schema';
@@ -47,11 +48,21 @@ export const LOGBOOK_QUERY = `
 // --- React hooks ---
 
 export function useInboxTasks() {
-  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'due_time' | 'status' | 'sort_order' | 'labels' | 'recurrence_rule'>>(INBOX_QUERY);
+  const query = useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'due_time' | 'status' | 'sort_order' | 'labels' | 'recurrence_rule'>>(INBOX_QUERY);
+  const count = useMemo(() => {
+    return query.data?.length ?? 0;
+  }, [query.data]);
+
+  return { ...query, count };
 }
 
 export function useTodayTasks() {
-  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule' | 'in_focus' | 'sort_order'>>(TODAY_QUERY);
+  const query = useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule' | 'in_focus' | 'sort_order'>>(TODAY_QUERY);
+  const count = useMemo(() => {
+    return query.data?.length ?? 0;
+  }, [query.data]);
+
+  return { ...query, count };
 }
 
 export function useUpcomingTasks() {
