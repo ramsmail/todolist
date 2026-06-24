@@ -67,6 +67,11 @@ export function Sidebar({ onNewProject, onQuickAdd }: Props) {
       <ul className="mt-2 space-y-0.5 px-2" role="list">
         {NAV.map(({ href, label, icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/');
+          let count: number | null = null;
+
+          if (label === 'Today') count = todayCount;
+          if (label === 'Inbox') count = inboxCount;
+
           return (
             <li key={href}>
               <Link
@@ -80,6 +85,15 @@ export function Sidebar({ onNewProject, onQuickAdd }: Props) {
               >
                 <span aria-hidden="true">{icon}</span>
                 {label}
+                {count !== null && (
+                  <span className={`ml-auto text-xs px-2 py-0.5 rounded-full font-medium ${
+                    count > 0
+                      ? 'bg-accent text-white'
+                      : 'bg-gray-300 text-gray-500 opacity-50'
+                  }`}>
+                    {count}
+                  </span>
+                )}
               </Link>
             </li>
           );
