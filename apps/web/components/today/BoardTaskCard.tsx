@@ -35,7 +35,9 @@ export const BoardTaskCard = memo(function BoardTaskCard({
 }: Props) {
   const { data: allLabels } = useLabels();
   const colorOf = (name: string) => allLabels.find(l => l.name === name)?.color ?? '#9CA3AF';
-  const names: string[] = task.labels ? JSON.parse(task.labels) : [];
+  const names: string[] = task.labels ? (() => {
+    try { return JSON.parse(task.labels); } catch { return []; }
+  })() : [];
 
   return (
     <div
@@ -50,7 +52,7 @@ export const BoardTaskCard = memo(function BoardTaskCard({
         <button
           onClick={e => { e.stopPropagation(); onComplete(task.id); }}
           className="mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 hover:bg-surface transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
-          style={{ borderColor: PRIORITY_COLOR[task.priority ?? 4] ?? '#9CA3AF' }}
+          style={{ borderColor: PRIORITY_COLOR[task.priority ?? 4] }}
           aria-label={`Complete ${task.title}`}
         />
 
@@ -92,7 +94,7 @@ export const BoardTaskCard = memo(function BoardTaskCard({
           aria-label={task.in_focus === 1 ? `Unpin ${task.title}` : `Pin ${task.title}`}
           title={task.in_focus === 1 ? 'Unpin from focus' : 'Pin to focus'}
         >
-          {task.in_focus === 1 ? '📍' : '📌'}
+          {task.in_focus === 1 ? '📌' : '📍'}
         </button>
       </div>
     </div>
