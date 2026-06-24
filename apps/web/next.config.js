@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: false,
   experimental: {
     // @powersync/web and wa-sqlite are browser-only (WASM/Web Workers).
     // Keep them out of the RSC server bundle so WASM/Worker code never loads
