@@ -34,4 +34,12 @@ describe('ViewToggle', () => {
     fireEvent.click(screen.getByText('Board'));
     expect(handleSetMode).toHaveBeenCalledWith('board');
   });
+
+  it('sets aria-pressed correctly for each button', () => {
+    const handleSetMode = vi.fn();
+    render(<ViewToggle mode="list" setMode={handleSetMode} />);
+
+    expect(screen.getByRole('button', { name: 'List' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Board' })).toHaveAttribute('aria-pressed', 'false');
+  });
 });
