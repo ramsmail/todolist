@@ -15,7 +15,6 @@ vi.mock('@todolist/db', async () => {
     useProjects:    vi.fn(),
     useLabels:      vi.fn(),
     useWeeklyActivity: vi.fn(),
-    useStreak:      vi.fn(),
     completeTask:   vi.fn(),
     toggleFocus:    vi.fn(),
   };
@@ -23,7 +22,7 @@ vi.mock('@todolist/db', async () => {
 
 import {
   useTodayTasks, useTodayStats, useProjects, useLabels,
-  useWeeklyActivity, useStreak,
+  useWeeklyActivity,
 } from '@todolist/db';
 import TodayPage from '@/app/today/page';
 
@@ -54,7 +53,6 @@ beforeEach(() => {
     { day: '2026-06-26', count: 0 },
     { day: '2026-06-27', count: 0 },
   ]);
-  (useStreak as any).mockReturnValue({ count: 0, days: Array(7).fill(false) });
 });
 
 describe('TodayPage', () => {
