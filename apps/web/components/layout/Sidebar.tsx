@@ -18,11 +18,10 @@ const NAV = [
 ];
 
 interface Props {
-  onNewProject: () => void;
-  onQuickAdd:   () => void;
+  onQuickAdd: () => void;
 }
 
-export function Sidebar({ onNewProject, onQuickAdd }: Props) {
+export function Sidebar({ onQuickAdd }: Props) {
   const pathname        = usePathname();
   const router          = useRouter();
   const { data: inboxTasks, count: inboxCount } = useInboxTasks();
@@ -133,16 +132,12 @@ export function Sidebar({ onNewProject, onQuickAdd }: Props) {
             );
           })}
         </ul>
-        <button
-          onClick={onNewProject}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-accent hover:bg-surface transition-colors mt-1"
+        <Link
+          href="/labels"
+          className="px-3 pt-4 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-secondary transition-colors block"
         >
-          + New project
-        </button>
-
-        <p className="px-3 pt-4 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider">
           Labels
-        </p>
+        </Link>
         <ul className="space-y-0.5" role="list">
           {labels.filter(l => l.name).map((l) => {
             const labelName = l.name as string;
@@ -166,12 +161,6 @@ export function Sidebar({ onNewProject, onQuickAdd }: Props) {
             );
           })}
         </ul>
-        <Link
-          href="/labels"
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-accent hover:bg-surface transition-colors mt-1"
-        >
-          + Manage labels
-        </Link>
 
         <p className="px-3 pt-4 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider">
           Filters
