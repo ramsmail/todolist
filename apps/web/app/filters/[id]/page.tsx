@@ -1,20 +1,17 @@
 'use client';
 
-import { use } from 'react';
+import { useState } from 'react';
+import { useParams } from 'next/navigation';
 import { useSavedFilters, useFilteredTasks, completeTask } from '@todolist/db';
 import { TaskList } from '@/components/tasks/TaskList';
 import { TaskDetailPanel } from '@/components/tasks/TaskDetailPanel';
-import { useState } from 'react';
 import { usePowerSync } from '@powersync/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import Link from 'next/link';
 
-interface Props {
-  params: Promise<{ id: string }>;
-}
-
-export default function FilterPage({ params }: Props) {
-  const { id } = use(params);
+export default function FilterPage() {
+  const params = useParams();
+  const id = params.id as string;
   const db     = usePowerSync();
   const { userId } = useCurrentUser();
 
