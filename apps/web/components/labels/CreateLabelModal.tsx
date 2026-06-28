@@ -14,22 +14,20 @@ interface Props {
 
 export function CreateLabelModal({ open, onClose }: Props) {
   const db = usePowerSync();
-  const [name, setName] = useState('');
-  const [color, setColor] = useState(SWATCHES[0]);
+  const [formData, setFormData] = useState({ name: '', color: SWATCHES[0] });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleCreate = async () => {
-    if (!name.trim()) return;
+    if (!formData.name.trim()) return;
     setSaving(true);
     setError(null);
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      await createLabel(db as any, { userId: user.id, name: name.trim(), color });
-      setName('');
-      setColor(SWATCHES[0]);
+      await createLabel(db as any, { userId: user.id, name: formData.name.trim(), color: formData.color });
+      setFormData({ name: '', color: SWATCHES[0] });
       onClose();
     } catch (e: any) {
       setError(e.message ?? 'Failed to create label');
@@ -55,8 +53,8 @@ export function CreateLabelModal({ open, onClose }: Props) {
         <input
           type="text"
           autoFocus
-          value={name}
-          onChange={e => setName(e.target.value)}
+          value={formData.name}
+          onChange={e => setFormData({ ...formData, name: e.target.value })}
           onKeyDown={e => e.key === 'Enter' && handleCreate()}
           placeholder="Label name"
           className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-primary text-sm placeholder-text-muted focus:outline-none focus:border-accent mb-4"
@@ -69,11 +67,11 @@ export function CreateLabelModal({ open, onClose }: Props) {
           {SWATCHES.map(c => (
             <button
               key={c}
-              onClick={() => setColor(c)}
-              className={`w-7 h-7 rounded-full transition-transform ${color === c ? 'ring-2 ring-white ring-offset-2 ring-offset-surface-alt scale-110' : ''}`}
+              onClick={() => setFormData({ ...formData, color: c })}
+              className={`w-7 h-7 rounded-full transition-transform ${formData.color === c ? 'ring-2 ring-white ring-offset-2 ring-offset-surface-alt scale-110' : ''}`}
               style={{ backgroundColor: c }}
               aria-label={`Color ${c}`}
-              aria-pressed={color === c}
+              aria-pressed={formData.color === c}
             />
           ))}
         </div>
@@ -89,7 +87,7 @@ export function CreateLabelModal({ open, onClose }: Props) {
           </button>
           <button
             onClick={handleCreate}
-            disabled={!name.trim() || saving}
+            disabled={!formData.name.trim() || saving}
             className="flex-[2] bg-accent text-white font-semibold rounded-xl py-2.5 text-sm hover:bg-accent-dark transition-colors disabled:opacity-40"
           >
             {saving ? 'Creating…' : 'Create'}

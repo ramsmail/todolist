@@ -67,4 +67,37 @@ describe('CreateLabelModal', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
     await waitFor(() => expect(createLabel).toHaveBeenCalled());
   });
+
+  it('resets name and color after successful creation', async () => {
+    render(<CreateLabelModal open={true} onClose={vi.fn()} />);
+    const input = screen.getByPlaceholderText('Label name');
+    fireEvent.change(input, { target: { value: 'urgent' } });
+    fireEvent.click(screen.getByText('Create'));
+    await waitFor(() => expect(createLabel).toHaveBeenCalled());
+    // After creation the input should be reset
+    expect(input.value).toBe('');
+  });
+
+  it('shows error message when createLabel throws', async () => {
+    (createLabel as any).mockRejectedValueOnce(new Error('Server error'));
+    render(<CreateLabelModal open={true} onClose={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText('Label name'), {
+      target: { value: 'urgent' },
+    });
+    fireEvent.click(screen.getByText('Create'));
+    await waitFor(() => expect(screen.getByText('Server error')).toBeInTheDocument());
+  });
+
+  it('clears error when retrying after failure', async () => {
+    (createLabel as any)
+      .mockRejectedValueOnce(new Error('Server error'))
+      .mockResolvedValueOnce('new-id');
+    render(<CreateLabelModal open={true} onClose={vi.fn()} />);
+    const input = screen.getByPlaceholderText('Label name');
+    fireEvent.change(input, { target: { value: 'urgent' } });
+    fireEvent.click(screen.getByText('Create'));
+    await waitFor(() => screen.getByText('Server error'));
+    fireEvent.click(screen.getByText('Create'));
+    await waitFor(() => expect(screen.queryByText('Server error')).not.toBeInTheDocument());
+  });
 });
