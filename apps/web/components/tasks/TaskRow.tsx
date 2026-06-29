@@ -38,7 +38,13 @@ export const TaskRow = memo(function TaskRow({
   const { data: allLabels } = useLabels();
   const colorOf = (name: string) =>
     allLabels.find((l) => l.name === name)?.color ?? '#9CA3AF';
-  const names: string[] = task.labels ? JSON.parse(task.labels) : [];
+  let names: string[] = [];
+  try {
+    const parsed = task.labels ? JSON.parse(task.labels) : [];
+    names = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    names = [];
+  }
 
   return (
     <div

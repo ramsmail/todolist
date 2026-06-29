@@ -88,6 +88,10 @@ function DrawerContent(props: DrawerContentComponentProps) {
 export function AppDrawer() {
   return (
     <Drawer.Navigator
+      // THROWAWAY (foundation sanity-test only): drawer v6 can't detect reanimated 4's
+      // worklets and falls back to the reanimated-1 legacy path, which crashes. Forcing
+      // false skips that. This whole React Navigation layer is deleted in the router migration.
+      useLegacyImplementation={false}
       drawerContent={props => <DrawerContent {...props} />}
       screenOptions={{
         headerShown:        false,
