@@ -1,25 +1,21 @@
 import React, { useState, useCallback } from 'react';
 import { View, FlatList, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useRouter } from 'expo-router';
 import { useInboxTasks, completeTask, updateTaskDue } from '@todolist/db';
 import { usePowerSync } from '@powersync/react';
 import { colors, typography } from '@todolist/ui';
-import { SwipeableTaskRow, type TaskRowData } from '../components/SwipeableTaskRow';
-import { FAB }               from '../components/FAB';
-import { QuickCaptureModal } from '../components/QuickCaptureModal';
-import type { InboxStackParamList } from '../navigation/AppTabs';
+import { SwipeableTaskRow, type TaskRowData } from '../../components/SwipeableTaskRow';
+import { FAB } from '../../components/FAB';
+import { QuickCaptureModal } from '../../components/QuickCaptureModal';
 
-type Nav = NativeStackNavigationProp<InboxStackParamList, 'Inbox'>;
-
-export function InboxScreen() {
-  const db         = usePowerSync();
-  const nav        = useNavigation<Nav>();
+export default function InboxScreen() {
+  const db = usePowerSync();
+  const router = useRouter();
   const { data: tasks } = useInboxTasks();
   const [capturing, setCapturing] = useState(false);
 
-  const handlePress = useCallback((id: string) => nav.navigate('TaskDetail', { taskId: id }), [nav]);
+  const handlePress = useCallback((id: string) => router.push(`/task/${id}`), [router]);
 
   const handleComplete = useCallback((id: string) => {
     completeTask(db as any, id).catch(console.error);
@@ -42,7 +38,7 @@ export function InboxScreen() {
 
   const keyExtractor = useCallback((item: TaskRowData) => item.id, []);
 
-  const openCapture  = useCallback(() => setCapturing(true), []);
+  const openCapture = useCallback(() => setCapturing(true), []);
   const closeCapture = useCallback(() => setCapturing(false), []);
 
   return (
@@ -70,10 +66,10 @@ export function InboxScreen() {
 }
 
 const styles = StyleSheet.create({
-  container:      { flex: 1, backgroundColor: colors.bg },
-  header:         { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  title:          { ...typography.heading1, color: colors.textPrimary, flex: 1 },
-  count:          { ...typography.caption, color: colors.textMuted, fontSize: 14 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  title: { ...typography.heading1, color: colors.textPrimary, flex: 1 },
+  count: { ...typography.caption, color: colors.textMuted, fontSize: 14 },
   emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  empty:          { ...typography.body, color: colors.textMuted, marginTop: 80, textAlign: 'center' },
+  empty: { ...typography.body, color: colors.textMuted, marginTop: 80, textAlign: 'center' },
 });

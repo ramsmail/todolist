@@ -4,7 +4,7 @@ export interface UploadTaskInput {
   attachmentId: string;
   taskId: string;
   userId: string;
-  fileBytes: Buffer;
+  fileBytes: Uint8Array;
   filename: string;
   mimeType: string;
   localUri: string;
@@ -15,7 +15,7 @@ export interface UploadTask {
   attachmentId: string;
   taskId: string;
   userId: string;
-  fileBytes: Buffer;
+  fileBytes: Uint8Array;
   filename: string;
   mimeType: string;
   localUri: string;

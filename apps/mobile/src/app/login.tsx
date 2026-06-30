@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect } from 'expo-router';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '../auth/AuthContext';
 
 export default function LoginScreen() {
   const { session, loading, signIn, signUp } = useAuth();
