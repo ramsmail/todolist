@@ -1,3 +1,4 @@
+import '../polyfills';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack, useSegments, useRouter } from 'expo-router';
