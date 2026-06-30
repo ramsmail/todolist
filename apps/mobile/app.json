@@ -22,7 +22,14 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-router"
+      "expo-router",
+      [
+        "expo-share-intent",
+        {
+          "androidIntentFilters": ["text/*", "image/*", "*/*"],
+          "androidMultiIntentFilters": ["image/*", "*/*"]
+        }
+      ]
     ],
     "extra": {
       "router": {},
