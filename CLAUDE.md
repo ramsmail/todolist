@@ -68,6 +68,7 @@ See [`docs/SCHEMA_SYNC_STRATEGY.md`](docs/SCHEMA_SYNC_STRATEGY.md) for detailed 
 
 - **`docs/design/`** — Phase specs and implementation plans (check for existing spec before starting a feature)
 - **`docs/SCHEMA_SYNC_STRATEGY.md`** — How to safely add tables/columns
+- **`docs/DISTRIBUTION.md`** — Build/EAS model and the developer-vs-end-user account split (one shared backend, per-user app sign-up)
 - **Package-specific guides:** `packages/db/CLAUDE.md`, `packages/core/CLAUDE.md`, `packages/ui/CLAUDE.md` — read these before working in that package
 
 ## Workflow Expectations
