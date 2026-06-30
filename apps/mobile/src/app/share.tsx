@@ -125,6 +125,15 @@ export default function ShareScreen() {
           });
       }
 
+      // Best-effort server-side title enrichment for links. Only when the user
+      // kept the raw URL as the title (didn't type their own); the Edge Function
+      // updates the title in Postgres and it syncs back via PowerSync.
+      if (payload.sourceUrl && trimmed === payload.sourceUrl) {
+        supabase.functions
+          .invoke('enrich-url', { body: { taskId, url: payload.sourceUrl } })
+          .catch((err) => console.error('enrich-url failed:', err));
+      }
+
       resetShareIntent();
       setPhase('saved');
       setTimeout(close, 900);
