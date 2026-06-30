@@ -2,6 +2,7 @@
   "expo": {
     "name": "TodoList",
     "slug": "todolist",
+    "owner": "ramsmail",
     "version": "1.0.0",
     "scheme": "todolist",
     "orientation": "portrait",
@@ -22,6 +23,12 @@
     "plugins": [
       "expo-secure-store",
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "43def8dd-5686-4982-9a95-fb09ec9ddec5"
+      }
+    }
   }
 }
