@@ -165,6 +165,7 @@ export async function createTask(
     labels?: string[];
     afterSortOrder?: string | null;
     recurrenceRule?: string | null;
+    sourceUrl?: string | null;
   }
 ): Promise<string> {
   const id = crypto.randomUUID();
@@ -176,8 +177,8 @@ export async function createTask(
     `INSERT INTO tasks
        (id, user_id, title, status, priority, due_date, due_time, timezone,
         project_id, parent_task_id, recurrence_rule, recurrence_start,
-        labels, sort_order, created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        labels, sort_order, source_url, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id,
       fields.userId,
@@ -193,6 +194,7 @@ export async function createTask(
       recurrenceStart,
       JSON.stringify(fields.labels ?? []),
       sortOrder,
+      fields.sourceUrl ?? null,
       now,
       now,
     ]

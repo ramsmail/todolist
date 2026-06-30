@@ -16,6 +16,7 @@ const tasks = new Table(
     recurrence_start: column.text,
     labels:           column.text,   // JSON array stored as text
     sort_order:       column.text,
+    source_url:       column.text,
     created_at:       column.text,
     updated_at:       column.text,
     deleted_at:       column.text,

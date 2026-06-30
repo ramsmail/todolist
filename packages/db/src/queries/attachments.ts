@@ -18,7 +18,7 @@ export async function createAttachment(
     filename: string;
     mimeType: string;
     sizeBytes: number;
-    storagePath: string;
+    storagePath?: string | null;
     localUri?: string;
     thumbnailUri?: string;
     durationSeconds?: number;
