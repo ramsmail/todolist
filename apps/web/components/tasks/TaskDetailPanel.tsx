@@ -6,7 +6,7 @@ import {
   useTask, useSubtasks,
   updateTaskTitle, updateTaskPriority, updateTaskProject,
   updateTaskDue, deleteTask, createTask, completeTask,
-  updateTaskRecurrence,
+  updateTaskRecurrence, useAttachmentsForTask,
 } from '@todolist/db';
 import { ProjectPicker } from '@/components/projects/ProjectPicker';
 import { RecurrencePicker } from './RecurrencePicker';
@@ -17,15 +17,61 @@ const PRIORITY_COLOR: Record<number, string> = {
   1: '#EF4444', 2: '#F97316', 3: '#3B82F6', 4: '#9CA3AF',
 };
 
+function useSignedUrl(storagePath: string | null): string | null {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!storagePath) return;
+    const supabase = createClient();
+    supabase.storage
+      .from('attachments')
+      .createSignedUrl(storagePath, 3600)
+      .then(({ data }) => { if (data?.signedUrl) setUrl(data.signedUrl); });
+  }, [storagePath]);
+  return url;
+}
+
+function AttachmentItem({ item }: {
+  item: { id: string; storage_path: string | null; mime_type: string | null; filename: string | null };
+}) {
+  const url = useSignedUrl(item.storage_path);
+  const isImage = item.mime_type?.startsWith('image/') ?? false;
+
+  if (isImage) {
+    return url ? (
+      <a href={url} target="_blank" rel="noopener noreferrer" className="block">
+        <img src={url} alt={item.filename ?? 'attachment'} className="w-full h-32 object-cover rounded-lg border border-border hover:opacity-90 transition-opacity" />
+      </a>
+    ) : (
+      <div className="w-full h-32 rounded-lg border border-border bg-surface flex items-center justify-center">
+        <span className="text-text-muted text-xs">Loading…</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 py-2 px-3 rounded-lg bg-surface border border-border">
+      <span>📎</span>
+      {url ? (
+        <a href={url} target="_blank" rel="noopener noreferrer" className="text-accent text-sm hover:underline truncate">
+          {item.filename ?? 'file'}
+        </a>
+      ) : (
+        <span className="text-text-muted text-sm truncate">{item.filename ?? 'file'}</span>
+      )}
+    </div>
+  );
+}
+
 interface Props {
   taskId:  string | null;
   onClose: () => void;
 }
 
 export function TaskDetailPanel({ taskId, onClose }: Props) {
-  const db             = usePowerSync();
-  const { data: rows } = useTask(taskId ?? '');
-  const { data: subs } = useSubtasks(taskId ?? '');
+  const db                   = usePowerSync();
+  const { data: rows }       = useTask(taskId ?? '');
+  const { data: subs }       = useSubtasks(taskId ?? '');
+  const { data: attachments } = useAttachmentsForTask(taskId ?? '');
   const task           = rows?.[0];
 
   const [titleDraft,    setTitleDraft]    = useState('');
@@ -189,6 +235,18 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
               <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Project</p>
               <ProjectPicker value={task.project_id ?? null} onChange={handleProject} />
             </div>
+
+            {/* Attachments */}
+            {attachments && attachments.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Attachments</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {(attachments as any[]).map((a) => (
+                    <AttachmentItem key={a.id} item={a} />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Sub-tasks */}
             <div>

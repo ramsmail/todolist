@@ -11,6 +11,7 @@ import {
 import { usePowerSync } from '@powersync/react';
 import { PriorityBadge, colors, typography } from '@todolist/ui';
 import { SubTaskList } from '../../components/SubTaskList';
+import { AttachmentGallery } from '../../components/AttachmentGallery';
 
 const PRIORITIES = [
   { value: 1, label: 'P1' },
@@ -125,6 +126,9 @@ export default function TaskDetailScreen() {
           <Text style={styles.sectionLabel}>DUE DATE</Text>
           <Text style={styles.dueDate}>{task.due_date ?? 'No date'}</Text>
         </View>
+
+        {/* Attachments */}
+        <AttachmentGallery taskId={taskId} />
 
         {/* Sub-tasks */}
         <SubTaskList parentTaskId={taskId} projectId={task.project_id ?? null} />
