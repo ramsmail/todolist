@@ -60,6 +60,8 @@ export function AttachmentGallery({ taskId }: Props) {
   const { data: attachments } = useAttachmentsForTask(taskId);
   const [lightbox, setLightbox] = useState<string | null>(null);
 
+  if (__DEV__) console.log('[AttachmentGallery] taskId:', taskId, 'count:', attachments?.length, JSON.stringify(attachments?.map(a => ({ id: (a as any).id, local_uri: (a as any).local_uri, storage_path: (a as any).storage_path }))));
+
   if (!attachments || attachments.length === 0) return null;
 
   return (

@@ -47,7 +47,7 @@ function AttachmentItem({ item }: {
     );
     return url ? (
       <a href={url} target="_blank" rel="noopener noreferrer" className="block">
-        <img src={url} alt={item.filename ?? 'attachment'} className="w-full h-32 object-cover rounded-lg border border-border hover:opacity-90 transition-opacity" />
+        <img src={url} alt={item.filename ?? 'attachment'} crossOrigin="anonymous" className="w-full h-32 object-cover rounded-lg border border-border hover:opacity-90 transition-opacity" />
       </a>
     ) : (
       <div className="w-full h-32 rounded-lg border border-border bg-surface flex items-center justify-center">
