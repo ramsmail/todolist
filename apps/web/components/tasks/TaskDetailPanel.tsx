@@ -36,7 +36,15 @@ function AttachmentItem({ item }: {
   const url = useSignedUrl(item.storage_path);
   const isImage = item.mime_type?.startsWith('image/') ?? false;
 
+  const noPath = !item.storage_path;
+
   if (isImage) {
+    if (noPath) return (
+      <div className="w-full h-32 rounded-lg border border-border bg-surface flex flex-col items-center justify-center gap-1">
+        <span className="text-xl">⏳</span>
+        <span className="text-text-muted text-xs">Upload pending…</span>
+      </div>
+    );
     return url ? (
       <a href={url} target="_blank" rel="noopener noreferrer" className="block">
         <img src={url} alt={item.filename ?? 'attachment'} className="w-full h-32 object-cover rounded-lg border border-border hover:opacity-90 transition-opacity" />
@@ -56,7 +64,7 @@ function AttachmentItem({ item }: {
           {item.filename ?? 'file'}
         </a>
       ) : (
-        <span className="text-text-muted text-sm truncate">{item.filename ?? 'file'}</span>
+        <span className="text-text-muted text-sm truncate">{item.filename ?? 'file'}{noPath ? ' (upload pending…)' : ''}</span>
       )}
     </div>
   );
