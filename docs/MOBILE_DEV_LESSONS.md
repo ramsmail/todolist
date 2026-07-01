@@ -177,6 +177,34 @@ Order of issues hit (each unblocked the next):
 
 ---
 
+## 5. Schema / data model (bottom-up)
+
+### 5.1 Migration files can be un-applied on the remote DB — verify LIVE, first
+- **Symptom:** A shared-URL task saved on device but never synced to web. No app
+  crash, no obvious error — a silent sync failure.
+- **Cause:** `tasks.source_url` existed as a migration *file* but was never pushed
+  to the remote Supabase DB (0002 + 0003 unapplied; only 0001 was). PowerSync's
+  upload to Postgres was rejected with `42703 column tasks.source_url does not
+  exist` and retried forever; the row never reached the server. Phase 0 tasks
+  synced because they had `source_url = null` (the connector omits null columns),
+  masking the gap until a task actually set the column.
+- **Rule (bottom-up):** apply and **verify the data model against the live DB
+  before** building features on it. A migration file is not "done" until it is
+  live in Postgres *and* reaching clients.
+- **Quick probe** (needs only the anon key):
+  ```bash
+  curl -s -H "apikey: $ANON" -H "Authorization: Bearer $ANON" \
+    "$SUPABASE_URL/rest/v1/<table>?select=<col>&limit=1"
+  # []  -> column exists (RLS hides rows for anon)
+  # {"code":"42703", ... does not exist} -> migration NOT applied
+  ```
+- **Order:** migration → push it LIVE (`supabase db push` or dashboard SQL) →
+  sync rules (`SELECT *` already covers new columns) → `packages/db` types →
+  rebuild `packages/db` → feature code.
+- The Supabase CLI auto-loads `.env` from cwd and dies if it's not strict
+  `KEY=value` (`failed to parse environment file`). If a stray/notes `.env` is
+  present, run push from a clean dir or use the dashboard SQL editor.
+
 ## TL;DR triage
 - **"Could not save task" / `crypto` undefined** → polyfill import missing (1.1).
 - **Dev client won't connect** → `adb reverse tcp:8081 tcp:8081`, use
