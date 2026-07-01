@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { ShareIntentProvider, useShareIntentContext } from 'expo-share-intent';
 import { AuthProvider, useAuth } from '../auth/AuthContext';
 import { PowerSyncProvider } from '../powersync/PowerSyncProvider';
+import { useOfflineAttachmentSync } from '../hooks/useOfflineAttachmentSync';
 
 function RootLayoutNav() {
   const { session, loading } = useAuth();
@@ -24,6 +25,8 @@ function RootLayoutNav() {
       router.replace('/(tabs)');
     }
   }, [session, loading, segments, router]);
+
+  useOfflineAttachmentSync();
 
   // Warm start: app already running when a share arrives. Cold starts are routed
   // by app/+native-intent.ts. Only capture once authenticated; otherwise the auth
