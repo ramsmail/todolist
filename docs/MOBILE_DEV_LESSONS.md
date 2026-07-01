@@ -101,6 +101,22 @@ Grouped by area:
   fetches a **manifest from `/`** (HTTP 200) which names the real bundle URL.
   Test with `curl -H "expo-platform: android" http://localhost:8081/`.
 
+### 2.7 One-shot recovery: relaunch the dev client into Metro over USB
+When the app "won't launch" / "won't connect" / is stuck connecting — usually
+the reverse tunnel dropped (2.1) and/or the app is holding a stale/half state.
+This block re-sets the tunnel, force-stops the app, and deep-links it back into
+Metro for a clean load. It's the go-to reset and safe to re-run any time:
+```bash
+adb reverse tcp:8081 tcp:8081                       # tunnel drops on replug (2.1)
+adb shell am force-stop com.rameshv.todolist        # clear stale state (2.4)
+adb shell am start -a android.intent.action.VIEW \
+  -d "todolist://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081" \
+  com.rameshv.todolist                              # deep-link into Metro (2.3)
+```
+Confirm it worked by watching Metro's log for an `Android Bundled …` line (the
+device fetched the bundle). Prereqs: Metro up (`CI=1 npx expo start
+--dev-client`, 2.2) and `adb devices` shows the device.
+
 ---
 
 ## 3. Local native build (`expo run:android`) failures
@@ -209,6 +225,8 @@ Order of issues hit (each unblocked the next):
 - **"Could not save task" / `crypto` undefined** → polyfill import missing (1.1).
 - **Dev client won't connect** → `adb reverse tcp:8081 tcp:8081`, use
   `localhost:8081` (2.1).
+- **App won't launch / stuck connecting** → run the one-shot recovery block
+  (2.7): re-tunnel + force-stop + deep-link into Metro.
 - **Metro dies at boot** → `CI=1 npx expo start --dev-client` (2.2).
 - **My JS fix isn't showing** → force-stop + redeploy; confirm it's not a native
   change needing a rebuild (2.4, 2.5).
