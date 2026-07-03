@@ -12,6 +12,7 @@ import { FilterBuilderModal } from '@/components/filters/FilterBuilderModal';
 const NAV = [
   { href: '/inbox',    label: 'Inbox',    icon: '📥' },
   { href: '/today',    label: 'Today',    icon: '☀️' },
+  { href: '/matrix',   label: 'Matrix',   icon: '⊞' },
   { href: '/upcoming', label: 'Upcoming', icon: '📅' },
   { href: '/logbook',  label: 'Logbook',  icon: '✓' },
   { href: '/search',   label: 'Search',   icon: '🔍' },
