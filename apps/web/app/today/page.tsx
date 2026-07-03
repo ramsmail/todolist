@@ -19,7 +19,8 @@ function TodayContent() {
   const [capture,  setCapture]  = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
 
-  const stats = statsRows[0] ?? { total: 0, completed: 0 };
+  const rawStats = statsRows[0];
+  const stats = { total: rawStats?.total ?? 0, completed: rawStats?.completed ?? 0 };
   const focusTasks = tasks.filter(t => t.in_focus === 1);
   const laterTasks = tasks.filter(t => t.in_focus !== 1);
   const focusSeconds = POMODORO - secondsLeft;
