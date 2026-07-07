@@ -117,6 +117,37 @@ Confirm it worked by watching Metro's log for an `Android Bundled …` line (the
 device fetched the bundle). Prereqs: Metro up (`CI=1 npx expo start
 --dev-client`, 2.2) and `adb devices` shows the device.
 
+### 2.8 Tunnel mode: dev loop without USB or LAN
+- **Symptom:** phone can't reach the laptop over Wi-Fi at all — not just "on 5G
+  data" (2.1), but stuck even on the *same* Wi-Fi network. Often a router doing
+  AP/client isolation or 2.4GHz/5GHz band separation between the two devices.
+  USB + `adb reverse` (2.1/2.7) always works around this, but requires the cable.
+- **Fix:** route Metro through Expo's built-in ngrok tunnel instead of LAN:
+  ```bash
+  npm i -g @expo/ngrok        # one-time
+  pnpm --filter @todolist/mobile start:tunnel
+  # or directly: CI=1 npx expo start --dev-client --tunnel
+  ```
+  This prints (and serves the manifest from) a public
+  `https://<id>-ramsmail-8081.exp.direct` URL. On the phone, open the dev
+  client → "Enter URL manually" → paste that URL (or scan the terminal QR). No
+  adb, no USB, no shared Wi-Fi network required — works even with the phone on
+  cellular data and Wi-Fi off entirely.
+- **Verify the tunnel is actually up** (same DevTools-crash caveat as 2.2
+  applies — `CI=1` is required, the crash message is harmless):
+  ```bash
+  curl -s http://localhost:8081/status                 # packager-status:running
+  curl -s http://localhost:4040/api/tunnels             # ngrok's local API; confirms public_url
+  ```
+- **Caveat:** the tunnel is a public relay hop, so it's slower and occasionally
+  flakier than a working LAN connection. Use it when LAN/USB aren't available;
+  prefer 2.1's `adb reverse` when the cable is handy and speed matters.
+- **Fully laptop-free alternative:** for verifying a build without any dev
+  server at all (no tunnel, no Metro, no laptop present), see
+  `docs/DISTRIBUTION.md` — an EAS `preview` build with EAS Update (OTA)
+  configured lets you install once and push JS-only changes with `eas update`
+  from anywhere, no dev-server connection of any kind.
+
 ---
 
 ## 3. Local native build (`expo run:android`) failures
@@ -230,6 +261,10 @@ Order of issues hit (each unblocked the next):
 - **Metro dies at boot** → `CI=1 npx expo start --dev-client` (2.2).
 - **My JS fix isn't showing** → force-stop + redeploy; confirm it's not a native
   change needing a rebuild (2.4, 2.5).
+- **No cable and Wi-Fi/LAN won't connect phone↔laptop at all** → tunnel mode
+  (2.8): `pnpm --filter @todolist/mobile start:tunnel`, enter the printed
+  `exp.direct` URL manually in the dev client. For a fully laptop-free check,
+  use an EAS `preview` build + `eas update` instead (see `docs/DISTRIBUTION.md`).
 - **Local Gradle/CMake hell** → align RN versions (3.1), clear caches (3.2–3.5),
   or just use EAS (3.6).
 - **EAS build can't reach Supabase/PowerSync** → `eas env:push` the `.env` (4.2).

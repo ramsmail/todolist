@@ -26,8 +26,15 @@
       [
         "expo-share-intent",
         {
-          "androidIntentFilters": ["text/*", "image/*", "*/*"],
-          "androidMultiIntentFilters": ["image/*", "*/*"]
+          "androidIntentFilters": [
+            "text/*",
+            "image/*",
+            "*/*"
+          ],
+          "androidMultiIntentFilters": [
+            "image/*",
+            "*/*"
+          ]
         }
       ]
     ],
@@ -36,6 +43,12 @@
       "eas": {
         "projectId": "43def8dd-5686-4982-9a95-fb09ec9ddec5"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/43def8dd-5686-4982-9a95-fb09ec9ddec5"
     }
   }
 }

@@ -30,7 +30,7 @@ A developer build service — end users never touch it. It provides:
   `expo run:android` hits Gradle/CMake codegen issues).
 - **Credentials** — manages the Android keystore / iOS signing certs.
 - **EAS Update (OTA)** — push JS-only changes to installed apps without a new
-  store release.
+  store release. See "Pushing an OTA update" below.
 - **EAS Submit** — uploads to Google Play / App Store.
 - **Env vars & build profiles** — configured in `apps/mobile/eas.json`.
 
@@ -39,11 +39,15 @@ EAS project: `@ramsmail/todolist` (`projectId` + `owner` are committed in
 
 ## Build profiles (`apps/mobile/eas.json`)
 
-| Profile | Output | Use |
-|---|---|---|
-| `development` | Dev client APK (`developmentClient: true`) | Maintainer's daily driver; connects to a local Metro server (`expo start --dev-client`), has debugging. Requires a laptop running Metro. |
-| `preview` | Standalone internal APK | Hand to testers / friends. Runs on its own — no Metro, no laptop. This is what you share before a store release. |
-| `production` | AAB, auto-incrementing version | Store submission. |
+| Profile | Output | Channel | Use |
+|---|---|---|---|
+| `development` | Dev client APK (`developmentClient: true`) | `development` | Maintainer's daily driver; connects to a local Metro server (`expo start --dev-client`, or `expo start --tunnel` — see `docs/MOBILE_DEV_LESSONS.md` §2.8 — when USB/LAN aren't available). Requires a laptop running Metro. |
+| `preview` | Standalone internal APK | `preview` | Hand to testers / friends. Runs on its own — no Metro, no laptop. Receives OTA updates published to the `preview` channel (see below). |
+| `production` | AAB, auto-incrementing version | `production` | Store submission. Receives OTA updates published to the `production` channel. |
+
+Each profile is wired to an EAS Update channel of the same name (`apps/mobile/eas.json`,
+configured via `eas update:configure`). A build only receives updates published
+to its own channel.
 
 Build env vars come from the matching EAS environment (e.g. the `development`
 environment holds the `EXPO_PUBLIC_*` Supabase/PowerSync values). Push them with
@@ -66,6 +70,31 @@ npx eas-cli build --profile preview --platform android
 EAS returns an install URL / QR code. The tester opens it on their Android
 device, installs the APK, launches the app, and signs up with email/password.
 Nothing else required on their end.
+
+### Pushing an OTA update (no rebuild, no laptop needed on the device side)
+Once a build with `expo-updates` is installed (any build from this point
+forward — it's now a standard dependency, see `apps/mobile/package.json`), push
+a JS-only change straight to it:
+```bash
+cd apps/mobile
+eas update --channel preview --message "short description of the change"
+```
+The installed app fetches the update the next time it's force-stopped and
+relaunched (expo-updates checks on launch). This requires **no dev server, no
+tunnel, no laptop connection of any kind** on the device side — the app pulls
+the update from `u.expo.dev` over the internet, same as it always talks to
+Supabase/PowerSync.
+
+- Use `--channel production` to ship to production installs instead.
+- **Only JS/asset changes work this way.** A native change (new native module,
+  a config plugin edit) isn't in the already-installed binary — it needs a new
+  `eas build` for that channel/profile, same rule as
+  `docs/MOBILE_DEV_LESSONS.md` §2.5.
+- `runtimeVersion` (in `apps/mobile/app.json`, policy `"appVersion"`) gates
+  compatibility: an update only applies to installs whose native runtime
+  matches. Bumping `version` in `app.json` for a native change, without a new
+  build, would silently make existing installs stop receiving updates until
+  they update the binary — always build after a native change, not just publish.
 
 ## What a new user's first run looks like
 1. Install the app (APK link, or from the store).
