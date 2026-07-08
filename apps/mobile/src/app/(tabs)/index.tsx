@@ -68,6 +68,7 @@ export default function TasksScreen() {
       onReschedule={handleReschedule}
       onPriorityPress={handlePriorityPress}
       projectName={item.project_id ? projectNameById.get(item.project_id) : null}
+      variant="panel"
     />
   ), [handlePress, handleComplete, handleReschedule, handlePriorityPress, projectNameById]);
 
