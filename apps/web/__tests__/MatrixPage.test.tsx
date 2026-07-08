@@ -33,10 +33,10 @@ vi.mock('@/components/tasks/QuickCaptureModal', () => ({
 describe('MatrixPage', () => {
   it('renders all four quadrant labels', () => {
     const { getByText } = render(<MatrixPage />);
-    expect(getByText('DO FIRST')).toBeTruthy();
-    expect(getByText('SCHEDULE')).toBeTruthy();
-    expect(getByText('DELEGATE')).toBeTruthy();
-    expect(getByText('ELIMINATE')).toBeTruthy();
+    expect(getByText('Do First')).toBeTruthy();
+    expect(getByText('Plan')).toBeTruthy();
+    expect(getByText('Pass')).toBeTruthy();
+    expect(getByText('Drop')).toBeTruthy();
   });
 
   it('places tasks in the correct quadrant by priority', () => {

@@ -57,7 +57,7 @@ export default function TodayScreen() {
   const closeCapture = useCallback(() => setCapturing(false), []);
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Text style={styles.title}>Today</Text>
         <Text style={styles.count}>{tasks?.length ?? 0}</Text>

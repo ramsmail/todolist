@@ -6,14 +6,17 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {},
   "devDependencies": {
     "@todolist/config": "workspace:*",
     "@types/react": "~19.2.17",
     "react": "19.2.3",
-    "react-native": "0.85.3"
+    "react-native": "0.85.3",
+    "vitest": "^1.6.0"
   },
   "peerDependencies": {
     "react": ">=19",

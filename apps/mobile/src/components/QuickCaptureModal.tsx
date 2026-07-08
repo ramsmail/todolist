@@ -8,14 +8,16 @@ import { parseTaskInput } from '@todolist/core';
 import { createTask }    from '@todolist/db';
 import { useAuth }       from '../auth/AuthContext';
 import { colors, typography } from '@todolist/ui';
+import { resolveTaskPriority } from '../lib/resolveTaskPriority';
 
 interface Props {
   visible:   boolean;
   projectId?: string | null;
+  defaultPriority?: 1 | 2 | 3 | 4;
   onClose:   () => void;
 }
 
-export function QuickCaptureModal({ visible, projectId, onClose }: Props) {
+export function QuickCaptureModal({ visible, projectId, defaultPriority, onClose }: Props) {
   const db              = usePowerSync();
   const { session }     = useAuth();
   const [input, setInput] = useState('');
@@ -39,7 +41,7 @@ export function QuickCaptureModal({ visible, projectId, onClose }: Props) {
       await createTask(db as any, {
         userId:    session.user.id,
         title:     parsed.title,
-        priority:  parsed.priority,
+        priority:  resolveTaskPriority(parsed.priority, defaultPriority),
         dueDate:   parsed.dueDate,
         dueTime:   parsed.dueTime,
         timezone:  Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -59,7 +61,7 @@ export function QuickCaptureModal({ visible, projectId, onClose }: Props) {
       setInput('');
       onCloseRef.current();
     }
-  }, [db, input, session, projectId]);
+  }, [db, input, session, projectId, defaultPriority]);
 
   return (
     <Modal

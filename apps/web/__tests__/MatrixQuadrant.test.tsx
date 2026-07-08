@@ -16,7 +16,7 @@ describe('MatrixQuadrant', () => {
     const { getByText } = render(
       <MatrixQuadrant quadrant={1} tasks={[]} onTaskPress={vi.fn()} onTaskComplete={vi.fn()} onDropTask={vi.fn()} />
     );
-    expect(getByText('DO FIRST')).toBeTruthy();
+    expect(getByText('Do First')).toBeTruthy();
   });
 
   it('shows empty state when no tasks', () => {

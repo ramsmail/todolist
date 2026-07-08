@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { quadrantLabel } from '@todolist/core';
 import { TaskRow, type TaskRowItem } from '@/components/tasks/TaskRow';
 
 const QUADRANT_CONFIG = {
-  1: { label: 'DO FIRST',  icon: '⚡', bg: 'bg-amber-50',   header: 'text-amber-700',   ring: 'ring-amber-400/50'   },
-  2: { label: 'SCHEDULE',  icon: '📅', bg: 'bg-indigo-50',  header: 'text-indigo-700',  ring: 'ring-indigo-400/50'  },
-  3: { label: 'DELEGATE',  icon: '↪',  bg: 'bg-neutral-50', header: 'text-neutral-600', ring: 'ring-neutral-400/50' },
-  4: { label: 'ELIMINATE', icon: '✕',  bg: 'bg-rose-50',    header: 'text-rose-700',    ring: 'ring-rose-400/50'    },
+  1: { icon: '⚡', bg: 'bg-amber-50',   header: 'text-amber-700',   ring: 'ring-amber-400/50'   },
+  2: { icon: '📅', bg: 'bg-indigo-50',  header: 'text-indigo-700',  ring: 'ring-indigo-400/50'  },
+  3: { icon: '↪',  bg: 'bg-neutral-50', header: 'text-neutral-600', ring: 'ring-neutral-400/50' },
+  4: { icon: '✕',  bg: 'bg-rose-50',    header: 'text-rose-700',    ring: 'ring-rose-400/50'    },
 } as const;
 
 interface MatrixQuadrantProps {
@@ -52,7 +53,7 @@ export function MatrixQuadrant({
       <div className="px-4 pt-4 pb-2 flex items-center gap-2">
         <span aria-hidden="true">{config.icon}</span>
         <span className={`text-xs font-bold tracking-widest uppercase ${config.header}`}>
-          {config.label}
+          {quadrantLabel[quadrant]}
         </span>
         <span className="ml-auto text-xs text-text-muted">{tasks.length}</span>
       </div>

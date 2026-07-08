@@ -45,6 +45,25 @@ export const LOGBOOK_QUERY = `
   LIMIT 200
 `;
 
+export const MATRIX_QUERY = `
+  SELECT id, title, priority, due_date, project_id, status, labels, recurrence_rule, sort_order
+  FROM tasks
+  WHERE status NOT IN ('completed', 'cancelled')
+    AND deleted_at IS NULL
+  ORDER BY sort_order
+`;
+
+export function groupTasksByPriority<T extends { priority: number | null }>(
+  tasks: T[]
+): Record<1 | 2 | 3 | 4, T[]> {
+  const groups: Record<1 | 2 | 3 | 4, T[]> = { 1: [], 2: [], 3: [], 4: [] };
+  for (const task of tasks) {
+    const priority = (task.priority ?? 4) as 1 | 2 | 3 | 4;
+    (groups[priority] ?? groups[4]).push(task);
+  }
+  return groups;
+}
+
 // --- React hooks ---
 
 export function useInboxTasks() {
@@ -54,6 +73,13 @@ export function useInboxTasks() {
   }, [query.data]);
 
   return { ...query, count };
+}
+
+export function useMatrixTasks() {
+  const query = useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule' | 'sort_order'>>(MATRIX_QUERY);
+  const byQuadrant = useMemo(() => groupTasksByPriority(query.data ?? []), [query.data]);
+
+  return { ...query, byQuadrant };
 }
 
 export function useTodayTasks() {

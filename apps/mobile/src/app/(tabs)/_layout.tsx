@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Inbox, CheckSquare } from 'lucide-react-native';
+import { LayoutGrid, CheckSquare } from 'lucide-react-native';
 import { colors } from '@todolist/ui';
 
 export default function TabsLayout() {
@@ -19,8 +19,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Inbox',
-          tabBarIcon: ({ color, size }) => <Inbox size={size} color={color} strokeWidth={2} />,
+          title: 'Tasks',
+          tabBarIcon: ({ color, size }) => <LayoutGrid size={size} color={color} strokeWidth={2} />,
         }}
       />
       <Tabs.Screen
