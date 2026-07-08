@@ -5,13 +5,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
-  useTask, updateTaskTitle, updateTaskPriority,
+  useTask, updateTaskTitle, updateTaskPriority, updateTaskDue,
   deleteTask, completeTask,
 } from '@todolist/db';
 import { usePowerSync } from '@powersync/react';
 import { PriorityBadge, colors, typography } from '@todolist/ui';
 import { SubTaskList } from '../../components/SubTaskList';
 import { AttachmentGallery } from '../../components/AttachmentGallery';
+import { DueDateField } from '../../components/DueDateField';
 
 const PRIORITIES = [
   { value: 1, label: 'P1' },
@@ -47,6 +48,10 @@ export default function TaskDetailScreen() {
 
   const handlePriority = useCallback(async (priority: number) => {
     await updateTaskPriority(db as any, taskId, priority).catch(console.error);
+  }, [db, taskId]);
+
+  const handleDueDate = useCallback((dueDate: string | null) => {
+    updateTaskDue(db as any, taskId, dueDate, null).catch(console.error);
   }, [db, taskId]);
 
   const handleComplete = useCallback(async () => {
@@ -124,7 +129,7 @@ export default function TaskDetailScreen() {
         {/* Due date */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>DUE DATE</Text>
-          <Text style={styles.dueDate}>{task.due_date ?? 'No date'}</Text>
+          <DueDateField dueDate={task.due_date} onChange={handleDueDate} />
         </View>
 
         {/* Attachments */}
@@ -160,7 +165,6 @@ const styles = StyleSheet.create({
   priorityBtn: { padding: 6, borderRadius: 8, borderWidth: 1, borderColor: 'transparent' },
   priorityBtnActive: { borderColor: colors.accent, backgroundColor: colors.surface },
   p4Label: { ...typography.caption, color: colors.textMuted, fontWeight: '600', paddingHorizontal: 2 },
-  dueDate: { ...typography.body, color: colors.textSecondary },
   actions: { marginTop: 32, gap: 12 },
   completeBtn: { paddingVertical: 14, borderRadius: 12, backgroundColor: colors.success, alignItems: 'center' },
   completeBtnText: { color: '#fff', fontWeight: '600', fontSize: 15 },

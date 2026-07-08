@@ -22,6 +22,7 @@
     "@powersync/op-sqlite": "^0.9.13",
     "@powersync/react": "^1.10.0",
     "@powersync/react-native": "^1.35.7",
+    "@react-native-community/datetimepicker": "9.1.0",
     "@supabase/supabase-js": "^2.44.0",
     "@todolist/core": "workspace:*",
     "@todolist/db": "workspace:*",
