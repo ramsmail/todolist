@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { quadrantLabel } from '@todolist/core';
-import { colors, typography } from '@todolist/ui';
+import { colors, typography, priorityColor } from '@todolist/ui';
 
 const QUADRANTS = [1, 2, 3, 4] as const;
 
@@ -23,7 +23,7 @@ export function QuadrantTabs({ active, onChange }: Props) {
             accessibilityRole="tab"
             accessibilityState={{ selected: isActive }}
           >
-            <Text style={[styles.label, isActive && styles.labelActive]}>
+            <Text style={[styles.label, isActive && { color: priorityColor[quadrant] }]}>
               {quadrantLabel[quadrant]}
             </Text>
           </Pressable>
@@ -51,5 +51,4 @@ const styles = StyleSheet.create({
   },
   tabActive: { backgroundColor: colors.surface },
   label: { ...typography.caption, color: colors.textMuted, fontWeight: '600' },
-  labelActive: { color: colors.textPrimary },
 });
