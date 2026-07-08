@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
-import { TaskCheckbox, PriorityBadge, colors, typography } from '@todolist/ui';
+import { TaskCheckbox, PriorityBadge, colors, typography, resolvePanelTint } from '@todolist/ui';
 
 export interface TaskRowData {
   id:       string;
@@ -24,12 +24,14 @@ interface Props {
   onReschedule:    (id: string) => void;
   projectName?:    string | null;
   onPriorityPress?: (id: string) => void;
+  variant?:        'flat' | 'panel';
 }
 
-export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule, projectName, onPriorityPress }: Props) {
+export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule, projectName, onPriorityPress, variant = 'flat' }: Props) {
   const swipeRef  = useRef<Swipeable>(null);
   const opacity   = useSharedValue(1);
   const isOverdue = task.due_date && task.due_date < new Date().toISOString().split('T')[0];
+  const isPanel   = variant === 'panel';
 
   // Reset opacity when FlatList recycles this cell for a different task
   useEffect(() => {
@@ -59,16 +61,16 @@ export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule, proj
   const rowStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
   const renderLeftAction = useCallback(() => (
-    <View style={styles.actionComplete}>
+    <View style={[styles.actionComplete, isPanel && styles.actionRounded]}>
       <Text style={styles.actionText}>✓ Done</Text>
     </View>
-  ), []);
+  ), [isPanel]);
 
   const renderRightAction = useCallback(() => (
-    <View style={styles.actionReschedule}>
+    <View style={[styles.actionReschedule, isPanel && styles.actionRounded]}>
       <Text style={styles.actionText}>Later →</Text>
     </View>
-  ), []);
+  ), [isPanel]);
 
   const handleCheckboxComplete = useCallback(() => handleComplete(task.id), [handleComplete, task.id]);
   const handleRowPress = useCallback(() => onPress(task.id), [onPress, task.id]);
@@ -85,7 +87,14 @@ export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule, proj
       onSwipeableLeftOpen={handleSwipeLeft}
       onSwipeableRightOpen={handleSwipeRight}
     >
-      <Animated.View style={[styles.row, rowStyle]}>
+      <Animated.View
+        style={[
+          styles.row,
+          isPanel && styles.rowPanel,
+          isPanel && { backgroundColor: resolvePanelTint(task.priority) },
+          rowStyle,
+        ]}
+      >
         <TaskCheckbox
           priority={task.priority as 1 | 2 | 3 | 4}
           onComplete={handleCheckboxComplete}
@@ -97,17 +106,32 @@ export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule, proj
               {task.due_date}
             </Text>
           )}
-          {projectName && (
+          {!isPanel && projectName && (
             <View style={styles.projectChip}>
               <Text style={styles.projectChipText}>{projectName}</Text>
             </View>
           )}
         </Pressable>
-        <PriorityBadge
-          priority={task.priority as 1 | 2 | 3 | 4}
-          interactive={!!onPriorityPress}
-          onPress={handlePriorityPress}
-        />
+        {isPanel ? (
+          <View style={styles.panelRight}>
+            <PriorityBadge
+              priority={task.priority as 1 | 2 | 3 | 4}
+              interactive={!!onPriorityPress}
+              onPress={handlePriorityPress}
+            />
+            {projectName && (
+              <View style={styles.projectChip}>
+                <Text style={styles.projectChipText}>{projectName}</Text>
+              </View>
+            )}
+          </View>
+        ) : (
+          <PriorityBadge
+            priority={task.priority as 1 | 2 | 3 | 4}
+            interactive={!!onPriorityPress}
+            onPress={handlePriorityPress}
+          />
+        )}
       </Animated.View>
     </Swipeable>
   );
@@ -124,10 +148,22 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     gap: 12,
   },
+  rowPanel: {
+    borderRadius: 14,
+    borderBottomWidth: 0,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
   content: { flex: 1 },
   title: { ...typography.body, color: colors.textPrimary },
   due:   { ...typography.caption, color: colors.textSecondary, marginTop: 3 },
   overdue: { color: colors.p1 },
+  panelRight: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
   projectChip: {
     alignSelf: 'flex-start',
     backgroundColor: colors.surfaceAlt,
@@ -150,6 +186,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     paddingRight: 20,
     width: 100,
+  },
+  actionRounded: {
+    borderRadius: 14,
+    marginHorizontal: 16,
   },
   actionText: { color: '#fff', fontWeight: '600', fontSize: 14 },
 });
