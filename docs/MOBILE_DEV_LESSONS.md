@@ -222,6 +222,27 @@ Order of issues hit (each unblocked the next):
 - Shown by `expo.dev` when offering to open a desktop helper (Orbit). Not needed
   for monitoring a build or downloading the APK over HTTPS — safe to **Block**.
 
+### 4.6 `postinstall` in `apps/mobile/package.json` runs on *every* `pnpm install` — use `eas-build-post-install` instead
+- **Symptom:** Vercel's web deploy fails during `pnpm install` (before `next
+  build` even starts) trying to compile `packages/ui` — a package `apps/web`
+  doesn't even depend on.
+- **Cause:** pnpm runs each workspace package's own lifecycle scripts on
+  install, not just the root's. A `postinstall` in `apps/mobile/package.json`
+  (added to build `packages/{core,db,ui}` for a fresh EAS checkout, see 4.2's
+  sibling problem) therefore also fires on Vercel's `pnpm install` for the
+  **web** app. Building `packages/ui` (React Native JSX) in that unrelated
+  context hits a real `@types/react` conflict (web pins `^18.3.0`, `packages/ui`
+  pins `~19.2.17`; root `.npmrc`'s `node-linker=hoisted` can only surface one
+  version at the top level) — `tsc` fails with `TS2786` (`Pressable`/`View`/
+  `Text` "cannot be used as a JSX component").
+- **Fix:** rename the script key to `eas-build-post-install`. This is an
+  EAS-specific hook (`Hook.POST_INSTALL`, run only by EAS's Android/iOS build
+  phases) — plain `npm`/`pnpm install` (Vercel, local dev) never invokes it, so
+  it can't leak into unrelated builds. Local dev was never relying on this
+  hook anyway (`packages/{core,db,ui}` dist/ output has always been a manual
+  `npm run build` per package after changing types — this hook only ever
+  targeted EAS's fresh-checkout problem).
+
 ---
 
 ## 5. Schema / data model (bottom-up)

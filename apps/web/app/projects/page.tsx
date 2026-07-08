@@ -34,7 +34,7 @@ export default function ProjectsPage() {
         </div>
         <Link
           href="#"
-          onClick={(e) => {
+          onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
             e.preventDefault();
             // Open create project modal — will be wired in next task
           }}

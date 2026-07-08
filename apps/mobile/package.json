@@ -4,7 +4,7 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "postinstall": "cd ../.. && pnpm turbo run build --filter=@todolist/core --filter=@todolist/db --filter=@todolist/ui",
+    "eas-build-post-install": "cd ../.. && pnpm turbo run build --filter=@todolist/core --filter=@todolist/db --filter=@todolist/ui",
     "start": "expo start",
     "start:tunnel": "CI=1 expo start --dev-client --tunnel",
     "android": "expo run:android",
