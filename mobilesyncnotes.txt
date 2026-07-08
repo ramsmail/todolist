@@ -1,0 +1,22 @@
+
+Steps
+
+1. Start the web app (the receiver) and log in
+pnpm dev          # localhost:3000
+Log in as ramesh.vmn@googlemail.com, open the Inbox, and confirm the console shows connected: true. Leave it open.
+
+2. Start the mobile app
+cd apps/mobile && npx expo start
+Then either scan the QR with Expo Go, or press a for an Android emulator / i for iOS simulator.
+
+▎ If you're running Expo Go on a physical device over USB, set up adb reverse so the device can reach your machine (per your saved setup):
+▎ adb reverse tcp:8081 tcp:8081
+
+3. Capture something on mobile
+- Sign in with the same account (ramesh.vmn@googlemail.com) — this is essential; PowerSync sync rules filter by user_id = auth.user_id(), so a different user's tasks won't replicate.
+- Type an idea or paste a URL → tap Capture.
+- It should appear immediately in the mobile "Recent" list (that's a direct Supabase read-back, not sync yet).
+
+4. Watch it arrive on web
+- Switch to the browser inbox. The task should appear within a few seconds — no refresh needed (PowerSync pushes it into local SQLite and the UI is reactive).
+- In the web console you'll see a downloading: true → false cycle and lastSyncedAt advance as the row arrives.

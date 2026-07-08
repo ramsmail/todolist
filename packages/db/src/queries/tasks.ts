@@ -1,4 +1,5 @@
 import type { AbstractPowerSyncDatabase } from '@powersync/common';
+import { useMemo } from 'react';
 import { useQuery } from '@powersync/react';
 import { generateKeyBetween } from 'fractional-indexing';
 import { parseRule, computeNext } from '@todolist/core';
@@ -44,14 +45,50 @@ export const LOGBOOK_QUERY = `
   LIMIT 200
 `;
 
+export const MATRIX_QUERY = `
+  SELECT id, title, priority, due_date, project_id, status, labels, recurrence_rule, sort_order
+  FROM tasks
+  WHERE status NOT IN ('completed', 'cancelled')
+    AND deleted_at IS NULL
+  ORDER BY sort_order
+`;
+
+export function groupTasksByPriority<T extends { priority: number | null }>(
+  tasks: T[]
+): Record<1 | 2 | 3 | 4, T[]> {
+  const groups: Record<1 | 2 | 3 | 4, T[]> = { 1: [], 2: [], 3: [], 4: [] };
+  for (const task of tasks) {
+    const priority = (task.priority ?? 4) as 1 | 2 | 3 | 4;
+    (groups[priority] ?? groups[4]).push(task);
+  }
+  return groups;
+}
+
 // --- React hooks ---
 
 export function useInboxTasks() {
-  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'due_time' | 'status' | 'sort_order' | 'labels' | 'recurrence_rule'>>(INBOX_QUERY);
+  const query = useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'due_time' | 'status' | 'sort_order' | 'labels' | 'recurrence_rule'>>(INBOX_QUERY);
+  const count = useMemo(() => {
+    return query.data?.length ?? 0;
+  }, [query.data]);
+
+  return { ...query, count };
+}
+
+export function useMatrixTasks() {
+  const query = useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule' | 'sort_order'>>(MATRIX_QUERY);
+  const byQuadrant = useMemo(() => groupTasksByPriority(query.data ?? []), [query.data]);
+
+  return { ...query, byQuadrant };
 }
 
 export function useTodayTasks() {
-  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule' | 'in_focus' | 'sort_order'>>(TODAY_QUERY);
+  const query = useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule' | 'in_focus' | 'sort_order'>>(TODAY_QUERY);
+  const count = useMemo(() => {
+    return query.data?.length ?? 0;
+  }, [query.data]);
+
+  return { ...query, count };
 }
 
 export function useUpcomingTasks() {
@@ -154,6 +191,7 @@ export async function createTask(
     labels?: string[];
     afterSortOrder?: string | null;
     recurrenceRule?: string | null;
+    sourceUrl?: string | null;
   }
 ): Promise<string> {
   const id = crypto.randomUUID();
@@ -165,8 +203,8 @@ export async function createTask(
     `INSERT INTO tasks
        (id, user_id, title, status, priority, due_date, due_time, timezone,
         project_id, parent_task_id, recurrence_rule, recurrence_start,
-        labels, sort_order, created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        labels, sort_order, source_url, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id,
       fields.userId,
@@ -182,6 +220,7 @@ export async function createTask(
       recurrenceStart,
       JSON.stringify(fields.labels ?? []),
       sortOrder,
+      fields.sourceUrl ?? null,
       now,
       now,
     ]

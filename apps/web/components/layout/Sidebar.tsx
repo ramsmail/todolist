@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useProjects, useLabels, useSavedFilters } from '@todolist/db';
+import { useProjects, useLabels, useSavedFilters, useInboxTasks, useTodayTasks } from '@todolist/db';
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 import { createClient } from '@/lib/supabase/client';
 import { useState } from 'react';
@@ -12,22 +12,24 @@ import { FilterBuilderModal } from '@/components/filters/FilterBuilderModal';
 const NAV = [
   { href: '/inbox',    label: 'Inbox',    icon: '📥' },
   { href: '/today',    label: 'Today',    icon: '☀️' },
+  { href: '/matrix',   label: 'Matrix',   icon: '⊞' },
   { href: '/upcoming', label: 'Upcoming', icon: '📅' },
   { href: '/logbook',  label: 'Logbook',  icon: '✓' },
   { href: '/search',   label: 'Search',   icon: '🔍' },
 ];
 
 interface Props {
-  onNewProject: () => void;
-  onQuickAdd:   () => void;
+  onQuickAdd: () => void;
 }
 
-export function Sidebar({ onNewProject, onQuickAdd }: Props) {
+export function Sidebar({ onQuickAdd }: Props) {
   const pathname        = usePathname();
   const router          = useRouter();
+  const { data: inboxTasks, count: inboxCount } = useInboxTasks();
   const { data: projects } = useProjects();
   const { data: labels } = useLabels();
   const { userId } = useCurrentUser();
+  const { data: todayTasks, count: todayCount } = useTodayTasks();
   const { data: savedFilters } = useSavedFilters(userId ?? '');
   const [signingOut, setSigningOut] = useState(false);
   const [filterModal, setFilterModal] = useState<{ open: boolean; filter?: any }>({ open: false });
@@ -65,6 +67,11 @@ export function Sidebar({ onNewProject, onQuickAdd }: Props) {
       <ul className="mt-2 space-y-0.5 px-2" role="list">
         {NAV.map(({ href, label, icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/');
+          let count: number | null = null;
+
+          if (label === 'Today') count = todayCount;
+          if (label === 'Inbox') count = inboxCount;
+
           return (
             <li key={href}>
               <Link
@@ -78,6 +85,15 @@ export function Sidebar({ onNewProject, onQuickAdd }: Props) {
               >
                 <span aria-hidden="true">{icon}</span>
                 {label}
+                {count !== null && (
+                  <span className={`ml-auto text-xs px-2 py-0.5 rounded-full font-medium ${
+                    count > 0
+                      ? 'bg-accent text-white'
+                      : 'bg-gray-300 text-gray-500 opacity-50'
+                  }`}>
+                    {count}
+                  </span>
+                )}
               </Link>
             </li>
           );
@@ -86,9 +102,12 @@ export function Sidebar({ onNewProject, onQuickAdd }: Props) {
 
       {/* Projects */}
       <div className="mt-4 px-2 flex-1 overflow-y-auto scrollable">
-        <p className="px-3 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider">
+        <Link
+          href="/projects"
+          className="px-3 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-secondary transition-colors block"
+        >
           Projects
-        </p>
+        </Link>
         <ul className="space-y-0.5" role="list">
           {projects.map(p => {
             const active = pathname === `/projects/${p.id}`;
@@ -114,16 +133,12 @@ export function Sidebar({ onNewProject, onQuickAdd }: Props) {
             );
           })}
         </ul>
-        <button
-          onClick={onNewProject}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-accent hover:bg-surface transition-colors mt-1"
+        <Link
+          href="/labels"
+          className="px-3 pt-4 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-secondary transition-colors block"
         >
-          + New project
-        </button>
-
-        <p className="px-3 pt-4 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider">
           Labels
-        </p>
+        </Link>
         <ul className="space-y-0.5" role="list">
           {labels.filter(l => l.name).map((l) => {
             const labelName = l.name as string;
@@ -147,12 +162,6 @@ export function Sidebar({ onNewProject, onQuickAdd }: Props) {
             );
           })}
         </ul>
-        <Link
-          href="/labels"
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-accent hover:bg-surface transition-colors mt-1"
-        >
-          + Manage labels
-        </Link>
 
         <p className="px-3 pt-4 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider">
           Filters

@@ -2,7 +2,9 @@
   "expo": {
     "name": "TodoList",
     "slug": "todolist",
+    "owner": "ramsmail",
     "version": "1.0.0",
+    "scheme": "todolist",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "splash": {
@@ -10,20 +12,43 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.yourname.todolist"
+      "bundleIdentifier": "com.rameshv.todolist"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0A0A0A"
       },
-      "package": "com.yourname.todolist"
+      "package": "com.rameshv.todolist"
     },
     "plugins": [
       "expo-secure-store",
+      "expo-router",
       [
-        "react-native-reanimated",
-        {}
+        "expo-share-intent",
+        {
+          "androidIntentFilters": [
+            "text/*",
+            "image/*",
+            "*/*"
+          ],
+          "androidMultiIntentFilters": [
+            "image/*",
+            "*/*"
+          ]
+        }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "43def8dd-5686-4982-9a95-fb09ec9ddec5"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/43def8dd-5686-4982-9a95-fb09ec9ddec5"
+    }
   }
 }

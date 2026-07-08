@@ -68,6 +68,8 @@ See [`docs/SCHEMA_SYNC_STRATEGY.md`](docs/SCHEMA_SYNC_STRATEGY.md) for detailed 
 
 - **`docs/design/`** — Phase specs and implementation plans (check for existing spec before starting a feature)
 - **`docs/SCHEMA_SYNC_STRATEGY.md`** — How to safely add tables/columns
+- **`docs/DISTRIBUTION.md`** — Build/EAS model and the developer-vs-end-user account split (one shared backend, per-user app sign-up)
+- **`docs/MOBILE_DEV_LESSONS.md`** — Gotchas from the Expo Router migration + EAS dev loop (crypto polyfill, adb reverse, Metro DevTools crash, Gradle/CMake failures). Read before debugging a mobile build/run issue.
 - **Package-specific guides:** `packages/db/CLAUDE.md`, `packages/core/CLAUDE.md`, `packages/ui/CLAUDE.md` — read these before working in that package
 
 ## Workflow Expectations

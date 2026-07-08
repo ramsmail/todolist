@@ -18,13 +18,15 @@ export interface TaskRowData {
 }
 
 interface Props {
-  task:          TaskRowData;
-  onPress:       (id: string) => void;
-  onComplete:    (id: string) => void;
-  onReschedule:  (id: string) => void;
+  task:            TaskRowData;
+  onPress:         (id: string) => void;
+  onComplete:      (id: string) => void;
+  onReschedule:    (id: string) => void;
+  projectName?:    string | null;
+  onPriorityPress?: (id: string) => void;
 }
 
-export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule }: Props) {
+export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule, projectName, onPriorityPress }: Props) {
   const swipeRef  = useRef<Swipeable>(null);
   const opacity   = useSharedValue(1);
   const isOverdue = task.due_date && task.due_date < new Date().toISOString().split('T')[0];
@@ -70,6 +72,7 @@ export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule }: Pr
 
   const handleCheckboxComplete = useCallback(() => handleComplete(task.id), [handleComplete, task.id]);
   const handleRowPress = useCallback(() => onPress(task.id), [onPress, task.id]);
+  const handlePriorityPress = useCallback(() => onPriorityPress?.(task.id), [onPriorityPress, task.id]);
 
   return (
     <Swipeable
@@ -94,8 +97,17 @@ export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule }: Pr
               {task.due_date}
             </Text>
           )}
+          {projectName && (
+            <View style={styles.projectChip}>
+              <Text style={styles.projectChipText}>{projectName}</Text>
+            </View>
+          )}
         </Pressable>
-        <PriorityBadge priority={task.priority as 1 | 2 | 3 | 4} />
+        <PriorityBadge
+          priority={task.priority as 1 | 2 | 3 | 4}
+          interactive={!!onPriorityPress}
+          onPress={handlePriorityPress}
+        />
       </Animated.View>
     </Swipeable>
   );
@@ -116,6 +128,15 @@ const styles = StyleSheet.create({
   title: { ...typography.body, color: colors.textPrimary },
   due:   { ...typography.caption, color: colors.textSecondary, marginTop: 3 },
   overdue: { color: colors.p1 },
+  projectChip: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginTop: 4,
+  },
+  projectChipText: { ...typography.caption, color: colors.textMuted, fontSize: 11 },
   actionComplete: {
     backgroundColor: colors.success,
     justifyContent: 'center',

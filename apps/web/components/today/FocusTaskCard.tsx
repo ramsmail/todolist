@@ -31,7 +31,14 @@ export const FocusTaskCard = memo(function FocusTaskCard({
 }: Props) {
   const { data: allLabels } = useLabels();
   const colorOf = (name: string) => allLabels.find(l => l.name === name)?.color ?? '#9CA3AF';
-  const names: string[] = task.labels ? JSON.parse(task.labels) : [];
+  let names: string[] = [];
+  try {
+    if (task.labels) {
+      names = Array.isArray(task.labels) ? task.labels : JSON.parse(task.labels);
+    }
+  } catch {
+    names = [];
+  }
 
   return (
     <div className="relative border border-border rounded-xl bg-surface-alt/60 overflow-hidden group">
@@ -64,7 +71,7 @@ export const FocusTaskCard = memo(function FocusTaskCard({
             {task.due_time && (
               <span className="text-xs text-text-muted">· {task.due_time.slice(0, 5)}</span>
             )}
-            {names.map(n => <LabelChip key={n} name={n} color={colorOf(n)} />)}
+            {Array.isArray(names) && names.map(n => <LabelChip key={n} name={n} color={colorOf(n)} />)}
           </div>
         </button>
 

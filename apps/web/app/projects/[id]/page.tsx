@@ -1,15 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { use } from 'react';
+import { useParams } from 'next/navigation';
 import { usePowerSync } from '@powersync/react';
 import { useProjectTasks, useProjects, completeTask } from '@todolist/db';
 import { TaskList } from '@/components/tasks/TaskList';
 import { QuickCaptureModal } from '@/components/tasks/QuickCaptureModal';
 import { TaskDetailPanel } from '@/components/tasks/TaskDetailPanel';
 
-export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id }            = use(params);
+export default function ProjectPage() {
+  const params          = useParams();
+  const id              = params.id as string;
   const db                = usePowerSync();
   const { data: tasks }   = useProjectTasks(id);
   const { data: projects} = useProjects();

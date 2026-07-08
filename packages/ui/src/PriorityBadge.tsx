@@ -1,20 +1,29 @@
 import React from 'react';
-import { Text, StyleSheet, View } from 'react-native';
+import { Text, StyleSheet, View, Pressable } from 'react-native';
 import { priorityColor, priorityLabel } from './tokens';
+import { shouldRenderPriorityBadge } from './priorityBadgeLogic';
 
 interface Props {
   priority: 1 | 2 | 3 | 4;
+  interactive?: boolean;
+  onPress?: () => void;
 }
 
-export function PriorityBadge({ priority }: Props) {
-  if (priority === 4) return null;  // P4 is default, don't clutter the row
-  return (
+export function PriorityBadge({ priority, interactive = false, onPress }: Props) {
+  if (!shouldRenderPriorityBadge(priority, interactive)) return null;
+
+  const badge = (
     <View style={[styles.badge, { borderColor: priorityColor[priority] }]}>
       <Text style={[styles.label, { color: priorityColor[priority] }]}>
         {priorityLabel[priority]}
       </Text>
     </View>
   );
+
+  if (interactive && onPress) {
+    return <Pressable onPress={onPress}>{badge}</Pressable>;
+  }
+  return badge;
 }
 
 const styles = StyleSheet.create({

@@ -9,6 +9,31 @@ export function useLabels() {
   );
 }
 
+export type LabelWithStats = {
+  id: string;
+  name: string;
+  color: string | null;
+  open_tasks: number;
+};
+
+export function useLabelsWithStats() {
+  return useQuery<LabelWithStats>(
+    `SELECT
+       l.id,
+       l.name,
+       l.color,
+       (SELECT COUNT(*)
+        FROM tasks t
+        WHERE t.deleted_at IS NULL
+          AND t.status NOT IN ('completed', 'cancelled')
+          AND EXISTS (SELECT 1 FROM json_each(t.labels) WHERE value = l.name)
+       ) AS open_tasks
+     FROM labels l
+     WHERE l.deleted_at IS NULL
+     ORDER BY l.name COLLATE NOCASE`
+  );
+}
+
 export type LabelTaskRow = Pick<
   TaskRecord,
   'id' | 'title' | 'priority' | 'due_date' | 'status' | 'sort_order' | 'labels' | 'recurrence_rule'
