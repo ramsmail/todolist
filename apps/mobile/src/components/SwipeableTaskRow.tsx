@@ -189,6 +189,7 @@ const styles = StyleSheet.create({
   },
   actionRounded: {
     borderRadius: 14,
+    marginHorizontal: 16,
   },
   actionText: { color: '#fff', fontWeight: '600', fontSize: 14 },
 });
