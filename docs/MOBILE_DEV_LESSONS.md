@@ -245,9 +245,106 @@ Order of issues hit (each unblocked the next):
 
 ---
 
-## 5. Schema / data model (bottom-up)
+## 5. EAS Update (OTA) — how a JS change actually reaches an installed build
 
-### 5.1 Migration files can be un-applied on the remote DB — verify LIVE, first
+A build made with `eas build` embeds a fixed **channel name** at compile time
+(from the `eas.json` profile's `channel` field). After that, `eas update`
+publishes JS/assets to a **branch**, and a **channel→branch mapping** decides
+which published updates a given installed build will ever see. These are two
+independent axes — profile channel and update branch — and nothing warns you
+when they don't line up.
+
+### 5.1 Two totally different distribution mechanisms — know which one is installed before troubleshooting
+- A **`developmentClient: true`** build (the `development` profile) has the
+  dev-launcher baked in and connects live to Metro — the `adb reverse` +
+  force-stop + deep-link recipe (2.1–2.7) is how you push code to it.
+- A **`preview`/`production`** build has no dev-launcher at all. It is a
+  standalone binary that only ever loads code via the embedded bundle or a
+  downloaded `expo-updates` OTA update. Deep-linking it into
+  `exp://localhost:8081` does nothing — there's no dev-launcher listening.
+- **Symptom of confusing the two:** re-tunneling/force-stopping/deep-linking a
+  standalone build "succeeds" (app relaunches) but never shows new code,
+  because it was never capable of connecting to Metro in the first place.
+- **Check which one you have:** if `adb logcat --pid=<pid>` shows a
+  `dev.expo.updates` tag doing `Updates state change: ...` on launch, it's a
+  standalone/OTA build, not a dev-client.
+
+### 5.2 Publishing to the wrong branch silently no-ops — verify the channel→branch mapping first
+- **Symptom:** `eas update --branch X --environment X` reports `✔ Published!`
+  with no errors, but the device's logcat shows
+  `Updates state change: CheckCompleteUnavailable` /
+  `UpdatesController onBackgroundUpdateFinished: No update available` — the
+  app checked, got a real answer from the server, and the answer was "nothing
+  new for you."
+- **Cause:** the installed build's embedded channel (e.g. `preview`) doesn't
+  match the branch you published to (e.g. `development`). `eas update` will
+  happily publish to any branch name; it has no way to know which installed
+  binaries will never ask for it.
+- **Fix — check first, publish second:**
+  ```bash
+  eas channel:view <channel-name>   # shows which branch(es) a channel serves
+  ```
+  Match this against the profile the installed build actually came from
+  (`apps/mobile/eas.json` → `build.<profile>.channel`), then
+  `eas update --branch <that-branch>`.
+- **If you don't know which profile is installed**, extract it straight from
+  the APK — compiled `AndroidManifest.xml` stores strings as **UTF-16LE**, so
+  plain `strings` finds nothing; you need `-el`:
+  ```bash
+  APK=$(adb shell pm path com.rameshv.todolist | sed 's/package://' | tr -d '\r')
+  adb pull "$APK" app.apk
+  unzip -o -q app.apk AndroidManifest.xml
+  strings -el AndroidManifest.xml | grep -A1 UPDATES_CONFIGURATION_REQUEST_HEADERS_KEY
+  # {"expo-channel-name":"preview"}   <- ground truth, not a guess
+  ```
+
+### 5.3 A downloaded update doesn't apply until the *next* launch
+- **Symptom:** `eas update` succeeds, you force-stop and relaunch the app
+  once, and it still shows the old UI.
+- **Cause:** `expo-updates` checks and downloads a new update in the
+  background on launch, but keeps running whatever bundle is *already loaded*
+  for that session. The new one only becomes active on the **following** cold
+  start (`isUpdatePending=true` after `DownloadComplete`).
+- **Fix:** force-stop + relaunch **twice** — once to trigger the download,
+  once to apply it. Confirm via logcat (`dev.expo.updates` tag), watching the
+  state sequence: `Check` → `CheckCompleteAvailable` → `Download` →
+  `DownloadComplete` (`isUpdatePending=true`). The *next* `StartStartup` should
+  load that update's manifest id.
+
+### 5.4 OTA can silently apply, then crash on first native module use
+- **Symptom:** the update downloads and applies cleanly (5.3's sequence
+  completes fine), but the specific screen that needed the new code renders as
+  a blank/grey screen instead — no crash dialog, no redbox.
+- **Cause:** the new JS imports a **native** module (e.g.
+  `@react-native-community/datetimepicker`) that wasn't compiled into this
+  binary. OTA can only ship JS/assets — see 2.5 — so
+  `TurboModuleRegistry.getEnforcing(...)` throws
+  `Invariant Violation: 'RNCDatePicker' could not be found`, and React's error
+  boundary swallows the crash into an empty view instead of a dialog.
+- **Fix:** confirm via `adb logcat --pid=<pid> | grep -i "TurboModuleRegistry\|Invariant Violation"`
+  right as you trigger the broken screen. If found, no further OTA update will
+  ever fix it — you need a fresh native `eas build` for that profile, then
+  reinstall the APK.
+
+### 5.5 A long-running Metro process won't see node_modules added after it started
+- **Symptom:** after `pnpm install` adds a new dependency, a Metro instance
+  that was already running errors on every bundle request:
+  `Unable to resolve module <pkg> ... could not be found within the project`.
+- **Cause:** Metro builds its dependency/haste module map once at startup. It
+  watches source file *edits*, but doesn't rescan `node_modules` for packages
+  that show up after boot.
+- **Fix:** kill and restart Metro (`CI=1 npx expo start --dev-client`, 2.2)
+  whenever `node_modules` changes underneath a long-running instance. Verify
+  with a manifest+bundle fetch before assuming the device will see anything
+  new: `curl -s -H "expo-platform: android" http://localhost:8081/` for the
+  manifest, then fetch its `launchAsset.url` and confirm it's real JS
+  (`file <path>`), not a JSON error blob.
+
+---
+
+## 6. Schema / data model (bottom-up)
+
+### 6.1 Migration files can be un-applied on the remote DB — verify LIVE, first
 - **Symptom:** A shared-URL task saved on device but never synced to web. No app
   crash, no obvious error — a silent sync failure.
 - **Cause:** `tasks.source_url` existed as a migration *file* but was never pushed
@@ -289,3 +386,15 @@ Order of issues hit (each unblocked the next):
 - **Local Gradle/CMake hell** → align RN versions (3.1), clear caches (3.2–3.5),
   or just use EAS (3.6).
 - **EAS build can't reach Supabase/PowerSync** → `eas env:push` the `.env` (4.2).
+- **`eas update` succeeds but the device shows no change** → first confirm
+  which distro mechanism is even installed (5.1: dev-client vs standalone
+  OTA), then check the installed build's channel actually matches the branch
+  you published to (5.2) — extract it straight from the APK, don't guess.
+- **Update published to the right branch but device still stale after one
+  relaunch** → downloaded updates apply on the *next* launch, not the current
+  one — relaunch twice (5.3).
+- **Update applies but a specific screen goes blank/grey with no crash
+  dialog** → check logcat for `TurboModuleRegistry`/`Invariant Violation` —
+  OTA can't add native modules, only a fresh `eas build` can (5.4, 2.5).
+- **New dependency installed but Metro still can't resolve it** → restart
+  Metro, it doesn't rescan `node_modules` after boot (5.5).
