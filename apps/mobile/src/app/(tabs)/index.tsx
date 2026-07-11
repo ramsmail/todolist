@@ -1,119 +1,103 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, FlatList, Text, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { useMatrixTasks, useProjects, completeTask, updateTaskDue, updateTaskPriority } from '@todolist/db';
 import { usePowerSync } from '@powersync/react';
-import { colors, typography } from '@todolist/ui';
-import { SwipeableTaskRow, type TaskRowData } from '../../components/SwipeableTaskRow';
-import { QuadrantTabs } from '../../components/QuadrantTabs';
-import { QuadrantPickerSheet } from '../../components/QuadrantPickerSheet';
+import { useTopPriorities, useTodayStats, completeTask } from '@todolist/db';
 import { FAB } from '../../components/FAB';
 import { QuickCaptureModal } from '../../components/QuickCaptureModal';
+import { GreetingHeader } from '../../components/home/GreetingHeader';
+import { DailyFocusCard } from '../../components/home/DailyFocusCard';
+import { EnergySelector } from '../../components/home/EnergySelector';
+import { HomePriorityRow, type PriorityRowData } from '../../components/home/HomePriorityRow';
+import { StatCard } from '../../components/home/StatCard';
+import { StartFocusButton } from '../../components/home/StartFocusButton';
+import { homeColors, homeSpace, homePriorityColor } from '../../components/home/homeTheme';
 
-const EMPTY_COPY: Record<1 | 2 | 3 | 4, string> = {
-  1: 'Nothing urgent right now.',
-  2: 'Nothing to plan yet.',
-  3: 'Nothing to pass along.',
-  4: 'Nothing to drop 🎉',
-};
+const DAILY_FOCUS = 'Focus on what moves the needle today.';
 
-type MatrixTask = TaskRowData & { project_id: string | null };
-
-export default function TasksScreen() {
+export default function HomeScreen() {
   const db = usePowerSync();
   const router = useRouter();
-  const { byQuadrant } = useMatrixTasks();
-  const { data: projects } = useProjects();
-  const [active, setActive] = useState<1 | 2 | 3 | 4>(1);
+  const { data: priorities } = useTopPriorities();
+  const { data: stats } = useTodayStats();
   const [capturing, setCapturing] = useState(false);
-  const [reassigningId, setReassigningId] = useState<string | null>(null);
 
-  const projectNameById = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const project of projects ?? []) {
-      if (project.name) map.set(project.id, project.name);
-    }
-    return map;
-  }, [projects]);
-
-  const tasks = (byQuadrant[active] ?? []) as MatrixTask[];
+  const { completed, total } = useMemo(() => {
+    const row = stats?.[0];
+    return { completed: Number(row?.completed ?? 0), total: Number(row?.total ?? 0) };
+  }, [stats]);
 
   const handlePress = useCallback((id: string) => router.push(`/task/${id}`), [router]);
-
   const handleComplete = useCallback((id: string) => {
     completeTask(db as any, id).catch(console.error);
   }, [db]);
-
-  const handleReschedule = useCallback((id: string) => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    updateTaskDue(db as any, id, tomorrow.toISOString().split('T')[0], null).catch(console.error);
-  }, [db]);
-
-  const handlePriorityPress = useCallback((id: string) => setReassigningId(id), []);
-
-  const closeReassign = useCallback(() => setReassigningId(null), []);
-
-  const handleReassign = useCallback((quadrant: 1 | 2 | 3 | 4) => {
-    if (!reassigningId) return;
-    updateTaskPriority(db as any, reassigningId, quadrant).catch(console.error);
-  }, [db, reassigningId]);
-
-  const renderItem = useCallback(({ item }: { item: MatrixTask }) => (
-    <SwipeableTaskRow
-      task={item}
-      onPress={handlePress}
-      onComplete={handleComplete}
-      onReschedule={handleReschedule}
-      onPriorityPress={handlePriorityPress}
-      projectName={item.project_id ? projectNameById.get(item.project_id) : null}
-      variant="panel"
-    />
-  ), [handlePress, handleComplete, handleReschedule, handlePriorityPress, projectNameById]);
-
-  const keyExtractor = useCallback((item: MatrixTask) => item.id, []);
 
   const openCapture = useCallback(() => setCapturing(true), []);
   const closeCapture = useCallback(() => setCapturing(false), []);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Tasks</Text>
-        <Text style={styles.count}>{tasks.length}</Text>
-      </View>
+      <StatusBar style="dark" />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <GreetingHeader />
+        <DailyFocusCard statement={DAILY_FOCUS} />
+        <EnergySelector />
 
-      <QuadrantTabs active={active} onChange={setActive} />
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Top Priorities</Text>
+          <Text style={styles.sectionHint}>Swipe left to complete</Text>
+        </View>
 
-      <FlatList
-        data={tasks}
-        keyExtractor={keyExtractor}
-        renderItem={renderItem}
-        contentContainerStyle={tasks.length === 0 ? styles.emptyContainer : undefined}
-        ListEmptyComponent={
-          <Text style={styles.empty}>{EMPTY_COPY[active]}</Text>
-        }
-      />
+        {priorities && priorities.length > 0 ? (
+          priorities.map((task) => (
+            <HomePriorityRow
+              key={task.id}
+              task={task as PriorityRowData}
+              onPress={handlePress}
+              onComplete={handleComplete}
+            />
+          ))
+        ) : (
+          <Text style={styles.empty}>No priorities yet — add a task to get started.</Text>
+        )}
+
+        <View style={styles.statsRow}>
+          <StatCard
+            label="Tasks"
+            value={`${completed}/${total}`}
+            progress={total > 0 ? completed / total : 0}
+            color={homePriorityColor[4]}
+          />
+          <StatCard label="Focus" value="0m/2h" progress={0} color={homeColors.accent} />
+          <StatCard label="Habits" value="4/5" progress={0.8} color={homeColors.energy} />
+        </View>
+
+        <StartFocusButton />
+      </ScrollView>
 
       <FAB onPress={openCapture} />
-
-      <QuickCaptureModal visible={capturing} onClose={closeCapture} defaultPriority={active} />
-
-      <QuadrantPickerSheet
-        visible={reassigningId !== null}
-        onSelect={handleReassign}
-        onClose={closeReassign}
-      />
+      <QuickCaptureModal visible={capturing} onClose={closeCapture} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  title: { ...typography.heading1, color: colors.textPrimary, flex: 1 },
-  count: { ...typography.caption, color: colors.textMuted, fontSize: 14 },
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  empty: { ...typography.body, color: colors.textMuted, marginTop: 80, textAlign: 'center' },
+  container: { flex: 1, backgroundColor: homeColors.page },
+  content: {
+    padding: homeSpace.screen,
+    paddingBottom: 100,
+    gap: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginBottom: -8,
+  },
+  sectionTitle: { fontSize: 17, color: homeColors.textPrimary, fontWeight: '700' },
+  sectionHint: { fontSize: 12, color: homeColors.textMuted },
+  statsRow: { flexDirection: 'row', gap: homeSpace.gap },
+  empty: { fontSize: 14, color: homeColors.textMuted, paddingVertical: 8 },
 });

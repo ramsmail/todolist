@@ -120,7 +120,19 @@ const user_settings = new Table({
   updated_at:            column.text,
 });
 
-export const AppSchema = new Schema({ tasks, projects, labels, saved_filters, attachments, reminders, user_settings });
+// daily_log: one row per user per day (energy level now; focus minutes later)
+const daily_log = new Table(
+  {
+    user_id:      column.text,
+    log_date:     column.text,
+    energy_level: column.integer,
+    created_at:   column.text,
+    updated_at:   column.text,
+  },
+  { indexes: { by_date: ['log_date'] } }
+);
+
+export const AppSchema = new Schema({ tasks, projects, labels, saved_filters, attachments, reminders, user_settings, daily_log });
 
 export type Database               = (typeof AppSchema)['types'];
 export type TaskRecord             = Database['tasks'];
@@ -130,3 +142,4 @@ export type SavedFilterRecord      = Database['saved_filters'];
 export type AttachmentRecord       = Database['attachments'];
 export type ReminderRecord         = Database['reminders'];
 export type UserSettingsRecord     = Database['user_settings'];
+export type DailyLogRecord         = Database['daily_log'];

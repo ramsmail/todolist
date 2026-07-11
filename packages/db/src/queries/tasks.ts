@@ -121,6 +121,22 @@ export function useSubtasks(parentTaskId: string) {
   );
 }
 
+// Top priorities for the home dashboard: focused tasks first, then by priority.
+// Fields match SwipeableTaskRow's TaskRowData so the row component is reusable.
+export const TOP_PRIORITIES_QUERY = `
+  SELECT id, title, priority, due_date, status, labels
+  FROM tasks
+  WHERE status NOT IN ('completed', 'cancelled')
+    AND parent_task_id IS NULL
+    AND deleted_at IS NULL
+  ORDER BY in_focus DESC, priority, sort_order
+  LIMIT 3
+`;
+
+export function useTopPriorities() {
+  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'status' | 'labels'>>(TOP_PRIORITIES_QUERY);
+}
+
 export function useTodayStats() {
   return useQuery<{ total: number; completed: number }>(
     `SELECT
