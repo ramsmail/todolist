@@ -9,6 +9,8 @@ Grouped by area:
 2. On-device dev loop (Metro, adb, dev client)
 3. Local native build (`expo run:android`) failures
 4. EAS build & setup
+5. EAS Update (OTA)
+6. Schema / data model (bottom-up)
 
 ---
 
@@ -147,6 +149,59 @@ device fetched the bundle). Prereqs: Metro up (`CI=1 npx expo start
   `docs/DISTRIBUTION.md` — an EAS `preview` build with EAS Update (OTA)
   configured lets you install once and push JS-only changes with `eas update`
   from anywhere, no dev-server connection of any kind.
+
+### 2.9 `CI=1` silently disables Metro's file watcher — stale bundles with no warning
+- **Symptom:** you edit a file, force-stop + relaunch the app to pick it up (2.4),
+  and the change is nowhere to be seen — no error, the app just runs old code.
+  Metro's own log shows a suspiciously small `Android Bundled ... (1 module)`
+  instead of the real module count, even right after a fresh relaunch.
+- **Cause:** `CI=1` (needed per 2.2 to dodge the React Native DevTools crash) also
+  puts Metro in a mode that does not watch the filesystem for changes — it keeps
+  serving from whatever it already had cached/bundled at the moment it started,
+  regardless of edits made afterward. Force-stopping and relaunching the *app*
+  doesn't help because the problem is server-side: Metro itself never re-read
+  the changed file.
+- **Fix:** kill Metro entirely and start it fresh after making source changes —
+  a relaunch of the *app* is not enough:
+  ```bash
+  lsof -ti:8081 | xargs -r kill -9   # or: pkill -f "expo start"
+  CI=1 npx expo start --dev-client --clear
+  ```
+  Confirm the next bundle log line shows the real module count (thousands, not
+  a handful) before trusting a test result.
+- **Rule:** treat every Metro session as good for exactly one code snapshot. If
+  you're iterating on a fix, restart Metro before each on-device retest, or
+  accept the risk that "it's still broken" might just mean "Metro never saw the
+  fix."
+
+### 2.10 `UnknownHostException: localhost` on a real device — use `127.0.0.1`, not `localhost`
+- **Symptom:** deep-linking the dev client at
+  `...?url=http%3A%2F%2Flocalhost%3A8081` lands on Expo's **error screen**
+  (not the normal connecting/loading screen) showing
+  `UnknownHostException: localhost: No address associated with hostname` — even
+  though `adb reverse tcp:8081 tcp:8081` is set up correctly and Metro is
+  confirmed running (`curl localhost:8081/status` from the laptop works fine).
+- **Cause:** observed specifically when the phone's **active default network is
+  cellular data**, not Wi-Fi (`dumpsys connectivity` shows a `MOBILE` transport
+  as the active default network, no Wi-Fi `NetworkAgentInfo` at all). On some
+  Android configurations in that state, the OS's per-app DNS resolver fails to
+  shortcut the `localhost` hostname to the loopback address — `adb reverse`
+  still correctly forwards the loopback **port**, but the string `localhost`
+  never successfully resolves to an address to forward *to*.
+- **Fix:** use the numeric loopback address instead of the hostname — it skips
+  DNS resolution entirely:
+  ```
+  todolist://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081
+  ```
+  (`%2F` = `/`, `%3A` = `:`). Everything else about the recovery recipe (2.7) is
+  unchanged — just swap `localhost` for `127.0.0.1` in the deep-link URL.
+- **Diagnostic, if this recurs and you want to confirm the cause rather than
+  just apply the fix:**
+  ```bash
+  adb shell settings get global airplane_mode_on      # expect 0
+  adb shell dumpsys connectivity | grep -iE "Active default network|NetworkAgentInfo"
+  # if the active default network's ni{...} shows MOBILE (not WIFI), this is likely it
+  ```
 
 ---
 
@@ -370,6 +425,52 @@ when they don't line up.
   `KEY=value` (`failed to parse environment file`). If a stray/notes `.env` is
   present, run push from a clean dir or use the dashboard SQL editor.
 
+### 6.2 PowerSync round-trips a Postgres `jsonb` column back double-JSON-encoded
+- **Symptom:** a label picked on an existing task's detail screen visibly
+  applies, then — after a few seconds, or after leaving and re-entering the
+  screen — silently reverts to unselected. No error anywhere (JS console,
+  logcat, PowerSync sync logs all clean). Confirmed via direct on-device SQLite
+  inspection that the *underlying local write was correct and durable*; only the
+  app's own display of it was wrong.
+- **Cause:** `tasks.labels` is `jsonb` in Postgres but `column.text` in the local
+  PowerSync/SQLite schema (`packages/db/src/schema.ts`). A local write
+  (`'["guitar"]'`, a plain JSON array string) uploads fine. But once that value
+  round-trips through the `jsonb` column and syncs back down, PowerSync mirrors
+  it into the local `text` column as the JSON-encoded *string* representation of
+  the jsonb value — i.e. the array gets wrapped in an extra layer of encoding
+  (`'"[\"guitar\"]"'`). Code that does a single `JSON.parse` (expecting an array
+  back) instead gets *another string* back, fails an `Array.isArray` check, and
+  silently treats it as empty.
+- **How this was actually diagnosed** (worth reusing the technique, not just the
+  fix): a single JS-level `console.log` of the query result looked identical to
+  the correct value at a glance — the bug only became visible by comparing two
+  captures of it side by side (`'["guitar"]'` vs `'"[\"guitar\"]"'`), and by
+  pulling the raw on-device SQLite file directly to confirm the true stored
+  value independent of the app's own display logic:
+  ```bash
+  adb exec-out run-as <package> cat /data/data/<package>/databases/<db>.db > local.db
+  adb exec-out run-as <package> cat /data/data/<package>/databases/<db>.db-wal > local.db-wal  # WAL mode — the main .db file alone is stale
+  sqlite3 local.db "SELECT data FROM ps_oplog WHERE row_type='tasks' AND row_id='<id>' ORDER BY op_id DESC LIMIT 1;"
+  ```
+- **Fix (display layer only — see `docs/TODO.md` for the still-open SQL-level
+  fix):** make the parser tolerant of one or more extra string-encoding layers
+  rather than assuming exactly one `JSON.parse` call reaches the array
+  (`packages/core/src/labels.ts`, `parseLabelsJson`) — loop `JSON.parse` while
+  the result is still a string, capped at a few iterations, before checking
+  `Array.isArray`.
+- **Still broken, not yet fixed:** raw SQL queries that operate on the column
+  directly (`json_each(tasks.labels)` in `packages/db/src/queries/labels.ts`,
+  used for label task-counts and "tasks by label") see the same
+  double-encoded value at the SQL level, before any JS parsing — a
+  double-encoded row breaks `json_each` there too. Fixing this needs a schema
+  decision (e.g. stop mirroring as `jsonb`, or normalize on write) touching
+  migrations → sync rules → `packages/db` together, per
+  `docs/SCHEMA_SYNC_STRATEGY.md` — tracked in `docs/TODO.md`, not a quick patch.
+- **Rule:** any Postgres `jsonb` column mirrored into a PowerSync `text` column
+  is a candidate for this same double-encoding on the sync-back path. Don't
+  assume a single `JSON.parse` is sufficient for a jsonb-backed column just
+  because it works on the freshly-written, not-yet-synced value.
+
 ## TL;DR triage
 - **"Could not save task" / `crypto` undefined** → polyfill import missing (1.1).
 - **Dev client won't connect** → `adb reverse tcp:8081 tcp:8081`, use
@@ -378,7 +479,14 @@ when they don't line up.
   (2.7): re-tunnel + force-stop + deep-link into Metro.
 - **Metro dies at boot** → `CI=1 npx expo start --dev-client` (2.2).
 - **My JS fix isn't showing** → force-stop + redeploy; confirm it's not a native
-  change needing a rebuild (2.4, 2.5).
+  change needing a rebuild (2.4, 2.5); then confirm Metro itself was actually
+  restarted since the edit — `CI=1` disables its file watcher (2.9).
+- **`UnknownHostException: localhost` on the dev client's error screen** → use
+  `127.0.0.1` instead of `localhost` in the deep-link URL, especially when the
+  phone is on cellular data rather than Wi-Fi (2.10).
+- **A label/jsonb-backed field silently reverts a few seconds after saving** →
+  check for PowerSync double-encoding a Postgres `jsonb` column on sync-back
+  (6.2) before assuming the write itself is broken.
 - **No cable and Wi-Fi/LAN won't connect phone↔laptop at all** → tunnel mode
   (2.8): `pnpm --filter @todolist/mobile start:tunnel`, enter the printed
   `exp.direct` URL manually in the dev client. For a fully laptop-free check,

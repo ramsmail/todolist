@@ -8,6 +8,9 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { TaskCheckbox, PriorityBadge, colors, typography, resolvePanelTint } from '@todolist/ui';
+import { parseLabelsJson } from '@todolist/core';
+import { useLabels } from '@todolist/db';
+import { LabelChip } from './LabelChip';
 
 export interface TaskRowData {
   id:       string;
@@ -15,6 +18,7 @@ export interface TaskRowData {
   priority: number;
   due_date: string | null;
   status:   string;
+  labels?:  string | null;
 }
 
 interface Props {
@@ -32,6 +36,8 @@ export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule, proj
   const opacity   = useSharedValue(1);
   const isOverdue = task.due_date && task.due_date < new Date().toISOString().split('T')[0];
   const isPanel   = variant === 'panel';
+  const { data: allLabels } = useLabels();
+  const labelNames = parseLabelsJson(task.labels);
 
   // Reset opacity when FlatList recycles this cell for a different task
   useEffect(() => {
@@ -106,6 +112,17 @@ export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule, proj
               {task.due_date}
             </Text>
           )}
+          {labelNames.length > 0 && (
+            <View style={styles.labelsRow}>
+              {labelNames.map(name => (
+                <LabelChip
+                  key={name}
+                  name={name}
+                  color={allLabels.find(l => l.name === name)?.color ?? colors.accent}
+                />
+              ))}
+            </View>
+          )}
           {!isPanel && projectName && (
             <View style={styles.projectChip}>
               <Text style={styles.projectChipText}>{projectName}</Text>
@@ -158,6 +175,7 @@ const styles = StyleSheet.create({
   },
   content: { flex: 1 },
   title: { ...typography.body, color: colors.textPrimary },
+  labelsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 5 },
   due:   { ...typography.caption, color: colors.textSecondary, marginTop: 3 },
   overdue: { color: colors.p1 },
   panelRight: {

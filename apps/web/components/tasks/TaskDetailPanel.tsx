@@ -1,17 +1,26 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { usePowerSync } from '@powersync/react';
+import { parseLabelsJson } from '@todolist/core';
 import {
   useTask, useSubtasks,
-  updateTaskTitle, updateTaskPriority, updateTaskProject,
+  updateTaskTitle, updateTaskDescription, updateTaskPriority, updateTaskProject,
   updateTaskDue, deleteTask, createTask, completeTask,
-  updateTaskRecurrence, useAttachmentsForTask,
+  updateTaskRecurrence, setTaskLabels, useAttachmentsForTask,
 } from '@todolist/db';
 import { ProjectPicker } from '@/components/projects/ProjectPicker';
 import { RecurrencePicker } from './RecurrencePicker';
 import { DatePicker } from './DatePicker';
+import { LabelPicker } from './LabelPicker';
 import { createClient } from '@/lib/supabase/client';
+import { LinkifiedText } from './LinkifiedText';
+
+function activateOnKey(fn: () => void) {
+  return (e: ReactKeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); }
+  };
+}
 
 const PRIORITY_COLOR: Record<number, string> = {
   1: '#EF4444', 2: '#F97316', 3: '#3B82F6', 4: '#9CA3AF',
@@ -82,14 +91,20 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
   const { data: attachments } = useAttachmentsForTask(taskId ?? '');
   const task           = rows?.[0];
 
-  const [titleDraft,    setTitleDraft]    = useState('');
-  const [editingTitle,  setEditingTitle]  = useState(false);
+  const [titleDraft,       setTitleDraft]       = useState('');
+  const [editingTitle,     setEditingTitle]     = useState(false);
+  const [descriptionDraft, setDescriptionDraft] = useState('');
+  const [editingDescription, setEditingDescription] = useState(false);
   const [newSubTitle,   setNewSubTitle]   = useState('');
   const [addingSub,     setAddingSub]     = useState(false);
 
   useEffect(() => {
     if (task) setTitleDraft(task.title ?? '');
   }, [task?.id, task?.title]);
+
+  useEffect(() => {
+    if (task) setDescriptionDraft(task.description ?? '');
+  }, [task?.id, task?.description]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -105,6 +120,14 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
     }
   }, [db, task, titleDraft]);
 
+  const saveDescription = useCallback(async () => {
+    if (!task) return;
+    setEditingDescription(false);
+    if (descriptionDraft !== (task.description ?? '')) {
+      await updateTaskDescription(db as any, task.id, descriptionDraft || null);
+    }
+  }, [db, task, descriptionDraft]);
+
   const handlePriority = useCallback(async (p: number) => {
     if (!task) return;
     await updateTaskPriority(db as any, task.id, p);
@@ -113,6 +136,11 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
   const handleProject = useCallback(async (projectId: string | null) => {
     if (!task) return;
     await updateTaskProject(db as any, task.id, projectId);
+  }, [db, task]);
+
+  const handleLabels = useCallback(async (labels: string[]) => {
+    if (!task) return;
+    await setTaskLabels(db as any, task.id, labels);
   }, [db, task]);
 
   const handleRecurrence = useCallback(async (rule: string | null) => {
@@ -190,13 +218,44 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
                 rows={2}
               />
             ) : (
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setEditingTitle(true)}
-                className="w-full text-left text-text-primary text-lg font-semibold hover:opacity-80 transition-opacity"
+                onKeyDown={activateOnKey(() => setEditingTitle(true))}
+                className="w-full text-left text-text-primary text-lg font-semibold hover:opacity-80 transition-opacity cursor-pointer"
                 aria-label="Edit task title"
               >
-                {task.title}
-              </button>
+                <LinkifiedText text={task.title} />
+              </div>
+            )}
+
+            {/* Description */}
+            {editingDescription ? (
+              <textarea
+                autoFocus
+                value={descriptionDraft}
+                onChange={e => setDescriptionDraft(e.target.value)}
+                onBlur={saveDescription}
+                placeholder="Add description"
+                className="w-full bg-surface border border-accent rounded-xl px-4 py-3 text-text-primary text-sm resize-none focus:outline-none"
+                rows={4}
+              />
+            ) : (
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setEditingDescription(true)}
+                onKeyDown={activateOnKey(() => setEditingDescription(true))}
+                className="w-full text-left text-sm hover:opacity-80 transition-opacity cursor-pointer"
+                aria-label="Edit task description"
+              >
+                {task.description ? (
+                  <span className="text-text-primary whitespace-pre-wrap"><LinkifiedText text={task.description} /></span>
+                ) : (
+                  <span className="text-text-muted">Add description</span>
+                )}
+              </div>
             )}
 
             {/* Priority */}
@@ -242,6 +301,12 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
             <div>
               <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Project</p>
               <ProjectPicker value={task.project_id ?? null} onChange={handleProject} />
+            </div>
+
+            {/* Labels */}
+            <div>
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Labels</p>
+              <LabelPicker selected={parseLabelsJson(task.labels)} onChange={handleLabels} />
             </div>
 
             {/* Attachments */}

@@ -1,18 +1,23 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, TextInput, ScrollView, Pressable, StyleSheet, Alert,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
-  useTask, updateTaskTitle, updateTaskPriority, updateTaskDue,
-  deleteTask, completeTask,
+  useTask, updateTaskTitle, updateTaskDescription, updateTaskPriority, updateTaskDue,
+  setTaskLabels, deleteTask, completeTask, useLabels,
 } from '@todolist/db';
+import { parseLabelsJson } from '@todolist/core';
 import { usePowerSync } from '@powersync/react';
 import { PriorityBadge, colors, typography } from '@todolist/ui';
 import { SubTaskList } from '../../components/SubTaskList';
 import { AttachmentGallery } from '../../components/AttachmentGallery';
 import { DueDateField } from '../../components/DueDateField';
+import { LinkifiedText } from '../../components/LinkifiedText';
+import { LabelChip } from '../../components/LabelChip';
+import { LabelPickerSheet } from '../../components/LabelPickerSheet';
 
 const PRIORITIES = [
   { value: 1, label: 'P1' },
@@ -29,9 +34,42 @@ export default function TaskDetailScreen() {
 
   const { data: rows } = useTask(taskId);
   const task = rows?.[0] ?? null;
+  const { data: allLabels } = useLabels();
+
+  const [labelPickerVisible, setLabelPickerVisible] = useState(false);
 
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
+  // Defaults to true: opening a task should drop you straight into the description
+  // field with the keyboard already up, instead of requiring a tap first.
+  const [editingDescription, setEditingDescription] = useState(true);
+  const [descriptionDraft, setDescriptionDraft] = useState('');
+
+  useEffect(() => {
+    if (task) setDescriptionDraft(task.description ?? '');
+  }, [task?.id, task?.description]);
+
+  // Autosave rather than relying solely on TextInput's onBlur — navigating away
+  // (header back arrow, hardware back, swipe gesture) doesn't reliably fire
+  // blur before the screen unmounts, which silently dropped edits.
+  useEffect(() => {
+    if (!editingTitle || !task) return;
+    const trimmed = titleDraft.trim();
+    if (!trimmed || trimmed === task.title) return;
+    const timer = setTimeout(() => {
+      updateTaskTitle(db as any, taskId, trimmed).catch(console.error);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [db, taskId, titleDraft, editingTitle, task?.title]);
+
+  useEffect(() => {
+    if (!editingDescription || !task) return;
+    if (descriptionDraft === (task.description ?? '')) return;
+    const timer = setTimeout(() => {
+      updateTaskDescription(db as any, taskId, descriptionDraft || null).catch(console.error);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [db, taskId, descriptionDraft, editingDescription, task?.description]);
 
   const startEditTitle = useCallback(() => {
     setTitleDraft(task?.title ?? '');
@@ -45,6 +83,22 @@ export default function TaskDetailScreen() {
     }
     setEditingTitle(false);
   }, [db, taskId, titleDraft, task?.title]);
+
+  const startEditDescription = useCallback(() => {
+    setDescriptionDraft(task?.description ?? '');
+    setEditingDescription(true);
+  }, [task?.description]);
+
+  const commitDescription = useCallback(async () => {
+    if (descriptionDraft !== (task?.description ?? '')) {
+      await updateTaskDescription(db as any, taskId, descriptionDraft || null).catch(console.error);
+    }
+    setEditingDescription(false);
+  }, [db, taskId, descriptionDraft, task?.description]);
+
+  const handleLabels = useCallback(async (labels: string[]) => {
+    await setTaskLabels(db as any, taskId, labels).catch(console.error);
+  }, [db, taskId]);
 
   const handlePriority = useCallback(async (priority: number) => {
     await updateTaskPriority(db as any, taskId, priority).catch(console.error);
@@ -87,6 +141,10 @@ export default function TaskDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
         {/* Title */}
@@ -103,7 +161,29 @@ export default function TaskDetailScreen() {
           />
         ) : (
           <Pressable onPress={startEditTitle}>
-            <Text style={styles.title}>{task.title}</Text>
+            <LinkifiedText text={task.title} style={styles.title} />
+          </Pressable>
+        )}
+
+        {/* Description */}
+        {editingDescription ? (
+          <TextInput
+            style={styles.descriptionInput}
+            value={descriptionDraft}
+            onChangeText={setDescriptionDraft}
+            onBlur={commitDescription}
+            autoFocus
+            multiline
+            placeholder="Add description"
+            placeholderTextColor={colors.textMuted}
+          />
+        ) : (
+          <Pressable onPress={startEditDescription} style={styles.section}>
+            {task.description ? (
+              <LinkifiedText text={task.description} style={styles.description} />
+            ) : (
+              <Text style={styles.descriptionPlaceholder}>Add description</Text>
+            )}
           </Pressable>
         )}
 
@@ -132,6 +212,22 @@ export default function TaskDetailScreen() {
           <DueDateField dueDate={task.due_date} onChange={handleDueDate} />
         </View>
 
+        {/* Labels */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>LABELS</Text>
+          <Pressable style={styles.labelsRow} onPress={() => setLabelPickerVisible(true)}>
+            {parseLabelsJson(task.labels).length > 0 ? (
+              <View style={styles.labelChips}>
+                {parseLabelsJson(task.labels).map(name => (
+                  <LabelChip key={name} name={name} color={allLabels.find(l => l.name === name)?.color ?? colors.accent} />
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.labelsPlaceholder}>Add labels</Text>
+            )}
+          </Pressable>
+        </View>
+
         {/* Attachments */}
         <AttachmentGallery taskId={taskId} />
 
@@ -149,6 +245,14 @@ export default function TaskDetailScreen() {
         </View>
 
       </ScrollView>
+      </KeyboardAvoidingView>
+
+      <LabelPickerSheet
+        visible={labelPickerVisible}
+        selected={parseLabelsJson(task.labels)}
+        onChange={handleLabels}
+        onClose={() => setLabelPickerVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -159,7 +263,13 @@ const styles = StyleSheet.create({
   notFound: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginTop: 80 },
   title: { ...typography.heading1, color: colors.textPrimary, marginBottom: 24 },
   titleInput: { ...typography.heading1, color: colors.textPrimary, marginBottom: 24, borderBottomWidth: 1, borderBottomColor: colors.accent },
+  description: { ...typography.body, color: colors.textPrimary },
+  descriptionPlaceholder: { ...typography.body, color: colors.textMuted },
+  descriptionInput: { ...typography.body, color: colors.textPrimary, marginBottom: 20, borderBottomWidth: 1, borderBottomColor: colors.accent, minHeight: 60, textAlignVertical: 'top' },
   section: { marginBottom: 20 },
+  labelsRow: { minHeight: 24, justifyContent: 'center' },
+  labelChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  labelsPlaceholder: { ...typography.body, color: colors.textMuted },
   sectionLabel: { ...typography.caption, color: colors.textMuted, fontWeight: '600', letterSpacing: 0.8, marginBottom: 8 },
   priorities: { flexDirection: 'row', gap: 8 },
   priorityBtn: { padding: 6, borderRadius: 8, borderWidth: 1, borderColor: 'transparent' },

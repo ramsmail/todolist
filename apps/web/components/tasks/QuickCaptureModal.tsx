@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { usePowerSync } from '@powersync/react';
-import { parseTaskInput } from '@todolist/core';
+import { parseTaskInput, mergeLabels } from '@todolist/core';
 import { createTask, ensureLabels } from '@todolist/db';
 import { createClient } from '@/lib/supabase/client';
 import { DatePicker } from './DatePicker';
+import { LabelPicker } from './LabelPicker';
 
 interface Props {
   open:       boolean;
@@ -17,6 +18,7 @@ export function QuickCaptureModal({ open, projectId, onClose }: Props) {
   const db      = usePowerSync();
   const [input,   setInput]   = useState('');
   const [dueDate, setDueDate] = useState<string | null>(null);
+  const [pickedLabels, setPickedLabels] = useState<string[]>([]);
   const [saving,  setSaving]  = useState(false);
   const [error,   setError]   = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -25,6 +27,7 @@ export function QuickCaptureModal({ open, projectId, onClose }: Props) {
     if (open) {
       setInput('');
       setDueDate(null);
+      setPickedLabels([]);
       setError(null);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -48,7 +51,8 @@ export function QuickCaptureModal({ open, projectId, onClose }: Props) {
       if (!user) throw new Error('Not authenticated');
 
       const parsed = parseTaskInput(trimmed, { now: new Date() });
-      if (parsed.labels.length) await ensureLabels(db as any, user.id, parsed.labels);
+      const labels = mergeLabels(pickedLabels, parsed.labels);
+      if (labels.length) await ensureLabels(db as any, user.id, labels);
       // An explicitly picked date wins; otherwise fall back to one parsed from the title.
       await createTask(db as any, {
         userId:         user.id,
@@ -58,7 +62,7 @@ export function QuickCaptureModal({ open, projectId, onClose }: Props) {
         dueTime:        parsed.dueTime,
         timezone:       Intl.DateTimeFormat().resolvedOptions().timeZone,
         projectId:      projectId ?? null,
-        labels:         parsed.labels,
+        labels,
         recurrenceRule: parsed.recurrenceRule,
         status:         'inbox',
       });
@@ -68,7 +72,7 @@ export function QuickCaptureModal({ open, projectId, onClose }: Props) {
     } finally {
       setSaving(false);
     }
-  }, [db, input, dueDate, projectId, onClose]);
+  }, [db, input, dueDate, pickedLabels, projectId, onClose]);
 
   if (!open) return null;
 
@@ -125,6 +129,13 @@ export function QuickCaptureModal({ open, projectId, onClose }: Props) {
             Due date
           </label>
           <DatePicker value={dueDate} onChange={setDueDate} />
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-text-secondary text-xs font-medium mb-1.5">
+            Labels
+          </label>
+          <LabelPicker selected={pickedLabels} onChange={setPickedLabels} />
         </div>
 
         {error && <p className="text-error text-xs mb-3">{error}</p>}

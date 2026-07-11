@@ -181,6 +181,7 @@ export async function createTask(
   fields: {
     userId: string;
     title: string;
+    description?: string | null;
     priority?: number;
     status?: string;
     dueDate?: string | null;
@@ -201,14 +202,15 @@ export async function createTask(
   const recurrenceStart = recurrenceRule ? (fields.dueDate ?? null) : null;
   await db.execute(
     `INSERT INTO tasks
-       (id, user_id, title, status, priority, due_date, due_time, timezone,
+       (id, user_id, title, description, status, priority, due_date, due_time, timezone,
         project_id, parent_task_id, recurrence_rule, recurrence_start,
         labels, sort_order, source_url, created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id,
       fields.userId,
       fields.title,
+      fields.description ?? null,
       fields.status ?? 'inbox',
       fields.priority ?? 4,
       fields.dueDate ?? null,
@@ -283,6 +285,20 @@ export async function updateTaskTitle(db: AbstractPowerSyncDatabase, id: string,
   await db.execute(
     `UPDATE tasks SET title = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
     [title, new Date().toISOString(), id]
+  );
+}
+
+export async function updateTaskDescription(db: AbstractPowerSyncDatabase, id: string, description: string | null): Promise<void> {
+  await db.execute(
+    `UPDATE tasks SET description = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
+    [description, new Date().toISOString(), id]
+  );
+}
+
+export async function setTaskLabels(db: AbstractPowerSyncDatabase, id: string, labels: string[]): Promise<void> {
+  await db.execute(
+    `UPDATE tasks SET labels = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
+    [JSON.stringify(labels), new Date().toISOString(), id]
   );
 }
 

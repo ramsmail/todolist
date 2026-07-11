@@ -1,15 +1,18 @@
 // Supabase Edge Function: enrich-url
 //
 // Given { taskId, url }, fetches the linked page server-side, extracts a human
-// title (og:title or <title>), and updates the task's title to "Read: <title>".
-// Called fire-and-forget from the mobile share screen after a URL is captured.
+// title (og:title or <title>) and description (og:description or <meta name
+// ="description">), updates the task's title to "Read: <title>", and backfills
+// the description only if the task doesn't already have one (never clobbers
+// something the user typed). Called fire-and-forget from the mobile share
+// screen after a URL is captured.
 //
 // Auth: uses the caller's JWT (forwarded Authorization header) so the UPDATE is
 // constrained by the tasks RLS policy — a user can only enrich their own task.
 // No service-role key is used.
 //
 // Why enrich server-side: the page fetch + parse must not run on a possibly
-// metered/offline device, and the title update flows back to every client via
+// metered/offline device, and the update flows back to every client via
 // PowerSync replication of the Postgres change.
 //
 // Deploy: supabase functions deploy enrich-url
@@ -18,10 +21,11 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const TITLE_PREFIX = 'Read: ';
 const MAX_TITLE = 200;
+const MAX_DESCRIPTION = 1000;
 const FETCH_TIMEOUT_MS = 8000;
 const MAX_HTML_BYTES = 256 * 1024;
 // The capture writes the task locally via PowerSync; it may not have replicated
-// to Postgres yet when this runs. Retry the UPDATE until the row appears.
+// to Postgres yet when this runs. Retry until the row appears.
 const UPDATE_ATTEMPTS = 6;
 const UPDATE_RETRY_MS = 1500;
 
@@ -60,6 +64,20 @@ function extractTitle(html: string): string | null {
   return clean || null;
 }
 
+function extractDescription(html: string): string | null {
+  const og =
+    html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) ??
+    html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i);
+  const named =
+    og ??
+    html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i) ??
+    html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i);
+  const raw = named?.[1];
+  if (!raw) return null;
+  const clean = decodeEntities(raw).replace(/\s+/g, ' ').trim();
+  return clean || null;
+}
+
 // Read at most maxBytes of the body — a title lives near the top of <head>, and
 // this caps memory against a hostile or huge response.
 async function readCapped(res: Response, maxBytes: number): Promise<string> {
@@ -91,7 +109,9 @@ function concat(chunks: Uint8Array[], size: number): Uint8Array {
   return out;
 }
 
-async function fetchTitle(url: string): Promise<string | null> {
+type PageMeta = { title: string | null; description: string | null };
+
+async function fetchPageMeta(url: string): Promise<PageMeta> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
@@ -103,11 +123,12 @@ async function fetchTitle(url: string): Promise<string | null> {
         Accept: 'text/html,application/xhtml+xml',
       },
     });
-    if (!res.ok) return null;
-    if (!(res.headers.get('content-type') ?? '').includes('text/html')) return null;
-    return extractTitle(await readCapped(res, MAX_HTML_BYTES));
+    if (!res.ok) return { title: null, description: null };
+    if (!(res.headers.get('content-type') ?? '').includes('text/html')) return { title: null, description: null };
+    const html = await readCapped(res, MAX_HTML_BYTES);
+    return { title: extractTitle(html), description: extractDescription(html) };
   } catch {
-    return null;
+    return { title: null, description: null };
   } finally {
     clearTimeout(timer);
   }
@@ -142,10 +163,11 @@ Deno.serve(async (req) => {
     return json({ error: 'Unsupported URL scheme' }, 400);
   }
 
-  const pageTitle = await fetchTitle(url);
+  const { title: pageTitle, description: pageDescription } = await fetchPageMeta(url);
   if (!pageTitle) return json({ ok: false, reason: 'no-title' });
 
   const newTitle = (TITLE_PREFIX + pageTitle).slice(0, MAX_TITLE);
+  const newDescription = pageDescription ? pageDescription.slice(0, MAX_DESCRIPTION) : null;
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -154,16 +176,29 @@ Deno.serve(async (req) => {
   );
 
   // Retry until the locally-created task has replicated to Postgres (RLS scopes
-  // the update to the caller's own rows). 0 returned rows == not there yet.
+  // every query to the caller's own rows). No row yet == not there yet.
   for (let attempt = 0; attempt < UPDATE_ATTEMPTS; attempt++) {
-    const { data, error } = await supabase
+    const { data: existing, error: selectError } = await supabase
       .from('tasks')
-      .update({ title: newTitle, updated_at: new Date().toISOString() })
+      .select('id, description')
       .eq('id', taskId)
-      .select('id');
+      .maybeSingle();
 
-    if (error) return json({ error: error.message }, 500);
-    if (data && data.length > 0) return json({ ok: true, title: newTitle });
+    if (selectError) return json({ error: selectError.message }, 500);
+
+    if (existing) {
+      const update: { title: string; updated_at: string; description?: string } = {
+        title: newTitle,
+        updated_at: new Date().toISOString(),
+      };
+      // Only backfill the description if the task doesn't already have one —
+      // never overwrite something the user typed.
+      if (newDescription && !existing.description) update.description = newDescription;
+
+      const { error: updateError } = await supabase.from('tasks').update(update).eq('id', taskId);
+      if (updateError) return json({ error: updateError.message }, 500);
+      return json({ ok: true, title: newTitle, description: update.description ?? null });
+    }
 
     if (attempt < UPDATE_ATTEMPTS - 1) {
       await new Promise((r) => setTimeout(r, UPDATE_RETRY_MS));

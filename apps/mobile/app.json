@@ -37,7 +37,14 @@
           ]
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow TodoList to use the microphone for voice capture.",
+          "speechRecognitionPermission": "Allow TodoList to use speech recognition for voice capture."
+        }
+      ]
     ],
     "extra": {
       "router": {},
