@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     .select('id, task_id, user_id, notified_mobile, notified_web')
     .lte('remind_at_utc', nowIso)
     .is('deleted_at', null)
-    .or('notified_mobile.eq.false,notified_web.eq.false');
+    .eq('notified_mobile', false);
 
   if (error) {
     console.error('[dispatch-reminders] query failed:', error.message);
