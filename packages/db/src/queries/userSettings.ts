@@ -12,6 +12,9 @@ export async function getUserSettings(db: AbstractPowerSyncDatabase): Promise<Us
   return db.getOptional<UserSettingsRecord>(`SELECT * FROM user_settings LIMIT 1`);
 }
 
+// Limited to what's needed so far — extend this Pick when `theme` or
+// `web_push_subscription` get a write path, rather than adding a second
+// upsert function for this table.
 type WritableFields = Partial<Pick<UserSettingsRecord, 'timezone' | 'expo_push_token' | 'nudge_enabled' | 'nudge_time'>>;
 
 export async function upsertUserSettings(
