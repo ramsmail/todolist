@@ -28,15 +28,23 @@ export function createReconciler(deps: ReconciliationDeps) {
 
     for (const [reminderId, notificationId] of scheduledReminders) {
       if (!pendingIds.has(reminderId)) {
-        await deps.cancelNotification(notificationId);
-        scheduledReminders.delete(reminderId);
+        try {
+          await deps.cancelNotification(notificationId);
+          scheduledReminders.delete(reminderId);
+        } catch (err) {
+          console.error('[reconciliation] failed to cancel notification for reminder', reminderId, err);
+        }
       }
     }
 
     for (const reminder of pending) {
       if (!scheduledReminders.has(reminder.id)) {
-        const notificationId = await deps.scheduleReminderNotification(reminder);
-        scheduledReminders.set(reminder.id, notificationId);
+        try {
+          const notificationId = await deps.scheduleReminderNotification(reminder);
+          scheduledReminders.set(reminder.id, notificationId);
+        } catch (err) {
+          console.error('[reconciliation] failed to schedule notification for reminder', reminder.id, err);
+        }
       }
     }
   }
