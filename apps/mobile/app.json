@@ -38,6 +38,7 @@
         }
       ],
       "@react-native-community/datetimepicker",
+      "expo-notifications",
       [
         "expo-speech-recognition",
         {

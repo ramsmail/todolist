@@ -32,6 +32,7 @@
     "expo-dev-client": "^56.0.20",
     "expo-file-system": "~56.0.8",
     "expo-linking": "~56.0.14",
+    "expo-notifications": "~56.0.21",
     "expo-router": "~56.2.11",
     "expo-secure-store": "~56.0.4",
     "expo-share-intent": "^7.0.0",
