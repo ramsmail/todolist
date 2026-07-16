@@ -1,4 +1,4 @@
-// Supabase Edge Function: dispatch-reminders
+// supabase/functions/dispatch-reminders/index.ts
 //
 // Cron-triggered dispatcher for the Reminder table's server-primary delivery
 // path (see docs/superpowers/specs/2026-07-15-notifications-design.md).
@@ -61,8 +61,6 @@ Deno.serve(async (req) => {
   let dispatched = 0;
 
   for (const reminder of rows) {
-    // Web push is out of scope for this function's first version (see the
-    // design spec's Out of Scope) — only act on the mobile branch.
     if (reminder.notified_mobile) continue;
 
     const { data: settings } = await supabase
@@ -93,7 +91,7 @@ Deno.serve(async (req) => {
 
       if (!res.ok) {
         console.error('[dispatch-reminders] Expo push failed:', reminder.id, await res.text());
-        continue; // not retried this run — next minute's poll picks it up, flag untouched
+        continue;
       }
 
       const { error: updateError } = await supabase
