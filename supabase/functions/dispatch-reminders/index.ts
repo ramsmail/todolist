@@ -17,6 +17,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const DISPATCH_SECRET = Deno.env.get('DISPATCH_REMINDERS_SECRET');
+const PUSH_TIMEOUT_MS = 8000;
 
 interface ReminderRow {
   id: string;
@@ -35,7 +36,7 @@ interface UserSettingsRow {
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
-  if (DISPATCH_SECRET && req.headers.get('x-dispatch-secret') !== DISPATCH_SECRET) {
+  if (!DISPATCH_SECRET || req.headers.get('x-dispatch-secret') !== DISPATCH_SECRET) {
     return new Response('Unauthorized', { status: 401 });
   }
 
@@ -63,31 +64,43 @@ Deno.serve(async (req) => {
   for (const reminder of rows) {
     if (reminder.notified_mobile) continue;
 
-    const { data: settings } = await supabase
+    const { data: settings, error: settingsError } = await supabase
       .from('user_settings')
       .select('id, expo_push_token, web_push_subscription')
       .eq('id', reminder.user_id)
       .maybeSingle<UserSettingsRow>();
 
+    if (settingsError) {
+      console.error('[dispatch-reminders] user_settings lookup failed:', reminder.id, settingsError.message);
+      continue;
+    }
     if (!settings?.expo_push_token) continue;
 
     try {
-      const res = await fetch('https://exp.host/--/api/v2/push/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          to: settings.expo_push_token,
-          title: 'Reminder',
-          body: 'A task is due',
-          categoryId: 'reminder',
-          data: {
-            url: `/task/${reminder.task_id}`,
-            taskId: reminder.task_id,
-            type: 'reminder',
-            reminderId: reminder.id,
-          },
-        }),
-      });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), PUSH_TIMEOUT_MS);
+      let res: Response;
+      try {
+        res = await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          signal: controller.signal,
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({
+            to: settings.expo_push_token,
+            title: 'Reminder',
+            body: 'A task is due',
+            categoryId: 'reminder',
+            data: {
+              url: `/task/${reminder.task_id}`,
+              taskId: reminder.task_id,
+              type: 'reminder',
+              reminderId: reminder.id,
+            },
+          }),
+        });
+      } finally {
+        clearTimeout(timer);
+      }
 
       if (!res.ok) {
         console.error('[dispatch-reminders] Expo push failed:', reminder.id, await res.text());
