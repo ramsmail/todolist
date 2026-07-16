@@ -41,6 +41,19 @@ export async function updateReminderTime(
   );
 }
 
+// Plain (non-hook) fresh lookup for use in write handlers — unlike useTaskReminder
+// (a live query bound to component render), this re-reads the current DB state
+// at call time, avoiding a stale-closure decision on create-vs-update.
+export async function getReminderForTask(
+  db: AbstractPowerSyncDatabase,
+  taskId: string
+): Promise<ReminderRecord | null> {
+  return db.getOptional<ReminderRecord>(
+    `SELECT * FROM reminders WHERE task_id = ? AND deleted_at IS NULL ORDER BY remind_at_utc DESC LIMIT 1`,
+    [taskId]
+  );
+}
+
 export async function deleteReminder(db: AbstractPowerSyncDatabase, reminderId: string): Promise<void> {
   const now = new Date().toISOString();
   await db.execute(

@@ -8,7 +8,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   useTask, updateTaskTitle, updateTaskDescription, updateTaskPriority, updateTaskDue,
   setTaskLabels, deleteTask, completeTask, useLabels,
-  useTaskReminder, createReminder, updateReminderTime, deleteReminder,
+  useTaskReminder, createReminder, updateReminderTime, deleteReminder, getReminderForTask,
 } from '@todolist/db';
 import { parseLabelsJson } from '@todolist/core';
 import { usePowerSync } from '@powersync/react';
@@ -119,17 +119,18 @@ export default function TaskDetailScreen() {
   const handleSetReminder = useCallback(async (remindAtLocal: string, remindAtUtc: string) => {
     const userId = session?.user.id;
     if (!userId) return;
-    if (reminder) {
-      await updateReminderTime(db as any, reminder.id, remindAtLocal, remindAtUtc);
+    const current = await getReminderForTask(db as any, taskId);
+    if (current) {
+      await updateReminderTime(db as any, current.id, remindAtLocal, remindAtUtc).catch(console.error);
     } else {
-      await createReminder(db as any, taskId, userId, remindAtLocal, remindAtUtc);
+      await createReminder(db as any, taskId, userId, remindAtLocal, remindAtUtc).catch(console.error);
     }
     ensurePushRegistered(db as any, userId).catch(console.error);
-  }, [db, taskId, session, reminder]);
+  }, [db, taskId, session]);
 
   const handleRemoveReminder = useCallback(async () => {
     if (!reminder) return;
-    await deleteReminder(db as any, reminder.id);
+    await deleteReminder(db as any, reminder.id).catch(console.error);
   }, [db, reminder]);
 
   const handleComplete = useCallback(async () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createReminder, updateReminderTime, deleteReminder, snoozeReminder, getPendingReminders } from './reminders';
+import { createReminder, updateReminderTime, deleteReminder, snoozeReminder, getPendingReminders, getReminderForTask } from './reminders';
 
 function makeMockDb(overrides: Partial<Record<string, any>> = {}) {
   return {
@@ -62,6 +62,27 @@ describe('snoozeReminder', () => {
     expect(sql).toContain('notified_mobile = 0');
     expect(sql).toContain('notified_web = 0');
     expect(params[1]).toBe('2026-07-20T04:30:00.000Z');
+  });
+});
+
+describe('getReminderForTask', () => {
+  it('queries for the most recent non-deleted reminder for the given task', async () => {
+    const db = makeMockDb({
+      getOptional: vi.fn().mockResolvedValue({ id: 'rem-1', task_id: 'task-1' }),
+    });
+    const result = await getReminderForTask(db, 'task-1');
+    const [sql, params] = db.getOptional.mock.calls[0];
+    expect(sql).toContain('WHERE task_id = ?');
+    expect(sql).toContain('deleted_at IS NULL');
+    expect(sql).toContain('ORDER BY remind_at_utc DESC');
+    expect(params).toEqual(['task-1']);
+    expect(result).toEqual({ id: 'rem-1', task_id: 'task-1' });
+  });
+
+  it('returns null when no reminder exists', async () => {
+    const db = makeMockDb({ getOptional: vi.fn().mockResolvedValue(null) });
+    const result = await getReminderForTask(db, 'task-1');
+    expect(result).toBeNull();
   });
 });
 
