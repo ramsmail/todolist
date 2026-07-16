@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, FlatList, Text, StyleSheet } from 'react-native';
+import { View, FlatList, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Settings } from 'lucide-react-native';
 import { useMatrixTasks, useProjects, completeTask, updateTaskDue, updateTaskPriority } from '@todolist/db';
 import { usePowerSync } from '@powersync/react';
 import { colors, typography } from '@todolist/ui';
@@ -82,6 +83,9 @@ export default function TasksScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Tasks</Text>
         <Text style={styles.count}>{tasks.length}</Text>
+        <Pressable onPress={() => router.push('/settings')} hitSlop={12} style={styles.settingsButton}>
+          <Settings size={20} color={colors.textMuted} strokeWidth={2} />
+        </Pressable>
       </View>
 
       <QuadrantTabs active={active} onChange={setActive} />
@@ -114,6 +118,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   title: { ...typography.heading1, color: colors.textPrimary, flex: 1 },
   count: { ...typography.caption, color: colors.textMuted, fontSize: 14 },
+  settingsButton: { marginLeft: 12 },
   emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   empty: { ...typography.body, color: colors.textMuted, marginTop: 80, textAlign: 'center' },
 });
