@@ -14,7 +14,7 @@ This spec keeps the server-primary model as-is and adds everything needed to mak
 
 Two independent notification types ship here:
 
-1. **Due-time reminders** (including a recurring task's next occurrence, which is just a new `Reminder` row created when recurrence advances — no separate mechanism needed for that). Server-primary: existing Edge-Function-polls-and-pushes model. The mobile client additionally schedules a **local fallback** notification for the same reminder, so the user is still notified if the push never arrives (device offline at fire time). The fallback is cancelled once the push is confirmed delivered or the reminder changes.
+1. **Due-time reminders**. Server-primary: existing Edge-Function-polls-and-pushes model. The mobile client additionally schedules a **local fallback** notification for the same reminder, so the user is still notified if the push never arrives (device offline at fire time). The fallback is cancelled once the push is confirmed delivered, or the reminder changes, or the underlying task is completed/deleted (both soft-delete the `Reminder` row). **Correction (post-implementation):** this section originally claimed a recurring task's next occurrence "just" gets a new `Reminder` row automatically when recurrence advances — that was never actually implemented anywhere in this codebase, and completing a recurring task now correctly cancels that occurrence's reminder (see the reminder-cancellation fix), meaning **a recurring task's reminder currently fires once, ever, then goes silent on every subsequent occurrence.** Recreating a reminder on recurrence advance is a real, separate, not-yet-built feature — tracked as a follow-up, not covered by this spec.
 2. **Daily inbox nudge**. Purely local — computed from the on-device task count, no server round-trip, no `Reminder` row. Silent when the inbox is empty.
 
 Both surface through the same deep-link and Android-channel infrastructure, but their delivery paths don't share code beyond that.
@@ -126,7 +126,7 @@ Nudge reconciliation: if `nudge_enabled`, compute inbox count via a new plain qu
 ## Out of Scope
 
 - Web Push client wiring (service worker, VAPID subscription capture, `web_push_subscription` population) — the Edge Function's web branch is stubbed but not implemented; a follow-up spec.
-- Recurring-task surfacing as a distinct notification type — folded into the reminders pipeline per the earlier decision, not a separate feature.
+- Recurring-task reminder carry-forward — recreating a reminder when a recurring task's due date advances to its next occurrence is NOT implemented (see the Overview correction above); today a recurring task's reminder fires exactly once, ever. A real follow-up feature, not covered here.
 - Exact-alarm scheduling — local fallback is intentionally best-effort.
 - Nudge day-of-week configuration (e.g. skip weekends) — daily-only for v1.
 - Quiet hours / do-not-disturb windows beyond what the OS/channel settings already provide.

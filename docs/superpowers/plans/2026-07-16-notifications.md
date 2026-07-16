@@ -1881,10 +1881,10 @@ Expected: no drift.
 
 ---
 
-## Out of Scope (unchanged from the design spec)
+## Out of Scope
 
 - Web Push client wiring
-- Recurring-task surfacing as a distinct notification type (rides the reminders pipeline automatically)
+- Recurring-task reminder carry-forward — **correction, discovered in final review (Task 15's fix)**: this was assumed to happen "automatically" but never was; a recurring task's reminder fires once, ever, then goes silent on every subsequent occurrence. A real follow-up feature, not covered by this plan.
 - Exact-alarm scheduling
 - Nudge day-of-week configuration
 - Quiet hours / do-not-disturb windows

@@ -45,6 +45,12 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   );
 
+  // `deleted_at IS NULL` relies on the task-completion/deletion soft-delete
+  // (see packages/db's completeTask/deleteTask) having already replicated from
+  // the device to Postgres via PowerSync. A task finished on-device within the
+  // same ~1-minute window as this poll can still see a not-yet-synced reminder
+  // and dispatch a push for an already-finished task — an accepted, bounded
+  // offline-first race, not a bug to fix here.
   const nowIso = new Date().toISOString();
   const { data: reminders, error } = await supabase
     .from('reminders')
