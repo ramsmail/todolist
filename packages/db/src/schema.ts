@@ -116,6 +116,8 @@ const user_settings = new Table({
   expo_push_token:       column.text,
   web_push_subscription: column.text,
   theme:                 column.text,
+  nudge_enabled:         column.integer,
+  nudge_time:            column.text,
   created_at:            column.text,
   updated_at:            column.text,
 });
