@@ -1,9 +1,12 @@
 // apps/mobile/src/notifications/setup.ts
 //
-// One-time startup registration: notification categories (action buttons),
-// Android channels, and the foreground display handler. Safe to call before
+// Startup registration: notification categories (action buttons), Android
+// channels, and the foreground display handler. Safe to call before
 // permission is granted — registering channels/categories doesn't require it.
-// Called once from _layout.tsx (see Task 12).
+// Called from useNotificationReconciliation (see Task 12), awaited before
+// that hook's first reconciliation pass. All calls here are idempotent, since
+// the hook's effect re-runs whenever `session` changes (including token
+// refreshes for an already-logged-in user), not strictly once per app life.
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
