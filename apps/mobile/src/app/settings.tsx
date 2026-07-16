@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, Switch, Pressable, Platform } from 'react-native';
+import { View, Text, StyleSheet, Switch, Pressable, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
@@ -36,7 +36,10 @@ export default function SettingsScreen() {
     if (!userId) return;
     if (value) {
       const granted = await ensurePushRegistered(db as any, userId);
-      if (!granted) return;
+      if (!granted) {
+        Alert.alert('Notifications disabled', 'Enable notifications for this app in system settings to use the daily inbox nudge.');
+        return;
+      }
     }
     await upsertUserSettings(db as any, userId, { nudge_enabled: value ? 1 : 0, nudge_time: nudgeTime });
   }, [db, userId, nudgeTime]);
