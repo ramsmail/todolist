@@ -8,6 +8,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   useTask, updateTaskTitle, updateTaskDescription, updateTaskPriority, updateTaskDue,
   setTaskLabels, deleteTask, completeTask, useLabels,
+  useTaskReminder, createReminder, updateReminderTime, deleteReminder,
 } from '@todolist/db';
 import { parseLabelsJson } from '@todolist/core';
 import { usePowerSync } from '@powersync/react';
@@ -18,6 +19,9 @@ import { DueDateField } from '../../components/DueDateField';
 import { LinkifiedText } from '../../components/LinkifiedText';
 import { LabelChip } from '../../components/LabelChip';
 import { LabelPickerSheet } from '../../components/LabelPickerSheet';
+import { ReminderField } from '../../components/ReminderField';
+import { useAuth } from '../../auth/AuthContext';
+import { ensurePushRegistered } from '../../notifications/registerPushToken';
 
 const PRIORITIES = [
   { value: 1, label: 'P1' },
@@ -107,6 +111,26 @@ export default function TaskDetailScreen() {
   const handleDueDate = useCallback((dueDate: string | null) => {
     updateTaskDue(db as any, taskId, dueDate, null).catch(console.error);
   }, [db, taskId]);
+
+  const { session } = useAuth();
+  const { data: reminderRows } = useTaskReminder(taskId);
+  const reminder = reminderRows?.[0] ?? null;
+
+  const handleSetReminder = useCallback(async (remindAtLocal: string, remindAtUtc: string) => {
+    const userId = session?.user.id;
+    if (!userId) return;
+    if (reminder) {
+      await updateReminderTime(db as any, reminder.id, remindAtLocal, remindAtUtc);
+    } else {
+      await createReminder(db as any, taskId, userId, remindAtLocal, remindAtUtc);
+    }
+    ensurePushRegistered(db as any, userId).catch(console.error);
+  }, [db, taskId, session, reminder]);
+
+  const handleRemoveReminder = useCallback(async () => {
+    if (!reminder) return;
+    await deleteReminder(db as any, reminder.id);
+  }, [db, reminder]);
 
   const handleComplete = useCallback(async () => {
     await completeTask(db as any, taskId).catch(console.error);
@@ -210,6 +234,18 @@ export default function TaskDetailScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>DUE DATE</Text>
           <DueDateField dueDate={task.due_date} onChange={handleDueDate} />
+        </View>
+
+        {/* Reminder */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>REMINDER</Text>
+          <ReminderField
+            dueDate={task.due_date}
+            dueTime={task.due_time}
+            reminderLocal={reminder?.remind_at_local ?? null}
+            onSet={handleSetReminder}
+            onRemove={handleRemoveReminder}
+          />
         </View>
 
         {/* Labels */}
