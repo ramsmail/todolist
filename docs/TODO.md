@@ -34,3 +34,31 @@ Follow-ups deferred from active work, not yet done.
   `packages/db` queries in that order, and add a test that exercises a
   round-tripped (double-encoded) label value through the SQL queries, not just
   the JS parser.
+
+## Recreate a reminder when a recurring task's due date advances
+
+- **What:** `docs/superpowers/specs/2026-07-15-notifications-design.md` and its
+  implementation plan originally assumed a recurring task's next occurrence
+  "just" gets a new `Reminder` row automatically when recurrence advances — no
+  separate mechanism needed. That was never actually built anywhere in this
+  codebase; `createReminder` (`packages/db/src/queries/reminders.ts`) has
+  exactly one call site, a manual user action in
+  `apps/mobile/src/app/task/[id].tsx`.
+- **What's still broken:** a fix landed to correctly cancel a task's reminder
+  when the task is completed or deleted (`completeTask`/`deleteTask` in
+  `packages/db/src/queries/tasks.ts`, both soft-delete via
+  `deleteRemindersForTask`). For a recurring task this is correct for the
+  just-finished occurrence, but nothing creates a reminder for the *next*
+  occurrence. Net effect: a recurring task's reminder currently fires once,
+  ever, then silently never again on any later occurrence.
+- **Why deferred:** this is a real, separate feature (recreate reminder offset
+  relative to the new `due_date`/`due_time` when `completeTask`'s recurring
+  branch advances a task), not covered by the notifications spec despite its
+  Overview text originally claiming otherwise (now corrected in that doc).
+- **To do:** decide whether recurrence should carry forward the *same* offset
+  the user originally chose (e.g. "10 min before") and, if so, persist that
+  offset somewhere (today only the resolved `remind_at_local`/`remind_at_utc`
+  are stored, not the offset itself) so `completeTask`'s recurring branch in
+  `packages/db/src/queries/tasks.ts` can call `createReminder` for the new
+  occurrence inside the same `writeTransaction` it already cancels the old
+  reminder in.
