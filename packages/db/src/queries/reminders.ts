@@ -62,6 +62,17 @@ export async function deleteReminder(db: AbstractPowerSyncDatabase, reminderId: 
   );
 }
 
+// Called when a task is completed or deleted, so a stale reminder can never
+// fire (locally or via the server-side dispatch-reminders Edge Function) for
+// a task the user has already finished or removed.
+export async function deleteRemindersForTask(db: AbstractPowerSyncDatabase, taskId: string): Promise<void> {
+  const now = new Date().toISOString();
+  await db.execute(
+    `UPDATE reminders SET deleted_at = ?, updated_at = ? WHERE task_id = ? AND deleted_at IS NULL`,
+    [now, now, taskId]
+  );
+}
+
 function toLocalDisplay(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');

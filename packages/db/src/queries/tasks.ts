@@ -4,6 +4,7 @@ import { useQuery } from '@powersync/react';
 import { generateKeyBetween } from 'fractional-indexing';
 import { parseRule, computeNext } from '@todolist/core';
 import type { TaskRecord } from '../schema';
+import { deleteRemindersForTask } from './reminders';
 
 // --- Read helpers (used in hooks) ---
 
@@ -246,6 +247,7 @@ export async function completeTask(db: AbstractPowerSyncDatabase, id: string): P
       `UPDATE tasks SET status = 'completed', updated_at = ? WHERE id = ?`,
       [now, id]
     );
+    await deleteRemindersForTask(db, id);
     return;
   }
 
@@ -277,6 +279,15 @@ export async function completeTask(db: AbstractPowerSyncDatabase, id: string): P
       `UPDATE tasks SET status = 'active', updated_at = ?
        WHERE parent_task_id = ? AND status = 'completed' AND deleted_at IS NULL`,
       [now, id]
+    );
+    // Cancel the reminder that just fired for this occurrence. The task keeps
+    // its id across occurrences (only due_date advances), so without this the
+    // just-fired reminder row would still look "pending" for the next one.
+    // A new reminder for the next occurrence is a separate, manual action —
+    // no auto-carry-forward exists anywhere in this codebase.
+    await tx.execute(
+      `UPDATE reminders SET deleted_at = ?, updated_at = ? WHERE task_id = ? AND deleted_at IS NULL`,
+      [now, now, id]
     );
   });
 }
@@ -371,6 +382,7 @@ export async function deleteTask(db: AbstractPowerSyncDatabase, id: string): Pro
     `UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE id = ?`,
     [now, now, id]
   );
+  await deleteRemindersForTask(db, id);
 }
 
 export async function toggleFocus(db: AbstractPowerSyncDatabase, id: string): Promise<void> {

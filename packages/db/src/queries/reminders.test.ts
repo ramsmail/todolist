@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createReminder, updateReminderTime, deleteReminder, snoozeReminder, getPendingReminders, getReminderForTask } from './reminders';
+import { createReminder, updateReminderTime, deleteReminder, snoozeReminder, getPendingReminders, getReminderForTask, deleteRemindersForTask } from './reminders';
 
 function makeMockDb(overrides: Partial<Record<string, any>> = {}) {
   return {
@@ -83,6 +83,18 @@ describe('getReminderForTask', () => {
     const db = makeMockDb({ getOptional: vi.fn().mockResolvedValue(null) });
     const result = await getReminderForTask(db, 'task-1');
     expect(result).toBeNull();
+  });
+});
+
+describe('deleteRemindersForTask', () => {
+  it("soft-deletes all non-deleted reminders for the given task", async () => {
+    const db = makeMockDb();
+    await deleteRemindersForTask(db, 'task-1');
+    const [sql, params] = db.execute.mock.calls[0];
+    expect(sql).toContain('deleted_at = ?');
+    expect(sql).toContain('task_id = ?');
+    expect(sql).toContain('deleted_at IS NULL');
+    expect(params).toEqual([expect.any(String), expect.any(String), 'task-1']);
   });
 });
 
