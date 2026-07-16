@@ -5,7 +5,7 @@
 alter table user_settings add column nudge_enabled boolean not null default false;
 alter table user_settings add column nudge_time text;
 
-create extension if not exists pg_cron with schema extensions;
+create extension if not exists pg_cron with schema pg_catalog;
 create extension if not exists pg_net with schema extensions;
 
 -- One-time manual setup (NOT run by this migration — these are secrets and
