@@ -10,7 +10,6 @@ import { PowerSyncProvider } from '../powersync/PowerSyncProvider';
 import { usePowerSync } from '@powersync/react';
 import { useOfflineAttachmentSync } from '../hooks/useOfflineAttachmentSync';
 import { useNotificationReconciliation } from '../hooks/useNotificationReconciliation';
-import { registerNotificationInfrastructure } from '../notifications/setup';
 import { registerDeepLinkListener, handleColdStartNotification } from '../notifications/deepLink';
 
 function RootLayoutNav() {
@@ -33,10 +32,6 @@ function RootLayoutNav() {
 
   useOfflineAttachmentSync();
   useNotificationReconciliation();
-
-  useEffect(() => {
-    registerNotificationInfrastructure().catch(console.error);
-  }, []);
 
   useEffect(() => {
     handleColdStartNotification(db, (url) => router.push(url)).catch(console.error);
