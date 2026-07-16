@@ -70,7 +70,7 @@ export async function snoozeReminder(
     `SELECT * FROM reminders WHERE id = ? AND deleted_at IS NULL`,
     [reminderId]
   );
-  if (!row) return;
+  if (!row || !row.remind_at_utc) return;
 
   const nextInstant = new Date(new Date(row.remind_at_utc).getTime() + minutes * 60000);
   await db.execute(
