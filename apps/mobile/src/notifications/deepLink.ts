@@ -34,5 +34,5 @@ export async function handleColdStartNotification(
   if (!response) return;
   const deps = makeDeps(db, navigate);
   const data = response.notification.request.content.data as NotificationResponseData;
-  await handleNotificationResponse(response.actionIdentifier, data, deps);
+  await handleNotificationResponse(response.actionIdentifier, data, deps).catch(console.error);
 }
