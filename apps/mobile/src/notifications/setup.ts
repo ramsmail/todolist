@@ -23,6 +23,14 @@ export async function registerNotificationInfrastructure(): Promise<void> {
   ]);
   await Notifications.setNotificationCategoryAsync('nudge', []);
 
+  // Sound is intentionally left at the Android default (on) for both channels
+  // — shouldPlaySound: false above only silences the in-app foreground banner;
+  // a due-time reminder firing while the app is backgrounded/killed should
+  // still audibly alert, which is the point of HIGH importance here.
+  //
+  // Note: Android locks a channel's importance/sound once created — changing
+  // these values here later won't affect existing installs' channels. A
+  // future change would need a new channel id (e.g. 'reminders_v2').
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('reminders', {
       name: 'Reminders',
