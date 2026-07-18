@@ -170,40 +170,6 @@ export function useTodayStats() {
   );
 }
 
-export function useWeeklyActivity() {
-  const mondayStr = (() => {
-    const today = new Date();
-    const dow = today.getDay();
-    const diff = today.getDate() - (dow === 0 ? 6 : dow - 1);
-    const monday = new Date(today.getFullYear(), today.getMonth(), diff);
-    return monday.toISOString().split('T')[0];
-  })();
-
-  const data = useQuery<{ day: string; count: number }>(
-    `SELECT
-       date(?, 'localtime') as day,
-       COUNT(CASE WHEN status = 'completed' THEN 1 END) as count
-     FROM tasks
-     WHERE due_date >= ?
-       AND due_date < date('now', '+1 day')
-       AND deleted_at IS NULL
-     GROUP BY day`,
-    [mondayStr, mondayStr]
-  );
-
-  const days: { day: string; count: number }[] = [];
-  const today = new Date();
-  for (let i = 0; i < 5; i++) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1) + i);
-    const dayStr = d.toISOString().split('T')[0];
-    const existing = data.data?.find(r => r.day === dayStr);
-    days.push({ day: dayStr, count: existing?.count ?? 0 });
-  }
-
-  return days;
-}
-
 export function useTask(id: string) {
   return useQuery<TaskRecord>(
     `SELECT * FROM tasks WHERE id = ? AND deleted_at IS NULL LIMIT 1`,
