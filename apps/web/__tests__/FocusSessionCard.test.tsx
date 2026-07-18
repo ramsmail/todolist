@@ -1,6 +1,6 @@
 import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { FocusSessionProvider } from '@/lib/focus/FocusSessionContext';
+import { FocusSessionProvider, useFocusSession } from '@/lib/focus/FocusSessionContext';
 import { FocusSessionCard } from '@/components/today/FocusSessionCard';
 
 const mockTasks = [
@@ -8,46 +8,60 @@ const mockTasks = [
   { id: '2', title: 'Task B' },
 ];
 
+function StartSessionButton() {
+  const { selectTask, start } = useFocusSession();
+  return (
+    <button onClick={() => { selectTask({ id: '1', title: 'Task A' }); start(); }}>
+      start-session
+    </button>
+  );
+}
+
 describe('FocusSessionCard', () => {
   beforeEach(() => { vi.useFakeTimers(); });
   afterEach(() => { vi.useRealTimers(); });
 
-  it('shows 25:00 timer by default', () => {
+  it('shows the in-focus task count when idle', () => {
     render(
       <FocusSessionProvider>
         <FocusSessionCard focusTasks={mockTasks} />
       </FocusSessionProvider>
     );
-    expect(screen.getByText('25:00')).toBeInTheDocument();
+    expect(screen.getByText('2 tasks in focus · no distractions')).toBeInTheDocument();
   });
 
-  it('shows task queue count', () => {
+  it('links "Start focusing" to /focus when idle', () => {
     render(
       <FocusSessionProvider>
         <FocusSessionCard focusTasks={mockTasks} />
       </FocusSessionProvider>
     );
-    expect(screen.getByText('2 tasks queued · no distractions')).toBeInTheDocument();
+    const link = screen.getByText('Start focusing').closest('a');
+    expect(link).toHaveAttribute('href', '/focus');
   });
 
-  it('shows "Start focusing" button when idle', () => {
+  it('shows a resume link with time left once a session is active', () => {
     render(
       <FocusSessionProvider>
+        <StartSessionButton />
         <FocusSessionCard focusTasks={mockTasks} />
       </FocusSessionProvider>
     );
-    expect(screen.getByText('Start focusing')).toBeInTheDocument();
-  });
-
-  it('shows "Pause" after clicking Start', () => {
-    render(
-      <FocusSessionProvider>
-        <FocusSessionCard focusTasks={mockTasks} />
-      </FocusSessionProvider>
-    );
-    const startBtn = screen.getByText('Start focusing');
-    act(() => { startBtn.click(); });
-    expect(screen.getByText('Pause')).toBeInTheDocument();
+    act(() => { screen.getByText('start-session').click(); });
+    const link = screen.getByText('Resume — 25:00 left').closest('a');
+    expect(link).toHaveAttribute('href', '/focus');
     expect(screen.queryByText('Start focusing')).not.toBeInTheDocument();
+  });
+
+  it('updates the resume time left as the session counts down', () => {
+    render(
+      <FocusSessionProvider>
+        <StartSessionButton />
+        <FocusSessionCard focusTasks={mockTasks} />
+      </FocusSessionProvider>
+    );
+    act(() => { screen.getByText('start-session').click(); });
+    act(() => { vi.advanceTimersByTime(5000); });
+    expect(screen.getByText('Resume — 24:55 left')).toBeInTheDocument();
   });
 });

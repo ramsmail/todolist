@@ -2,16 +2,12 @@
 
 Follow-ups deferred from active work, not yet done.
 
-## Deploy `enrich-url` Edge Function update
+## ~~Deploy `enrich-url` Edge Function update~~ — done 2026-07-11
 
-- **What:** `supabase/functions/enrich-url/index.ts` was extended to also extract
-  `og:description`/`meta[name=description]` and backfill the task's description
-  (only when currently empty), alongside the existing title enrichment.
-- **Why deferred:** no Deno runtime available in the dev environment used to build
-  this — the function was written and reviewed but never deployed or run.
-- **To do:** `supabase functions deploy enrich-url`, then verify by sharing a real
-  URL from the mobile app and confirming both `title` and `description` populate
-  on the resulting task within a few seconds.
+Deployed via `supabase functions deploy enrich-url` (version 2, `ACTIVE`).
+**Still to do:** verify end-to-end by sharing a real URL from the mobile app and
+confirming both `title` and `description` populate on the resulting task within
+a few seconds — not yet manually confirmed post-deploy.
 
 ## Fix jsonb double-encoding in label-filter SQL queries
 
