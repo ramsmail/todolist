@@ -7,10 +7,11 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
-import { TaskCheckbox, PriorityBadge, colors, typography, resolvePanelTint } from '@todolist/ui';
+import { TaskCheckbox, PriorityBadge, typography } from '@todolist/ui';
 import { parseLabelsJson } from '@todolist/core';
 import { useLabels } from '@todolist/db';
 import { LabelChip } from './LabelChip';
+import { homeColors, homePriorityColor, homeRowTint } from './home/homeTheme';
 
 export interface TaskRowData {
   id:       string;
@@ -97,7 +98,7 @@ export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule, proj
         style={[
           styles.row,
           isPanel && styles.rowPanel,
-          isPanel && { backgroundColor: resolvePanelTint(task.priority) },
+          isPanel && { backgroundColor: homeRowTint(task.priority) },
           rowStyle,
         ]}
       >
@@ -118,7 +119,7 @@ export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule, proj
                 <LabelChip
                   key={name}
                   name={name}
-                  color={allLabels.find(l => l.name === name)?.color ?? colors.accent}
+                  color={allLabels.find(l => l.name === name)?.color ?? homeColors.accent}
                 />
               ))}
             </View>
@@ -158,48 +159,50 @@ const styles = StyleSheet.create({
   row: {
     flexDirection:   'row',
     alignItems:      'flex-start',
-    backgroundColor: colors.surface,
+    backgroundColor: homeColors.card,
     paddingHorizontal: 16,
     paddingVertical: 13,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: homeColors.cardBorder,
     gap: 12,
   },
   rowPanel: {
     borderRadius: 14,
     borderBottomWidth: 0,
+    borderWidth: 1,
+    borderColor: homeColors.cardBorder,
     marginHorizontal: 16,
     marginBottom: 10,
     paddingHorizontal: 14,
     paddingVertical: 14,
   },
   content: { flex: 1 },
-  title: { ...typography.body, color: colors.textPrimary },
+  title: { ...typography.body, color: homeColors.textPrimary },
   labelsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 5 },
-  due:   { ...typography.caption, color: colors.textSecondary, marginTop: 3 },
-  overdue: { color: colors.p1 },
+  due:   { ...typography.caption, color: homeColors.textSecondary, marginTop: 3 },
+  overdue: { color: homePriorityColor[1] },
   panelRight: {
     alignItems: 'flex-end',
     gap: 6,
   },
   projectChip: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: homeColors.sectionBg,
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
     marginTop: 4,
   },
-  projectChipText: { ...typography.caption, color: colors.textMuted, fontSize: 11 },
+  projectChipText: { ...typography.caption, color: homeColors.textMuted, fontSize: 11 },
   actionComplete: {
-    backgroundColor: colors.success,
+    backgroundColor: homeColors.success,
     justifyContent: 'center',
     alignItems: 'flex-start',
     paddingLeft: 20,
     width: 100,
   },
   actionReschedule: {
-    backgroundColor: colors.accent,
+    backgroundColor: homeColors.accent,
     justifyContent: 'center',
     alignItems: 'flex-end',
     paddingRight: 20,

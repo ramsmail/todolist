@@ -1,10 +1,12 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, SectionList, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { useTodayTasks, completeTask, updateTaskDue } from '@todolist/db';
 import { usePowerSync } from '@powersync/react';
-import { colors, typography } from '@todolist/ui';
+import { typography } from '@todolist/ui';
+import { homeColors, homePriorityColor } from '../../components/home/homeTheme';
 import { SwipeableTaskRow, type TaskRowData } from '../../components/SwipeableTaskRow';
 import { FAB } from '../../components/FAB';
 import { QuickCaptureModal } from '../../components/QuickCaptureModal';
@@ -58,6 +60,7 @@ export default function TodayScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <StatusBar style="dark" />
       <View style={styles.header}>
         <Text style={styles.title}>Today</Text>
         <Text style={styles.count}>{tasks?.length ?? 0}</Text>
@@ -81,13 +84,13 @@ export default function TodayScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  title: { ...typography.heading1, color: colors.textPrimary, flex: 1 },
-  count: { ...typography.caption, color: colors.textMuted, fontSize: 14 },
-  sectionHeader: { backgroundColor: colors.surfaceAlt, paddingHorizontal: 16, paddingVertical: 6 },
-  sectionTitle: { ...typography.caption, color: colors.textMuted, fontWeight: '600', letterSpacing: 0.5 },
-  sectionTitleOverdue: { color: colors.p1 },
+  container: { flex: 1, backgroundColor: homeColors.page },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: homeColors.cardBorder },
+  title: { ...typography.heading1, color: homeColors.textPrimary, flex: 1 },
+  count: { ...typography.caption, color: homeColors.textMuted, fontSize: 14 },
+  sectionHeader: { backgroundColor: homeColors.sectionBg, paddingHorizontal: 16, paddingVertical: 6 },
+  sectionTitle: { ...typography.caption, color: homeColors.textMuted, fontWeight: '600', letterSpacing: 0.5 },
+  sectionTitleOverdue: { color: homePriorityColor[1] },
   emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  empty: { ...typography.body, color: colors.textMuted, marginTop: 80, textAlign: 'center' },
+  empty: { ...typography.body, color: homeColors.textMuted, marginTop: 80, textAlign: 'center' },
 });

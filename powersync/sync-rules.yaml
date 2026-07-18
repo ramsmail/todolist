@@ -17,3 +17,4 @@ streams:
       - SELECT * FROM reminders       WHERE user_id = auth.user_id()
       - SELECT * FROM attachments     WHERE user_id = auth.user_id()
       - SELECT * FROM user_settings   WHERE id       = auth.user_id()
+      - SELECT * FROM daily_log       WHERE user_id  = auth.user_id()

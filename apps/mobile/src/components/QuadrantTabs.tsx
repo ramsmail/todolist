@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { quadrantLabel } from '@todolist/core';
-import { colors, typography, priorityColor } from '@todolist/ui';
+import { typography, priorityColor } from '@todolist/ui';
+import { homeColors } from './home/homeTheme';
 
 const QUADRANTS = [1, 2, 3, 4] as const;
 
@@ -38,7 +39,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginHorizontal: 16,
     marginBottom: 8,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: homeColors.sectionBg,
     borderRadius: 10,
     padding: 3,
     gap: 3,
@@ -49,6 +50,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  tabActive: { backgroundColor: colors.surface },
-  label: { ...typography.caption, color: colors.textMuted, fontWeight: '600' },
+  tabActive: {
+    backgroundColor: homeColors.card,
+    borderWidth: 1,
+    borderColor: homeColors.cardBorder,
+  },
+  label: { ...typography.caption, color: homeColors.textMuted, fontWeight: '600' },
 });
