@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { LOGBOOK_QUERY, MATRIX_QUERY, groupTasksByPriority, completeTask, deleteTask } from './tasks';
+import { LOGBOOK_QUERY, MATRIX_QUERY, TODAY_QUERY, FOCUS_TASKS_QUERY, groupTasksByPriority, completeTask, deleteTask } from './tasks';
 
 function makeMockDb(overrides: Partial<Record<string, any>> = {}) {
   const txExecute = vi.fn().mockResolvedValue(undefined);
@@ -14,6 +14,26 @@ function makeMockDb(overrides: Partial<Record<string, any>> = {}) {
     ...overrides,
   } as any;
 }
+
+describe('TODAY_QUERY', () => {
+  it('includes in_focus field', () => {
+    expect(TODAY_QUERY).toContain('in_focus');
+  });
+
+  it('includes due_time field', () => {
+    expect(TODAY_QUERY).toContain('due_time');
+  });
+});
+
+describe('FOCUS_TASKS_QUERY', () => {
+  it('filters on in_focus = 1', () => {
+    expect(FOCUS_TASKS_QUERY).toContain('in_focus = 1');
+  });
+
+  it('excludes completed and cancelled tasks', () => {
+    expect(FOCUS_TASKS_QUERY).toContain("status NOT IN ('completed', 'cancelled')");
+  });
+});
 
 describe('LOGBOOK_QUERY', () => {
   it("selects only completed tasks", () => {

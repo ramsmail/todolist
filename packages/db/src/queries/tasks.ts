@@ -19,7 +19,7 @@ export const INBOX_QUERY = `
 `;
 
 export const TODAY_QUERY = `
-  SELECT id, title, priority, due_date, project_id, status, labels, recurrence_rule, in_focus, sort_order
+  SELECT id, title, priority, due_date, due_time, project_id, status, labels, recurrence_rule, in_focus, sort_order
   FROM tasks
   WHERE due_date <= date('now')
     AND status NOT IN ('completed', 'cancelled')
@@ -84,12 +84,32 @@ export function useMatrixTasks() {
 }
 
 export function useTodayTasks() {
-  const query = useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'project_id' | 'status' | 'labels' | 'recurrence_rule' | 'in_focus' | 'sort_order'>>(TODAY_QUERY);
+  const query = useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'due_time' | 'project_id' | 'status' | 'labels' | 'recurrence_rule' | 'in_focus' | 'sort_order'>>(TODAY_QUERY);
   const count = useMemo(() => {
     return query.data?.length ?? 0;
   }, [query.data]);
 
   return { ...query, count };
+}
+
+// From feat/today-dashboard-redesign — not yet wired into a screen; kept
+// alongside useTodayTasks/useTodayStats below (the already-integrated
+// versions) pending reconciliation of the two Today-page designs.
+export const FOCUS_TASKS_QUERY = `
+  SELECT id, title, priority, due_date, due_time, project_id, status, labels, recurrence_rule, in_focus
+  FROM tasks
+  WHERE in_focus = 1
+    AND due_date <= date('now')
+    AND status NOT IN ('completed', 'cancelled')
+    AND deleted_at IS NULL
+  ORDER BY priority, sort_order
+`;
+
+export function useFocusTasks() {
+  return useQuery<Pick<TaskRecord,
+    'id' | 'title' | 'priority' | 'due_date' | 'due_time' | 'project_id' |
+    'status' | 'labels' | 'recurrence_rule' | 'in_focus'
+  >>(FOCUS_TASKS_QUERY);
 }
 
 export function useUpcomingTasks() {

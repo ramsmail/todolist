@@ -21,3 +21,5 @@ export * from './queries/savedFilters';
 export * from './queries/attachments';
 export * from './queries/reminders';
 export * from './queries/userSettings';
+export * from './queries/streak';
+export * from './queries/weeklyActivity';
