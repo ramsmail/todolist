@@ -3,7 +3,6 @@ import {
   PowerSyncBackendConnector,
   UpdateType,
 } from '@powersync/react-native';
-import { Alert } from 'react-native';
 import { supabase } from '../supabase/client';
 
 const FATAL_CODES = [/^22/, /^23/]; // Postgres class 22 (data), 23 (integrity)
@@ -24,10 +23,8 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
     const transaction = await database.getNextCrudTransaction();
     if (!transaction) return;
 
-    let failedOp: (typeof transaction.crud)[number] | undefined;
     try {
       for (const op of transaction.crud) {
-        failedOp = op;
         const table = supabase.from(op.table);
         let result: { error: any };
 
@@ -57,14 +54,6 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
       if (FATAL_CODES.some(re => re.test(String(code)))) {
         // Data bug — discard to unblock the queue rather than retry forever
         console.error('Fatal upload error, discarding transaction:', ex);
-        // TEMPORARY DIAGNOSTIC — remove once the toggle-reverts bug is
-        // confirmed fixed. A discarded write here is invisible anywhere else:
-        // the local SQLite row already changed, so the UI looks fine until
-        // the next sync pulls the (unchanged) server row back down.
-        Alert.alert(
-          'Diagnostic: sync upload rejected',
-          `Table: ${failedOp?.table}\nOp: ${failedOp?.op}\nCode: ${code}\nMessage: ${ex?.message ?? String(ex)}\nData: ${JSON.stringify(failedOp?.opData)}`
-        );
         await transaction.complete();
       } else {
         throw ex; // Retryable (network, 5xx)

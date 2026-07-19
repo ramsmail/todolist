@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { usePowerSync } from '@powersync/react';
-import { useUserSettings, upsertUserSettings, getUserSettings } from '@todolist/db';
+import { useUserSettings, upsertUserSettings } from '@todolist/db';
 import { useAuth } from '../auth/AuthContext';
 import { ensureNotificationPermission } from '../notifications/registerPushToken';
 import { colors, typography } from '@todolist/ui';
@@ -51,22 +51,6 @@ export default function SettingsScreen() {
         }
       }
       await upsertUserSettings(db as any, userId, { nudge_enabled: value ? 1 : 0, nudge_time: nudgeTime });
-
-      // TEMPORARY DIAGNOSTIC — remove once the toggle-reverts bug is confirmed
-      // fixed. Checks whether something (a rejected PowerSync upload syncing
-      // the old server value back down) undoes this write shortly after it
-      // locally succeeds — a failure mode invisible to this function's own
-      // try/catch since it would happen in a separate async upload task.
-      const justWrote = await getUserSettings(db as any);
-      setTimeout(async () => {
-        const later = await getUserSettings(db as any);
-        if ((later?.nudge_enabled ?? 0) !== (justWrote?.nudge_enabled ?? 0)) {
-          Alert.alert(
-            'Diagnostic: setting changed itself',
-            `Right after saving, nudge_enabled was ${justWrote?.nudge_enabled}. 4 seconds later it is ${later?.nudge_enabled} with no user action. Something (likely a rejected sync upload) is overwriting it.`
-          );
-        }
-      }, 4000);
     } catch (err) {
       console.error('[settings] failed to update daily nudge setting:', err);
       Alert.alert('Something went wrong', `Could not update the daily inbox nudge setting: ${String((err as any)?.message ?? err)}`);
