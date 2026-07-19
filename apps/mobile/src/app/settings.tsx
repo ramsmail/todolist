@@ -33,15 +33,28 @@ export default function SettingsScreen() {
   const nudgeTime = settings?.nudge_time ?? '09:00';
 
   const handleToggle = useCallback(async (value: boolean) => {
-    if (!userId) return;
-    if (value) {
-      const granted = await ensureNotificationPermission();
-      if (!granted) {
-        Alert.alert('Notifications disabled', 'Enable notifications for this app in system settings to use the daily inbox nudge.');
-        return;
-      }
+    if (!userId) {
+      Alert.alert('Not signed in', 'Your session is not ready yet — try again in a moment.');
+      return;
     }
-    await upsertUserSettings(db as any, userId, { nudge_enabled: value ? 1 : 0, nudge_time: nudgeTime });
+    try {
+      if (value) {
+        const { granted, canAskAgain } = await ensureNotificationPermission();
+        if (!granted) {
+          Alert.alert(
+            'Notifications disabled',
+            canAskAgain
+              ? 'Notification permission was not granted. Please allow notifications to use the daily inbox nudge.'
+              : 'Notifications are blocked for this app. Enable them in your device Settings > Apps > TodoList > Notifications to use the daily inbox nudge.'
+          );
+          return;
+        }
+      }
+      await upsertUserSettings(db as any, userId, { nudge_enabled: value ? 1 : 0, nudge_time: nudgeTime });
+    } catch (err) {
+      console.error('[settings] failed to update daily nudge setting:', err);
+      Alert.alert('Something went wrong', `Could not update the daily inbox nudge setting: ${String((err as any)?.message ?? err)}`);
+    }
   }, [db, userId, nudgeTime]);
 
   const applyTime = useCallback((date: Date) => {

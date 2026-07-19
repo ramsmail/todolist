@@ -20,21 +20,18 @@ import Constants from 'expo-constants';
 import type { AbstractPowerSyncDatabase } from '@powersync/common';
 import { upsertUserSettings } from '@todolist/db';
 
-export async function ensureNotificationPermission(): Promise<boolean> {
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let status = existingStatus;
-  if (status !== 'granted') {
-    const request = await Notifications.requestPermissionsAsync();
-    status = request.status;
-  }
-  return status === 'granted';
+export async function ensureNotificationPermission(): Promise<{ granted: boolean; canAskAgain: boolean }> {
+  const existing = await Notifications.getPermissionsAsync();
+  if (existing.status === 'granted') return { granted: true, canAskAgain: existing.canAskAgain };
+  const request = await Notifications.requestPermissionsAsync();
+  return { granted: request.status === 'granted', canAskAgain: request.canAskAgain };
 }
 
 export async function ensurePushRegistered(
   db: AbstractPowerSyncDatabase,
   userId: string
 ): Promise<boolean> {
-  const granted = await ensureNotificationPermission();
+  const { granted } = await ensureNotificationPermission();
   if (!granted) return false;
 
   const projectId = Constants.expoConfig?.extra?.eas?.projectId;
