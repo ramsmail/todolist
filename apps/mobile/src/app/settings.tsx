@@ -1,10 +1,10 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Switch, Pressable, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { usePowerSync } from '@powersync/react';
-import { useUserSettings, upsertUserSettings } from '@todolist/db';
+import { useUserSettings, upsertUserSettings, getUserSettings } from '@todolist/db';
 import { useAuth } from '../auth/AuthContext';
 import { ensureNotificationPermission } from '../notifications/registerPushToken';
 import { colors, typography } from '@todolist/ui';
@@ -32,7 +32,22 @@ export default function SettingsScreen() {
   const nudgeEnabled = !!settings?.nudge_enabled;
   const nudgeTime = settings?.nudge_time ?? '09:00';
 
+  // TEMPORARY DIAGNOSTIC — tracks each handleToggle invocation to catch a
+  // double-fire of Switch's onValueChange (a known Android RN issue) sending
+  // conflicting values for what looks like one tap.
+  const lastCallRef = useRef<{ value: boolean; at: number } | null>(null);
+
   const handleToggle = useCallback(async (value: boolean) => {
+    const now = Date.now();
+    const prevCall = lastCallRef.current;
+    lastCallRef.current = { value, at: now };
+    if (prevCall && now - prevCall.at < 2000) {
+      Alert.alert(
+        'Diagnostic: toggle fired twice',
+        `handleToggle was called again ${now - prevCall.at}ms after the previous call.\nPrevious value: ${prevCall.value}\nThis value: ${value}`
+      );
+    }
+
     if (!userId) {
       Alert.alert('Not signed in', 'Your session is not ready yet — try again in a moment.');
       return;
@@ -51,6 +66,21 @@ export default function SettingsScreen() {
         }
       }
       await upsertUserSettings(db as any, userId, { nudge_enabled: value ? 1 : 0, nudge_time: nudgeTime });
+
+      // TEMPORARY DIAGNOSTIC — checks whether something undoes this write
+      // shortly after it locally succeeds (e.g. a stale PowerSync download
+      // re-applying an old server value), invisible to this function's own
+      // try/catch since it would happen in a separate async task.
+      const justWrote = await getUserSettings(db as any);
+      setTimeout(async () => {
+        const later = await getUserSettings(db as any);
+        if ((later?.nudge_enabled ?? 0) !== (justWrote?.nudge_enabled ?? 0)) {
+          Alert.alert(
+            'Diagnostic: setting changed itself',
+            `Right after saving, nudge_enabled was ${justWrote?.nudge_enabled}. 4 seconds later it is ${later?.nudge_enabled} with no user action.`
+          );
+        }
+      }, 4000);
     } catch (err) {
       console.error('[settings] failed to update daily nudge setting:', err);
       Alert.alert('Something went wrong', `Could not update the daily inbox nudge setting: ${String((err as any)?.message ?? err)}`);

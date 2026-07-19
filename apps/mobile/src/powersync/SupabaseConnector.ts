@@ -3,6 +3,7 @@ import {
   PowerSyncBackendConnector,
   UpdateType,
 } from '@powersync/react-native';
+import { Alert } from 'react-native';
 import { supabase } from '../supabase/client';
 
 const FATAL_CODES = [/^22/, /^23/]; // Postgres class 22 (data), 23 (integrity)
@@ -23,8 +24,21 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
     const transaction = await database.getNextCrudTransaction();
     if (!transaction) return;
 
+    // TEMPORARY DIAGNOSTIC — surface exactly what's being uploaded for
+    // user_settings, in what order, since the local reads alone can't show
+    // whether there are multiple/stale queued ops racing each other.
+    const settingsOps = transaction.crud.filter(op => op.table === 'user_settings');
+    if (settingsOps.length > 0) {
+      Alert.alert(
+        'Diagnostic: uploading user_settings',
+        settingsOps.map(op => `${op.op}: ${JSON.stringify(op.opData)}`).join('\n')
+      );
+    }
+
+    let failedOp: (typeof transaction.crud)[number] | undefined;
     try {
       for (const op of transaction.crud) {
+        failedOp = op;
         const table = supabase.from(op.table);
         let result: { error: any };
 
@@ -54,8 +68,17 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
       if (FATAL_CODES.some(re => re.test(String(code)))) {
         // Data bug — discard to unblock the queue rather than retry forever
         console.error('Fatal upload error, discarding transaction:', ex);
+        Alert.alert(
+          'Diagnostic: sync upload rejected',
+          `Table: ${failedOp?.table}\nOp: ${failedOp?.op}\nCode: ${code}\nMessage: ${ex?.message ?? String(ex)}\nData: ${JSON.stringify(failedOp?.opData)}`
+        );
         await transaction.complete();
       } else {
+        console.error('Retryable upload error:', ex);
+        Alert.alert(
+          'Diagnostic: upload failed, will retry',
+          `Table: ${failedOp?.table}\nOp: ${failedOp?.op}\nCode: ${code}\nMessage: ${ex?.message ?? String(ex)}`
+        );
         throw ex; // Retryable (network, 5xx)
       }
     }
