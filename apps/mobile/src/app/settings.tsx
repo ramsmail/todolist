@@ -6,7 +6,7 @@ import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/d
 import { usePowerSync } from '@powersync/react';
 import { useUserSettings, upsertUserSettings } from '@todolist/db';
 import { useAuth } from '../auth/AuthContext';
-import { ensurePushRegistered } from '../notifications/registerPushToken';
+import { ensureNotificationPermission } from '../notifications/registerPushToken';
 import { colors, typography } from '@todolist/ui';
 
 function parseTime(time: string | null): Date {
@@ -35,7 +35,7 @@ export default function SettingsScreen() {
   const handleToggle = useCallback(async (value: boolean) => {
     if (!userId) return;
     if (value) {
-      const granted = await ensurePushRegistered(db as any, userId);
+      const granted = await ensureNotificationPermission();
       if (!granted) {
         Alert.alert('Notifications disabled', 'Enable notifications for this app in system settings to use the daily inbox nudge.');
         return;
