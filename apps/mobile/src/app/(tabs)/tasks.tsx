@@ -1,9 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, FlatList, Text, StyleSheet, Alert } from 'react-native';
+import { View, FlatList, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
-import { useMatrixTasks, useProjects, completeTask, updateTaskDue, updateTaskPriority } from '@todolist/db';
+import { useMatrixTasks, useProjects, updateTaskPriority } from '@todolist/db';
 import { usePowerSync } from '@powersync/react';
 import { typography } from '@todolist/ui';
 import { homeColors } from '../../components/home/homeTheme';
@@ -12,6 +11,7 @@ import { QuadrantTabs } from '../../components/QuadrantTabs';
 import { QuadrantPickerSheet } from '../../components/QuadrantPickerSheet';
 import { FAB } from '../../components/FAB';
 import { QuickCaptureModal } from '../../components/QuickCaptureModal';
+import { useTaskActions } from '../../hooks/useTaskActions';
 
 const EMPTY_COPY: Record<1 | 2 | 3 | 4, string> = {
   1: 'Nothing urgent right now.',
@@ -24,7 +24,6 @@ type MatrixTask = TaskRowData & { project_id: string | null };
 
 export default function TasksScreen() {
   const db = usePowerSync();
-  const router = useRouter();
   const { byQuadrant } = useMatrixTasks();
   const { data: projects } = useProjects();
   const [active, setActive] = useState<1 | 2 | 3 | 4>(1);
@@ -41,25 +40,7 @@ export default function TasksScreen() {
 
   const tasks = (byQuadrant[active] ?? []) as MatrixTask[];
 
-  const handlePress = useCallback((id: string) => router.push(`/task/${id}`), [router]);
-
-  // Rethrow so the row un-hides itself; a swallowed failure here used to look
-  // identical to a successful completion.
-  const handleComplete = useCallback(async (id: string) => {
-    try {
-      await completeTask(db as any, id);
-    } catch (e) {
-      console.error(e);
-      Alert.alert('Could not complete task', 'The change was not saved. Please try again.');
-      throw e;
-    }
-  }, [db]);
-
-  const handleReschedule = useCallback((id: string) => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    updateTaskDue(db as any, id, tomorrow.toISOString().split('T')[0], null).catch(console.error);
-  }, [db]);
+  const { handlePress, handleComplete, handleReschedule } = useTaskActions();
 
   const handlePriorityPress = useCallback((id: string) => setReassigningId(id), []);
 
