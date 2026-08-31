@@ -2,6 +2,10 @@
 
 Follow-ups deferred from active work, not yet done.
 
+## ~~Mobile Home tab consolidated into Today tab~~ — done 2026-09-01
+
+Mobile Home tab (greeting, progress ring, energy strip) merged into Today tab as the summary header and top sections. See implementation plan: `docs/superpowers/plans/2026-09-01-mobile-today-consolidation.md`.
+
 ## ~~Deploy `enrich-url` Edge Function update~~ — done 2026-07-11
 
 Deployed via `supabase functions deploy enrich-url` (version 2, `ACTIVE`).
