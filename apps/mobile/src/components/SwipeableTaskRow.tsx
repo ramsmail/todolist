@@ -8,7 +8,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { TaskCheckbox, PriorityBadge, typography } from '@todolist/ui';
-import { parseLabelsJson } from '@todolist/core';
+import { parseLabelsJson, parseRule, describeRule } from '@todolist/core';
 import { useLabels } from '@todolist/db';
 import { LabelChip } from './LabelChip';
 import { homeColors, homePriorityColor, homeRowTint } from './home/homeTheme';
@@ -20,12 +20,14 @@ export interface TaskRowData {
   due_date: string | null;
   status:   string;
   labels?:  string | null;
+  recurrence_rule?: string | null;
 }
 
 interface Props {
   task:            TaskRowData;
   onPress:         (id: string) => void;
-  onComplete:      (id: string) => void;
+  // May reject; the row restores itself rather than staying hidden on failure.
+  onComplete:      (id: string) => void | Promise<void>;
   onReschedule:    (id: string) => void;
   projectName?:    string | null;
   onPriorityPress?: (id: string) => void;
@@ -39,22 +41,36 @@ export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule, proj
   const isPanel   = variant === 'panel';
   const { data: allLabels } = useLabels();
   const labelNames = parseLabelsJson(task.labels);
+  const rule = task.recurrence_rule ? parseRule(task.recurrence_rule) : null;
+  const repeat = rule ? describeRule(rule) : null;
 
-  // Reset opacity when FlatList recycles this cell for a different task
+  // Reset opacity when FlatList recycles this cell for a different task, and
+  // when the task survives its own completion. A recurring task does the
+  // latter: completeTask advances due_date and keeps the id, so this instance
+  // is reused and an id-only dep list left the row invisible but still holding
+  // its space — indistinguishable from a write that silently failed.
   useEffect(() => {
     opacity.value = 1;
-  }, [task.id, opacity]);
+  }, [task.id, task.due_date, task.status, opacity]);
 
   const closeSwipe = useCallback(() => {
     swipeRef.current?.close();
   }, []);
 
+  // If the write fails, nothing removes this row from the list, so bring it
+  // back instead of leaving an invisible row holding empty space.
+  const runComplete = useCallback((id: string) => {
+    Promise.resolve(onComplete(id)).catch(() => {
+      opacity.value = withTiming(1, { duration: 150 });
+    });
+  }, [onComplete, opacity]);
+
   const handleComplete = useCallback((id: string) => {
     opacity.value = withTiming(0, { duration: 250 }, () => {
       runOnJS(closeSwipe)();
-      runOnJS(onComplete)(id);
+      runOnJS(runComplete)(id);
     });
-  }, [onComplete, opacity, closeSwipe]);
+  }, [runComplete, opacity, closeSwipe]);
 
   const handleSwipeLeft = useCallback(() => {
     handleComplete(task.id);
@@ -108,10 +124,15 @@ export function SwipeableTaskRow({ task, onPress, onComplete, onReschedule, proj
         />
         <Pressable style={styles.content} onPress={handleRowPress}>
           <Text style={styles.title} numberOfLines={2}>{task.title}</Text>
-          {task.due_date && (
-            <Text style={[styles.due, isOverdue ? styles.overdue : null]}>
-              {task.due_date}
-            </Text>
+          {(task.due_date || repeat) && (
+            <View style={styles.metaRow}>
+              {task.due_date && (
+                <Text style={[styles.due, isOverdue ? styles.overdue : null]}>
+                  {task.due_date}
+                </Text>
+              )}
+              {repeat && <Text style={styles.repeat}>↻ {repeat}</Text>}
+            </View>
           )}
           {labelNames.length > 0 && (
             <View style={styles.labelsRow}>
@@ -179,8 +200,10 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   title: { ...typography.body, color: homeColors.textPrimary },
   labelsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 5 },
-  due:   { ...typography.caption, color: homeColors.textSecondary, marginTop: 3 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 3 },
+  due:   { ...typography.caption, color: homeColors.textSecondary },
   overdue: { color: homePriorityColor[1] },
+  repeat: { ...typography.caption, color: homeColors.textMuted },
   panelRight: {
     alignItems: 'flex-end',
     gap: 6,

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, FlatList, Text, StyleSheet } from 'react-native';
+import { View, FlatList, Text, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
@@ -43,8 +43,16 @@ export default function TasksScreen() {
 
   const handlePress = useCallback((id: string) => router.push(`/task/${id}`), [router]);
 
-  const handleComplete = useCallback((id: string) => {
-    completeTask(db as any, id).catch(console.error);
+  // Rethrow so the row un-hides itself; a swallowed failure here used to look
+  // identical to a successful completion.
+  const handleComplete = useCallback(async (id: string) => {
+    try {
+      await completeTask(db as any, id);
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Could not complete task', 'The change was not saved. Please try again.');
+      throw e;
+    }
   }, [db]);
 
   const handleReschedule = useCallback((id: string) => {

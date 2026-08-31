@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { LOGBOOK_QUERY, MATRIX_QUERY, TODAY_QUERY, FOCUS_TASKS_QUERY, groupTasksByPriority, completeTask, deleteTask } from './tasks';
+import { LOGBOOK_QUERY, MATRIX_QUERY, TODAY_QUERY, FOCUS_TASKS_QUERY, TOP_PRIORITIES_QUERY, groupTasksByPriority, completeTask, deleteTask } from './tasks';
 
 function makeMockDb(overrides: Partial<Record<string, any>> = {}) {
   const txExecute = vi.fn().mockResolvedValue(undefined);
@@ -64,6 +64,28 @@ describe('MATRIX_QUERY', () => {
 
   it("orders by sort_order", () => {
     expect(MATRIX_QUERY).toContain("ORDER BY sort_order");
+  });
+});
+
+describe('TOP_PRIORITIES_QUERY', () => {
+  // A recurring task is not completed by completeTask — it keeps its id and
+  // advances due_date — so it stays in this result set afterwards. Rows have to
+  // be able to show that it repeats, otherwise checking one off looks like the
+  // task failed to save.
+  it("selects recurrence_rule so rows can mark repeating tasks", () => {
+    expect(TOP_PRIORITIES_QUERY).toContain('recurrence_rule');
+  });
+
+  it("excludes completed and cancelled tasks", () => {
+    expect(TOP_PRIORITIES_QUERY).toContain("status NOT IN ('completed', 'cancelled')");
+  });
+
+  it("excludes soft-deleted tasks", () => {
+    expect(TOP_PRIORITIES_QUERY).toContain("deleted_at IS NULL");
+  });
+
+  it("excludes sub-tasks", () => {
+    expect(TOP_PRIORITIES_QUERY).toContain('parent_task_id IS NULL');
   });
 });
 
@@ -133,6 +155,46 @@ describe('completeTask', () => {
     expect(reminderSql).toContain('task_id = ?');
     expect(reminderSql).toContain('deleted_at IS NULL');
     expect(reminderParams).toEqual([expect.any(String), expect.any(String), 'task-1']);
+  });
+
+  // Pins the behaviour that surprised us on the Home dashboard: a recurring
+  // task survives completion under its original id, so any list that doesn't
+  // filter by due date still contains it afterwards. Rows must not assume
+  // completion removes them.
+  it("leaves the original recurring task active and only advances its due_date", async () => {
+    const db = makeMockDb({
+      getOptional: vi.fn().mockResolvedValue({
+        id: 'task-1',
+        user_id: 'user-1',
+        title: 'Water plants',
+        description: null,
+        priority: 3,
+        due_date: '2026-07-20',
+        due_time: null,
+        timezone: null,
+        project_id: null,
+        labels: '[]',
+        sort_order: 'a0',
+        recurrence_rule: 'FREQ=DAILY',
+        recurrence_start: '2026-07-20',
+      }),
+    });
+
+    await completeTask(db, 'task-1');
+
+    const taskUpdate = db.txExecute.mock.calls.find(([sql]: [string]) =>
+      sql.includes('UPDATE tasks SET due_date = ?')
+    );
+    expect(taskUpdate).toBeDefined();
+    expect(taskUpdate[0]).not.toContain("status = 'completed'");
+    expect(taskUpdate[1]).toEqual(['2026-07-21', expect.any(String), 'task-1']);
+
+    // The completed occurrence is a separate snapshot row, not the original.
+    const snapshot = db.txExecute.mock.calls.find(([sql]: [string]) =>
+      sql.includes('INSERT INTO tasks')
+    );
+    expect(snapshot).toBeDefined();
+    expect(snapshot[1][0]).not.toBe('task-1');
   });
 });
 

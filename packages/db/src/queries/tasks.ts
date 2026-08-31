@@ -144,8 +144,13 @@ export function useSubtasks(parentTaskId: string) {
 
 // Top priorities for the home dashboard: focused tasks first, then by priority.
 // Fields match SwipeableTaskRow's TaskRowData so the row component is reusable.
+//
+// Deliberately unfiltered by due date, so undated tasks and recurring tasks
+// whose next occurrence is still ahead both stay visible. That means a
+// recurring task remains here after completeTask advances it — recurrence_rule
+// is selected so rows can label it instead of looking like a failed save.
 export const TOP_PRIORITIES_QUERY = `
-  SELECT id, title, priority, due_date, status, labels
+  SELECT id, title, priority, due_date, status, labels, recurrence_rule
   FROM tasks
   WHERE status NOT IN ('completed', 'cancelled')
     AND parent_task_id IS NULL
@@ -155,7 +160,7 @@ export const TOP_PRIORITIES_QUERY = `
 `;
 
 export function useTopPriorities() {
-  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'status' | 'labels'>>(TOP_PRIORITIES_QUERY);
+  return useQuery<Pick<TaskRecord, 'id' | 'title' | 'priority' | 'due_date' | 'status' | 'labels' | 'recurrence_rule'>>(TOP_PRIORITIES_QUERY);
 }
 
 export function useTodayStats() {
