@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Home, LayoutGrid, CheckSquare } from 'lucide-react-native';
+import { CheckSquare, LayoutGrid } from 'lucide-react-native';
 import { homeColors } from '../../components/home/homeTheme';
 
 export default function TabsLayout() {
@@ -19,8 +19,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => <Home size={size} color={color} strokeWidth={2} />,
+          title: 'Today',
+          tabBarIcon: ({ color, size }) => <CheckSquare size={size} color={color} strokeWidth={2} />,
         }}
       />
       <Tabs.Screen
@@ -28,13 +28,6 @@ export default function TabsLayout() {
         options={{
           title: 'Tasks',
           tabBarIcon: ({ color, size }) => <LayoutGrid size={size} color={color} strokeWidth={2} />,
-        }}
-      />
-      <Tabs.Screen
-        name="today"
-        options={{
-          title: 'Today',
-          tabBarIcon: ({ color, size }) => <CheckSquare size={size} color={color} strokeWidth={2} />,
         }}
       />
     </Tabs>
