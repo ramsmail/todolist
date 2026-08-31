@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { LOGBOOK_QUERY, MATRIX_QUERY, TODAY_QUERY, FOCUS_TASKS_QUERY, TOP_PRIORITIES_QUERY, groupTasksByPriority, completeTask, deleteTask } from './tasks';
+import { LOGBOOK_QUERY, MATRIX_QUERY, TODAY_QUERY, AGENDA_QUERY, FOCUS_TASKS_QUERY, TOP_PRIORITIES_QUERY, groupTasksByPriority, groupAgendaTasks, completeTask, deleteTask } from './tasks';
+import { quadrantLabel } from '@todolist/core';
 
 function makeMockDb(overrides: Partial<Record<string, any>> = {}) {
   const txExecute = vi.fn().mockResolvedValue(undefined);
@@ -22,6 +23,38 @@ describe('TODAY_QUERY', () => {
 
   it('includes due_time field', () => {
     expect(TODAY_QUERY).toContain('due_time');
+  });
+});
+
+describe('AGENDA_QUERY', () => {
+  it('includes everything already due', () => {
+    expect(AGENDA_QUERY).toContain("due_date <= date('now')");
+  });
+
+  it('also includes undated top-level P1 work', () => {
+    expect(AGENDA_QUERY).toContain('due_date IS NULL AND priority = 1 AND parent_task_id IS NULL');
+  });
+
+  it('excludes completed and cancelled tasks', () => {
+    expect(AGENDA_QUERY).toContain("status NOT IN ('completed', 'cancelled')");
+  });
+
+  it('excludes soft-deleted tasks', () => {
+    expect(AGENDA_QUERY).toContain('deleted_at IS NULL');
+  });
+
+  it('selects recurrence_rule so rows can label repeats', () => {
+    expect(AGENDA_QUERY).toContain('recurrence_rule');
+  });
+
+  it('orders by priority so P1 leads each section', () => {
+    expect(AGENDA_QUERY).toContain('ORDER BY priority, sort_order');
+  });
+});
+
+describe('TODAY_QUERY regression', () => {
+  it('stays date-only, so the web Today page and sidebar count are unaffected', () => {
+    expect(TODAY_QUERY).not.toContain('priority = 1');
   });
 });
 
@@ -250,5 +283,78 @@ describe('groupTasksByPriority', () => {
     const groups = groupTasksByPriority(tasks);
 
     expect(groups[4].map(t => t.id)).toEqual(['a']);
+  });
+});
+
+describe('groupAgendaTasks', () => {
+  const today = '2026-09-01';
+
+  it('splits dated tasks into Overdue and Today', () => {
+    const sections = groupAgendaTasks([
+      { id: 'late', due_date: '2026-08-25', priority: 2 },
+      { id: 'now', due_date: '2026-09-01', priority: 3 },
+    ], today);
+
+    expect(sections.map(s => s.key)).toEqual(['overdue', 'today']);
+    expect(sections[0].data.map(t => t.id)).toEqual(['late']);
+    expect(sections[1].data.map(t => t.id)).toEqual(['now']);
+  });
+
+  it('puts undated P1 work in its own Do First band', () => {
+    const sections = groupAgendaTasks([
+      { id: 'someday', due_date: null, priority: 1 },
+    ], today);
+
+    expect(sections.map(s => s.key)).toEqual(['do-first']);
+    expect(sections[0].data.map(t => t.id)).toEqual(['someday']);
+  });
+
+  it('titles the Do First band from the shared quadrant label', () => {
+    const sections = groupAgendaTasks([{ id: 'a', due_date: null, priority: 1 }], today);
+
+    expect(sections[0].title).toBe(quadrantLabel[1]);
+  });
+
+  it('drops undated non-P1 tasks rather than mislabelling them as Do First', () => {
+    const sections = groupAgendaTasks([
+      { id: 'undated-p3', due_date: null, priority: 3 },
+    ], today);
+
+    expect(sections).toEqual([]);
+  });
+
+  it('omits empty sections so no bare header renders', () => {
+    const sections = groupAgendaTasks([
+      { id: 'now', due_date: '2026-09-01', priority: 1 },
+    ], today);
+
+    expect(sections.map(s => s.key)).toEqual(['today']);
+  });
+
+  it('orders bands Overdue, then Today, then Do First', () => {
+    const sections = groupAgendaTasks([
+      { id: 'undated', due_date: null, priority: 1 },
+      { id: 'now', due_date: '2026-09-01', priority: 1 },
+      { id: 'late', due_date: '2026-08-01', priority: 1 },
+    ], today);
+
+    expect(sections.map(s => s.key)).toEqual(['overdue', 'today', 'do-first']);
+  });
+
+  it("preserves the query's order within a band", () => {
+    const sections = groupAgendaTasks([
+      { id: 'first', due_date: '2026-08-01', priority: 1 },
+      { id: 'second', due_date: '2026-08-02', priority: 2 },
+    ], today);
+
+    expect(sections[0].data.map(t => t.id)).toEqual(['first', 'second']);
+  });
+
+  it('treats a null priority as non-P1 when undated', () => {
+    const sections = groupAgendaTasks([
+      { id: 'a', due_date: null, priority: null },
+    ], today);
+
+    expect(sections).toEqual([]);
   });
 });

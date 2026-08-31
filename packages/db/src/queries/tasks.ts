@@ -2,7 +2,7 @@ import type { AbstractPowerSyncDatabase } from '@powersync/common';
 import { useMemo } from 'react';
 import { useQuery } from '@powersync/react';
 import { generateKeyBetween } from 'fractional-indexing';
-import { parseRule, computeNext } from '@todolist/core';
+import { parseRule, computeNext, quadrantLabel } from '@todolist/core';
 import type { TaskRecord } from '../schema';
 import { deleteRemindersForTask } from './reminders';
 
@@ -24,6 +24,30 @@ export const TODAY_QUERY = `
   WHERE due_date <= date('now')
     AND status NOT IN ('completed', 'cancelled')
     AND deleted_at IS NULL
+  ORDER BY priority, sort_order
+`;
+
+// The mobile Today tab's list: everything already due (overdue + today) plus
+// top-level P1 work carrying no date at all. That undated branch is the only
+// thing the old Home "Top Priorities" list did that a date filter cannot;
+// folding it in here is what let that tab go away.
+//
+// Deliberately NOT a widening of TODAY_QUERY: that one still backs the web
+// Today page, the web Focus page, and the sidebar's Today count, and changing
+// its meaning would move all three silently.
+//
+// parent_task_id is filtered on the undated branch only, so dated subtasks
+// keep showing up exactly as they do today while undated P1 subtasks don't
+// surface as if they were standalone work.
+export const AGENDA_QUERY = `
+  SELECT id, title, priority, due_date, due_time, project_id, status, labels, recurrence_rule, in_focus, sort_order
+  FROM tasks
+  WHERE status NOT IN ('completed', 'cancelled')
+    AND deleted_at IS NULL
+    AND (
+      due_date <= date('now')
+      OR (due_date IS NULL AND priority = 1 AND parent_task_id IS NULL)
+    )
   ORDER BY priority, sort_order
 `;
 
@@ -65,6 +89,52 @@ export function groupTasksByPriority<T extends { priority: number | null }>(
   return groups;
 }
 
+export type AgendaSectionKey = 'overdue' | 'today' | 'do-first';
+
+export interface AgendaSection<T> {
+  key:   AgendaSectionKey;
+  title: string;
+  data:  T[];
+}
+
+interface AgendaTask {
+  due_date: string | null;
+  priority: number | null;
+}
+
+// Splits AGENDA_QUERY's rows into the three bands the mobile Today tab renders.
+// `today` is passed in rather than read off the clock so this stays pure and
+// testable; callers pass new Date().toISOString().split('T')[0].
+//
+// Undated rows can only be P1 given AGENDA_QUERY's WHERE clause, but the
+// priority check is repeated here so a future caller with a looser query can't
+// quietly file ordinary undated tasks under "Do First".
+export function groupAgendaTasks<T extends AgendaTask>(
+  tasks: T[],
+  today: string
+): AgendaSection<T>[] {
+  const overdue:  T[] = [];
+  const dueToday: T[] = [];
+  const doFirst:  T[] = [];
+
+  for (const task of tasks) {
+    if (task.due_date == null) {
+      if (task.priority === 1) doFirst.push(task);
+      continue;
+    }
+    if (task.due_date < today) overdue.push(task);
+    else if (task.due_date === today) dueToday.push(task);
+  }
+
+  const sections: AgendaSection<T>[] = [
+    { key: 'overdue',  title: 'Overdue',        data: overdue },
+    { key: 'today',    title: 'Today',          data: dueToday },
+    { key: 'do-first', title: quadrantLabel[1], data: doFirst },
+  ];
+
+  return sections.filter(section => section.data.length > 0);
+}
+
 // --- React hooks ---
 
 export function useInboxTasks() {
@@ -88,6 +158,16 @@ export function useTodayTasks() {
   const count = useMemo(() => {
     return query.data?.length ?? 0;
   }, [query.data]);
+
+  return { ...query, count };
+}
+
+export function useAgendaTasks() {
+  const query = useQuery<Pick<TaskRecord,
+    'id' | 'title' | 'priority' | 'due_date' | 'due_time' | 'project_id' |
+    'status' | 'labels' | 'recurrence_rule' | 'in_focus' | 'sort_order'
+  >>(AGENDA_QUERY);
+  const count = useMemo(() => query.data?.length ?? 0, [query.data]);
 
   return { ...query, count };
 }
