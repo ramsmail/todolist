@@ -1,28 +1,25 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, SectionList, Text, StyleSheet } from 'react-native';
+import type { SectionListData } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
-import { Settings } from 'lucide-react-native';
-import { usePowerSync } from '@powersync/react';
-import { useTopPriorities, useTodayStats, completeTask } from '@todolist/db';
+import { useAgendaTasks, useTodayStats, groupAgendaTasks, type AgendaSection } from '@todolist/db';
+import { typography } from '@todolist/ui';
+import { homeColors, homePriorityColor } from '../../components/home/homeTheme';
+import { SwipeableTaskRow, type TaskRowData } from '../../components/SwipeableTaskRow';
+import { TodayHeader } from '../../components/home/TodayHeader';
 import { FAB } from '../../components/FAB';
 import { QuickCaptureModal } from '../../components/QuickCaptureModal';
-import { GreetingHeader } from '../../components/home/GreetingHeader';
-import { DailyFocusCard } from '../../components/home/DailyFocusCard';
-import { EnergySelector } from '../../components/home/EnergySelector';
-import { HomePriorityRow, type PriorityRowData } from '../../components/home/HomePriorityRow';
-import { StatCard } from '../../components/home/StatCard';
-import { StartFocusButton } from '../../components/home/StartFocusButton';
-import { homeColors, homeSpace, homePriorityColor } from '../../components/home/homeTheme';
+import { useTaskActions } from '../../hooks/useTaskActions';
 
-const DAILY_FOCUS = 'Focus on what moves the needle today.';
-
-export default function HomeScreen() {
-  const db = usePowerSync();
-  const router = useRouter();
-  const { data: priorities } = useTopPriorities();
+// The app's landing tab. Merges what used to be three overlapping screens:
+// the old Home dashboard's real widgets live in TodayHeader, and its "Top
+// Priorities" list is now the Do First section — the only band a date filter
+// alone could not produce.
+export default function TodayScreen() {
+  const { data: tasks } = useAgendaTasks();
   const { data: stats } = useTodayStats();
+  const { handlePress, handleComplete, handleReschedule } = useTaskActions();
   const [capturing, setCapturing] = useState(false);
 
   const { completed, total } = useMemo(() => {
@@ -30,18 +27,35 @@ export default function HomeScreen() {
     return { completed: Number(row?.completed ?? 0), total: Number(row?.total ?? 0) };
   }, [stats]);
 
-  const handlePress = useCallback((id: string) => router.push(`/task/${id}`), [router]);
-  // Rethrow so the row un-hides itself; a swallowed failure here used to look
-  // identical to a successful completion.
-  const handleComplete = useCallback(async (id: string) => {
-    try {
-      await completeTask(db as any, id);
-    } catch (e) {
-      console.error(e);
-      Alert.alert('Could not complete task', 'The change was not saved. Please try again.');
-      throw e;
-    }
-  }, [db]);
+  const sections = useMemo(
+    () => groupAgendaTasks(
+      (tasks ?? []) as TaskRowData[],
+      new Date().toISOString().split('T')[0]
+    ),
+    [tasks]
+  );
+
+  const renderItem = useCallback(({ item }: { item: TaskRowData }) => (
+    <SwipeableTaskRow
+      task={item}
+      onPress={handlePress}
+      onComplete={handleComplete}
+      onReschedule={handleReschedule}
+    />
+  ), [handlePress, handleComplete, handleReschedule]);
+
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: SectionListData<TaskRowData, AgendaSection<TaskRowData>> }) => (
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, section.key === 'overdue' && styles.sectionTitleOverdue]}>
+          {section.title}
+        </Text>
+      </View>
+    ),
+    []
+  );
+
+  const keyExtractor = useCallback((item: TaskRowData) => item.id, []);
 
   const openCapture = useCallback(() => setCapturing(true), []);
   const closeCapture = useCallback(() => setCapturing(false), []);
@@ -49,47 +63,19 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <StatusBar style="dark" />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.headerRow}>
-          <GreetingHeader />
-          <Pressable onPress={() => router.push('/settings')} hitSlop={12}>
-            <Settings size={22} color={homeColors.textMuted} strokeWidth={2} />
-          </Pressable>
-        </View>
-        <DailyFocusCard statement={DAILY_FOCUS} />
-        <EnergySelector />
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Top Priorities</Text>
-          <Text style={styles.sectionHint}>Swipe left to complete</Text>
-        </View>
-
-        {priorities && priorities.length > 0 ? (
-          priorities.map((task) => (
-            <HomePriorityRow
-              key={task.id}
-              task={task as PriorityRowData}
-              onPress={handlePress}
-              onComplete={handleComplete}
-            />
-          ))
-        ) : (
-          <Text style={styles.empty}>No priorities yet — add a task to get started.</Text>
-        )}
-
-        <View style={styles.statsRow}>
-          <StatCard
-            label="Tasks"
-            value={`${completed}/${total}`}
-            progress={total > 0 ? completed / total : 0}
-            color={homePriorityColor[4]}
-          />
-          <StatCard label="Focus" value="0m/2h" progress={0} color={homeColors.accent} />
-          <StatCard label="Habits" value="4/5" progress={0.8} color={homeColors.energy} />
-        </View>
-
-        <StartFocusButton />
-      </ScrollView>
+      <SectionList
+        sections={sections}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        renderSectionHeader={renderSectionHeader}
+        ListHeaderComponent={<TodayHeader completed={completed} total={total} />}
+        ListEmptyComponent={
+          <Text style={styles.empty}>Nothing due today, and no P1 waiting.</Text>
+        }
+        contentContainerStyle={styles.listContent}
+        stickySectionHeadersEnabled
+      />
 
       <FAB onPress={openCapture} />
       <QuickCaptureModal visible={capturing} onClose={closeCapture} />
@@ -99,20 +85,23 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: homeColors.page },
-  content: {
-    padding: homeSpace.screen,
-    paddingBottom: 100,
-    gap: 20,
-  },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  listContent: { paddingBottom: 100 },
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    marginBottom: -8,
+    backgroundColor: homeColors.sectionBg,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
   },
-  sectionTitle: { fontSize: 17, color: homeColors.textPrimary, fontWeight: '700' },
-  sectionHint: { fontSize: 12, color: homeColors.textMuted },
-  statsRow: { flexDirection: 'row', gap: homeSpace.gap },
-  empty: { fontSize: 14, color: homeColors.textMuted, paddingVertical: 8 },
+  sectionTitle: {
+    ...typography.caption,
+    color: homeColors.textMuted,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  sectionTitleOverdue: { color: homePriorityColor[1] },
+  empty: {
+    ...typography.body,
+    color: homeColors.textMuted,
+    marginTop: 40,
+    textAlign: 'center',
+  },
 });
