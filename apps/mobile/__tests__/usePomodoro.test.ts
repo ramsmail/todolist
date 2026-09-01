@@ -109,8 +109,6 @@ describe('usePomodoro', () => {
       result.current.start();
     });
 
-    const intervalBefore = result.current.isRunning;
-
     unmount();
   });
 });

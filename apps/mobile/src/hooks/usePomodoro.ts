@@ -60,7 +60,7 @@ export function usePomodoro(): PomodoroState {
         if (intervalRef.current) clearInterval(intervalRef.current);
       }
     }, 100);
-  }, [isRunning, timeRemaining]);
+  }, [isRunning]);
 
   const pause = useCallback(() => {
     if (!isRunning) return;
