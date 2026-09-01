@@ -11,13 +11,17 @@ interface PomodoroTimerProps {
  * Visual timer display showing MM:SS format.
  * Border color changes to accent when running to indicate activity.
  */
-export function PomodoroTimer({ displayTime, isRunning }: PomodoroTimerProps) {
+export const PomodoroTimer = React.memo(function PomodoroTimer({ displayTime, isRunning }: PomodoroTimerProps) {
   return (
-    <View style={[styles.container, isRunning && styles.running]}>
+    <View
+      style={[styles.container, isRunning && styles.running]}
+      testID="pomodoro-timer"
+      accessibilityRole="timer"
+    >
       <Text style={styles.time}>{displayTime}</Text>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
