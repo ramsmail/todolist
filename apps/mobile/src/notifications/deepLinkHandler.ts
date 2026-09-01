@@ -13,6 +13,7 @@ export interface NotificationResponseData {
 export interface DeepLinkDeps {
   completeTask: (taskId: string) => Promise<void>;
   snoozeReminder: (reminderId: string, minutes: number) => Promise<void>;
+  rescheduleTaskTomorrow: (taskId: string) => Promise<void>;
   navigate: (url: string) => void;
 }
 
@@ -27,6 +28,13 @@ export async function handleNotificationResponse(
   }
   if (actionIdentifier === 'snooze_1h' && data.reminderId) {
     await deps.snoozeReminder(data.reminderId, 60);
+    return;
+  }
+  // P1 card "Reschedule": moves the task's due date, matching the Today tab's
+  // swipe-right, rather than snoozing the notification. Returns before the
+  // navigate branch so the action completes without opening the app.
+  if (actionIdentifier === 'reschedule_tomorrow' && data.taskId) {
+    await deps.rescheduleTaskTomorrow(data.taskId);
     return;
   }
   if (actionIdentifier === DEFAULT_ACTION_IDENTIFIER && data.url) {

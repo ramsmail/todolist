@@ -5,6 +5,7 @@ function makeDeps() {
   return {
     completeTask: vi.fn().mockResolvedValue(undefined),
     snoozeReminder: vi.fn().mockResolvedValue(undefined),
+    rescheduleTaskTomorrow: vi.fn().mockResolvedValue(undefined),
     navigate: vi.fn(),
   };
 }
@@ -43,5 +44,37 @@ describe('handleNotificationResponse', () => {
     const deps = makeDeps();
     await handleNotificationResponse(DEFAULT_ACTION_IDENTIFIER, {}, deps);
     expect(deps.navigate).not.toHaveBeenCalled();
+  });
+});
+
+describe('reschedule_tomorrow action', () => {
+  it('pushes the task to tomorrow', async () => {
+    const deps = makeDeps();
+    await handleNotificationResponse('reschedule_tomorrow', { taskId: 'task-1' }, deps);
+    expect(deps.rescheduleTaskTomorrow).toHaveBeenCalledWith('task-1');
+  });
+
+  it('does not navigate, so the action stays out-of-app', async () => {
+    const deps = makeDeps();
+    await handleNotificationResponse('reschedule_tomorrow', { taskId: 'task-1', url: '/task/task-1' }, deps);
+    expect(deps.navigate).not.toHaveBeenCalled();
+  });
+
+  it('does nothing without a taskId', async () => {
+    const deps = makeDeps();
+    await handleNotificationResponse('reschedule_tomorrow', {}, deps);
+    expect(deps.rescheduleTaskTomorrow).not.toHaveBeenCalled();
+  });
+
+  it('does not complete the task', async () => {
+    const deps = makeDeps();
+    await handleNotificationResponse('reschedule_tomorrow', { taskId: 'task-1' }, deps);
+    expect(deps.completeTask).not.toHaveBeenCalled();
+  });
+
+  it('still opens the task on a plain tap of a P1 card', async () => {
+    const deps = makeDeps();
+    await handleNotificationResponse(DEFAULT_ACTION_IDENTIFIER, { taskId: 'task-1', url: '/task/task-1' }, deps);
+    expect(deps.navigate).toHaveBeenCalledWith('/task/task-1');
   });
 });
