@@ -6,6 +6,8 @@ import { GreetingHeader } from './GreetingHeader';
 import { ProgressRing } from './ProgressRing';
 import { EnergyStrip } from './EnergyStrip';
 import { homeColors, homeSpace, homePriorityColor } from './homeTheme';
+import { usePomodoro } from '../../contexts/PomodoroContext';
+import { PomodoroTimer, TimerControls } from '@todolist/ui';
 
 interface Props {
   completed: number;
@@ -21,6 +23,7 @@ interface Props {
 // P1s listed under Do First below.
 export function TodayHeader({ completed, total }: Props) {
   const router = useRouter();
+  const pomodoroState = usePomodoro();
   const progress = total > 0 ? completed / total : 0;
   const remaining = Math.max(0, total - completed);
 
@@ -57,6 +60,19 @@ export function TodayHeader({ completed, total }: Props) {
         </View>
         <View style={styles.divider} />
         <EnergyStrip />
+        <View style={styles.divider} />
+        <View style={styles.timerSection}>
+          <PomodoroTimer
+            displayTime={pomodoroState.displayTime}
+            isRunning={pomodoroState.isRunning}
+          />
+          <TimerControls
+            isRunning={pomodoroState.isRunning}
+            onStart={pomodoroState.start}
+            onPause={pomodoroState.pause}
+            onReset={pomodoroState.reset}
+          />
+        </View>
       </View>
     </View>
   );
@@ -83,4 +99,5 @@ const styles = StyleSheet.create({
   progressValue: { fontSize: 15, color: homeColors.textPrimary, fontWeight: '700' },
   progressCaption: { fontSize: 12, color: homeColors.textSecondary },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: homeColors.cardBorder },
+  timerSection: { gap: 8 },
 });
