@@ -12,6 +12,11 @@ export interface PomodoroState {
   displayTime: string;
 }
 
+/**
+ * Hook managing pomodoro timer state and logic.
+ * Timer runs independently of component lifecycle (via Context in a future task).
+ * Accurate timing: uses timestamps to detect actual elapsed time, not interval drift.
+ */
 export function usePomodoro(): PomodoroState {
   const [timeRemaining, setTimeRemaining] = useState(DEFAULT_DURATION);
   const [isRunning, setIsRunning] = useState(false);
