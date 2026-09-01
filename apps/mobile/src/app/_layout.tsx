@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { ShareIntentProvider, useShareIntentContext } from 'expo-share-intent';
 import { AuthProvider, useAuth } from '../auth/AuthContext';
 import { PowerSyncProvider } from '../powersync/PowerSyncProvider';
+import { PomodoroProvider } from '../contexts/PomodoroContext';
 import { usePowerSync } from '@powersync/react';
 import { useOfflineAttachmentSync } from '../hooks/useOfflineAttachmentSync';
 import { useNotificationReconciliation } from '../hooks/useNotificationReconciliation';
@@ -62,7 +63,9 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <AuthProvider>
             <PowerSyncProvider>
-              <RootLayoutNav />
+              <PomodoroProvider>
+                <RootLayoutNav />
+              </PomodoroProvider>
             </PowerSyncProvider>
           </AuthProvider>
         </SafeAreaProvider>
