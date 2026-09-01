@@ -9,6 +9,9 @@ function makeDeps(overrides: Partial<Record<string, any>> = {}) {
     getInboxCount: vi.fn().mockResolvedValue(0),
     getNudgeSettings: vi.fn().mockResolvedValue({ enabled: false, time: null }),
     scheduleNudgeNotification: vi.fn().mockResolvedValue('nudge-1'),
+    getP1CardTasks: vi.fn().mockResolvedValue([]),
+    getP1CardSettings: vi.fn().mockResolvedValue({ enabled: false, time: null }),
+    scheduleP1CardNotification: vi.fn().mockResolvedValue('p1-notif-1'),
     ...overrides,
   };
 }
@@ -143,5 +146,128 @@ describe('reconcileNudge', () => {
     await reconciler.reconcileNudge();
     expect(deps.cancelNotification).toHaveBeenCalledWith('nudge-1');
     expect(deps.scheduleNudgeNotification).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('reconcileP1Cards', () => {
+  const task = { id: 'task-1', title: 'File the tax return', due_date: '2026-08-30', due_time: null };
+  const enabled = { enabled: true, time: '09:00' };
+
+  it('schedules a card per qualifying task when enabled', async () => {
+    const deps = makeDeps({
+      getP1CardSettings: vi.fn().mockResolvedValue(enabled),
+      getP1CardTasks: vi.fn().mockResolvedValue([task, { ...task, id: 'task-2' }]),
+    });
+    const reconciler = createReconciler(deps as any);
+
+    await reconciler.reconcileP1Cards();
+
+    expect(deps.scheduleP1CardNotification).toHaveBeenCalledTimes(2);
+    expect(deps.scheduleP1CardNotification).toHaveBeenCalledWith(task, '09:00');
+  });
+
+  it('schedules nothing when the setting is off', async () => {
+    const deps = makeDeps({
+      getP1CardSettings: vi.fn().mockResolvedValue({ enabled: false, time: '09:00' }),
+      getP1CardTasks: vi.fn().mockResolvedValue([task]),
+    });
+    const reconciler = createReconciler(deps as any);
+
+    await reconciler.reconcileP1Cards();
+
+    expect(deps.scheduleP1CardNotification).not.toHaveBeenCalled();
+  });
+
+  it('schedules nothing when no fire time is set', async () => {
+    const deps = makeDeps({
+      getP1CardSettings: vi.fn().mockResolvedValue({ enabled: true, time: null }),
+      getP1CardTasks: vi.fn().mockResolvedValue([task]),
+    });
+    const reconciler = createReconciler(deps as any);
+
+    await reconciler.reconcileP1Cards();
+
+    expect(deps.scheduleP1CardNotification).not.toHaveBeenCalled();
+  });
+
+  it('does not query for tasks at all when the setting is off', async () => {
+    const deps = makeDeps({ getP1CardSettings: vi.fn().mockResolvedValue({ enabled: false, time: null }) });
+    const reconciler = createReconciler(deps as any);
+
+    await reconciler.reconcileP1Cards();
+
+    expect(deps.getP1CardTasks).not.toHaveBeenCalled();
+  });
+
+  it('cancels the previous pass cards before scheduling fresh ones', async () => {
+    const deps = makeDeps({
+      getP1CardSettings: vi.fn().mockResolvedValue(enabled),
+      getP1CardTasks: vi.fn().mockResolvedValue([task]),
+    });
+    const reconciler = createReconciler(deps as any);
+
+    await reconciler.reconcileP1Cards();
+    await reconciler.reconcileP1Cards();
+
+    expect(deps.cancelNotification).toHaveBeenCalledWith('p1-notif-1');
+    expect(deps.scheduleP1CardNotification).toHaveBeenCalledTimes(2);
+  });
+
+  it('cancels a card for a task that no longer qualifies', async () => {
+    const deps = makeDeps({
+      getP1CardSettings: vi.fn().mockResolvedValue(enabled),
+      getP1CardTasks: vi.fn()
+        .mockResolvedValueOnce([task])
+        .mockResolvedValueOnce([]), // completed on another device
+    });
+    const reconciler = createReconciler(deps as any);
+
+    await reconciler.reconcileP1Cards();
+    await reconciler.reconcileP1Cards();
+
+    expect(deps.cancelNotification).toHaveBeenCalledWith('p1-notif-1');
+    expect(deps.scheduleP1CardNotification).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears scheduled cards when the setting is turned off', async () => {
+    const deps = makeDeps({
+      getP1CardSettings: vi.fn()
+        .mockResolvedValueOnce(enabled)
+        .mockResolvedValueOnce({ enabled: false, time: '09:00' }),
+      getP1CardTasks: vi.fn().mockResolvedValue([task]),
+    });
+    const reconciler = createReconciler(deps as any);
+
+    await reconciler.reconcileP1Cards();
+    await reconciler.reconcileP1Cards();
+
+    expect(deps.cancelNotification).toHaveBeenCalledWith('p1-notif-1');
+  });
+
+  it('still schedules the remaining tasks when one schedule call throws', async () => {
+    const deps = makeDeps({
+      getP1CardSettings: vi.fn().mockResolvedValue(enabled),
+      getP1CardTasks: vi.fn().mockResolvedValue([task, { ...task, id: 'task-2' }]),
+      scheduleP1CardNotification: vi.fn()
+        .mockRejectedValueOnce(new Error('boom'))
+        .mockResolvedValueOnce('p1-notif-2'),
+    });
+    const reconciler = createReconciler(deps as any);
+
+    await expect(reconciler.reconcileP1Cards()).resolves.toBeUndefined();
+    expect(deps.scheduleP1CardNotification).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not leave a cancelled card tracked when cancellation throws', async () => {
+    const deps = makeDeps({
+      getP1CardSettings: vi.fn().mockResolvedValue(enabled),
+      getP1CardTasks: vi.fn().mockResolvedValue([task]),
+      cancelNotification: vi.fn().mockRejectedValue(new Error('gone')),
+    });
+    const reconciler = createReconciler(deps as any);
+
+    await reconciler.reconcileP1Cards();
+    await expect(reconciler.reconcileP1Cards()).resolves.toBeUndefined();
+    expect(deps.scheduleP1CardNotification).toHaveBeenCalledTimes(2);
   });
 });

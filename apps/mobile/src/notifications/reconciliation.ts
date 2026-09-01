@@ -1,3 +1,5 @@
+import type { P1CardTask } from './p1CardContent';
+
 export interface PendingReminder {
   id: string;
   task_id: string;
@@ -9,6 +11,11 @@ export interface NudgeSettings {
   time: string | null;
 }
 
+export interface P1CardSettings {
+  enabled: boolean;
+  time: string | null;
+}
+
 export interface ReconciliationDeps {
   getPendingReminders: () => Promise<PendingReminder[]>;
   scheduleReminderNotification: (reminder: PendingReminder) => Promise<string>;
@@ -16,11 +23,15 @@ export interface ReconciliationDeps {
   getInboxCount: () => Promise<number>;
   getNudgeSettings: () => Promise<NudgeSettings>;
   scheduleNudgeNotification: (count: number, time: string) => Promise<string>;
+  getP1CardTasks: () => Promise<P1CardTask[]>;
+  getP1CardSettings: () => Promise<P1CardSettings>;
+  scheduleP1CardNotification: (task: P1CardTask, time: string) => Promise<string>;
 }
 
 export function createReconciler(deps: ReconciliationDeps) {
   const scheduledReminders = new Map<string, string>(); // reminderId -> scheduledNotificationId
   let scheduledNudgeId: string | null = null;
+  const scheduledP1Cards = new Map<string, string>(); // taskId -> scheduledNotificationId
 
   async function reconcileReminders(): Promise<void> {
     const pending = await deps.getPendingReminders();
@@ -68,5 +79,34 @@ export function createReconciler(deps: ReconciliationDeps) {
     scheduledNudgeId = await deps.scheduleNudgeNotification(count, settings.time);
   }
 
-  return { reconcileReminders, reconcileNudge };
+  // Unlike reconcileReminders, this tears down and rebuilds every pass rather
+  // than diffing. Two reasons: card content is frozen at schedule time (same
+  // Expo constraint as the nudge), so a task whose title or due date changed
+  // needs re-scheduling even though its id did not; and the qualifying set is
+  // a LIMIT 3 window that reshuffles as due dates move.
+  async function reconcileP1Cards(): Promise<void> {
+    for (const [taskId, notificationId] of scheduledP1Cards) {
+      try {
+        await deps.cancelNotification(notificationId);
+      } catch (err) {
+        console.error('[reconciliation] failed to cancel P1 card for task', taskId, err);
+      }
+    }
+    scheduledP1Cards.clear();
+
+    const settings = await deps.getP1CardSettings();
+    if (!settings.enabled || !settings.time) return;
+
+    const tasks = await deps.getP1CardTasks();
+    for (const task of tasks) {
+      try {
+        const notificationId = await deps.scheduleP1CardNotification(task, settings.time);
+        scheduledP1Cards.set(task.id, notificationId);
+      } catch (err) {
+        console.error('[reconciliation] failed to schedule P1 card for task', task.id, err);
+      }
+    }
+  }
+
+  return { reconcileReminders, reconcileNudge, reconcileP1Cards };
 }
