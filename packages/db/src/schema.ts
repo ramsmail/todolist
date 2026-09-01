@@ -118,6 +118,7 @@ const user_settings = new Table({
   theme:                 column.text,
   nudge_enabled:         column.integer,
   nudge_time:            column.text,
+  p1_cards_enabled:      column.integer,
   created_at:            column.text,
   updated_at:            column.text,
 });
