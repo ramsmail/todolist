@@ -4,4 +4,5 @@ export { PriorityBadge }       from './PriorityBadge';
 export { shouldRenderPriorityBadge } from './priorityBadgeLogic';
 export { SyncStatusIndicator } from './SyncStatusIndicator';
 export { PomodoroTimer }       from './PomodoroTimer';
+export { TimerControls }       from './components/TimerControls';
 export * from './tokens';
