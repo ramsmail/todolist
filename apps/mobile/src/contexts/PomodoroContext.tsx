@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useMemo, ReactNode } from 'react';
 import { usePomodoro as useTimerHook, type PomodoroState } from '../hooks/usePomodoro';
 
 type PomodoroContextValue = PomodoroState;
@@ -12,8 +12,25 @@ const PomodoroContext = createContext<PomodoroContextValue | undefined>(undefine
 export function PomodoroProvider({ children }: { children: ReactNode }) {
   const timerState = useTimerHook();
 
+  const value = useMemo<PomodoroContextValue>(
+    () => ({
+      displayTime: timerState.displayTime,
+      isRunning: timerState.isRunning,
+      start: timerState.start,
+      pause: timerState.pause,
+      reset: timerState.reset,
+    }),
+    [
+      timerState.displayTime,
+      timerState.isRunning,
+      timerState.start,
+      timerState.pause,
+      timerState.reset,
+    ]
+  );
+
   return (
-    <PomodoroContext.Provider value={timerState}>
+    <PomodoroContext.Provider value={value}>
       {children}
     </PomodoroContext.Provider>
   );
