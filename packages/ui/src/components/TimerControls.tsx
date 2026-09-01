@@ -31,6 +31,7 @@ export const TimerControls = React.memo(function TimerControls({
           ]}
           onPress={onStart}
           testID="timer-start-button"
+          accessibilityLabel="Start timer"
         >
           <Text style={[styles.buttonText, styles.primaryButtonText]}>
             Start
@@ -45,6 +46,7 @@ export const TimerControls = React.memo(function TimerControls({
           ]}
           onPress={onPause}
           testID="timer-pause-button"
+          accessibilityLabel="Pause timer"
         >
           <Text style={[styles.buttonText, styles.primaryButtonText]}>
             Pause
@@ -60,6 +62,7 @@ export const TimerControls = React.memo(function TimerControls({
         ]}
         onPress={onReset}
         testID="timer-reset-button"
+        accessibilityLabel="Reset timer"
       >
         <Text style={[styles.buttonText, styles.secondaryButtonText]}>
           Reset
