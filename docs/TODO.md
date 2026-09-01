@@ -2,6 +2,10 @@
 
 Follow-ups deferred from active work, not yet done.
 
+## ~~P1 notification cards~~ — done 2026-09-01
+
+High-priority (P1) tasks show as separate local notification cards in the Android notification shade, alongside the existing Inbox triage card. Fires at the daily nudge time; gated by its own `p1_cards_enabled` toggle in settings. Implemented via `expo-notifications` local scheduled notifications, NOT native home screen widgets. See plan: `docs/superpowers/plans/2026-09-01-mobile-p1-notification-cards.md`. The complete and reschedule actions (both handled by `deepLinkHandler.ts`) require no app reopening — Firebase-style action-only notifications.
+
 ## ~~Mobile Home tab consolidated into Today tab~~ — done 2026-09-01
 
 Mobile Home tab (greeting, progress ring, energy strip) merged into Today tab as the summary header and top sections. See implementation plan: `docs/superpowers/plans/2026-09-01-mobile-today-consolidation.md`.
