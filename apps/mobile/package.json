@@ -55,7 +55,9 @@
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
+    "@testing-library/react-hooks": "^8.0.1",
     "@todolist/config": "workspace:*",
+    "@types/jest": "^29.5.0",
     "@types/react": "~19.2.17",
     "detox": "^20.0.0",
     "jest-circus": "^29.0.0",
