@@ -25,6 +25,13 @@ export async function registerNotificationInfrastructure(): Promise<void> {
     { identifier: 'snooze_1h', buttonTitle: 'Snooze 1h', options: { opensAppToForeground: false } },
   ]);
   await Notifications.setNotificationCategoryAsync('nudge', []);
+  // P1 cards reuse the 'complete' action identifier, which deepLinkHandler
+  // already routes via data.taskId. 'reschedule_tomorrow' is card-specific:
+  // reminders snooze the notification, cards move the task's due date.
+  await Notifications.setNotificationCategoryAsync('p1_card', [
+    { identifier: 'complete', buttonTitle: 'Complete', options: { opensAppToForeground: false } },
+    { identifier: 'reschedule_tomorrow', buttonTitle: 'Reschedule', options: { opensAppToForeground: false } },
+  ]);
 
   // Sound is intentionally left at the Android default (on) for both channels
   // — shouldPlaySound: false above only silences the in-app foreground banner;
