@@ -31,6 +31,7 @@ export default function SettingsScreen() {
   const userId = session?.user.id ?? '';
   const nudgeEnabled = !!settings?.nudge_enabled;
   const nudgeTime = settings?.nudge_time ?? '09:00';
+  const p1CardsEnabled = !!settings?.p1_cards_enabled;
 
   // TEMPORARY DIAGNOSTIC — tracks each handleToggle invocation to catch a
   // double-fire of Switch's onValueChange (a known Android RN issue) sending
@@ -87,6 +88,31 @@ export default function SettingsScreen() {
     }
   }, [db, userId, nudgeTime]);
 
+  const handleP1Toggle = useCallback(async (value: boolean) => {
+    if (!userId) {
+      Alert.alert('Not signed in', 'Your session is not ready yet — try again in a moment.');
+      return;
+    }
+    try {
+      if (value) {
+        const { granted, canAskAgain } = await ensureNotificationPermission();
+        if (!granted) {
+          Alert.alert(
+            'Notifications disabled',
+            canAskAgain
+              ? 'Notification permission was not granted. Please allow notifications to use high-priority cards.'
+              : 'Notifications are blocked for this app. Enable them in your device Settings > Apps > TodoList > Notifications to use high-priority cards.'
+          );
+          return;
+        }
+      }
+      await upsertUserSettings(db as any, userId, { p1_cards_enabled: value ? 1 : 0 });
+    } catch (err) {
+      console.error('[settings] failed to update high-priority cards setting:', err);
+      Alert.alert('Something went wrong', `Could not update the high-priority cards setting: ${String((err as any)?.message ?? err)}`);
+    }
+  }, [db, userId]);
+
   const applyTime = useCallback((date: Date) => {
     if (!userId) return;
     upsertUserSettings(db as any, userId, { nudge_time: formatTime(date) }).catch(console.error);
@@ -137,6 +163,17 @@ export default function SettingsScreen() {
           onDismiss={() => setShowIosPicker(false)}
         />
       )}
+
+      <View style={styles.row}>
+        <Text style={styles.label}>High-priority cards</Text>
+        <Switch value={p1CardsEnabled} onValueChange={handleP1Toggle} />
+      </View>
+
+      {p1CardsEnabled && (
+        <Text style={styles.hint}>
+          Up to 3 overdue or due-today P1 tasks, delivered at {nudgeTime}.
+        </Text>
+      )}
     </SafeAreaView>
   );
 }
@@ -152,4 +189,5 @@ const styles = StyleSheet.create({
   },
   label: { ...typography.body, color: colors.textPrimary },
   value: { ...typography.body, color: colors.textMuted },
+  hint: { ...typography.caption, color: colors.textMuted, paddingTop: 10 },
 });
