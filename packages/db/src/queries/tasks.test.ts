@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { LOGBOOK_QUERY, MATRIX_QUERY, TODAY_QUERY, AGENDA_QUERY, FOCUS_TASKS_QUERY, TOP_PRIORITIES_QUERY, groupTasksByPriority, groupAgendaTasks, completeTask, deleteTask } from './tasks';
+import { LOGBOOK_QUERY, MATRIX_QUERY, TODAY_QUERY, AGENDA_QUERY, FOCUS_TASKS_QUERY, TOP_PRIORITIES_QUERY, P1_CARDS_QUERY, P1_CARD_LIMIT, groupTasksByPriority, groupAgendaTasks, completeTask, deleteTask, getP1CardTasks } from './tasks';
 import { quadrantLabel } from '@todolist/core';
 
 function makeMockDb(overrides: Partial<Record<string, any>> = {}) {
@@ -356,5 +356,56 @@ describe('groupAgendaTasks', () => {
     ], today);
 
     expect(sections).toEqual([]);
+  });
+});
+
+describe('P1_CARDS_QUERY', () => {
+  it('selects only priority 1 work', () => {
+    expect(P1_CARDS_QUERY).toContain('priority = 1');
+  });
+
+  it('covers overdue and due-today tasks', () => {
+    expect(P1_CARDS_QUERY).toContain("due_date <= date('now')");
+  });
+
+  it('excludes undated tasks, which the Do First band already covers', () => {
+    expect(P1_CARDS_QUERY).toContain('due_date IS NOT NULL');
+  });
+
+  it('excludes completed and cancelled tasks', () => {
+    expect(P1_CARDS_QUERY).toContain("status NOT IN ('completed', 'cancelled')");
+  });
+
+  it('excludes soft-deleted tasks', () => {
+    expect(P1_CARDS_QUERY).toContain('deleted_at IS NULL');
+  });
+
+  it('shows the most overdue work first', () => {
+    expect(P1_CARDS_QUERY).toContain('ORDER BY due_date, sort_order');
+  });
+
+  it('caps the number of cards so a big P1 backlog cannot spam the shade', () => {
+    expect(P1_CARD_LIMIT).toBe(3);
+    expect(P1_CARDS_QUERY).toContain(`LIMIT ${P1_CARD_LIMIT}`);
+  });
+
+  it('selects the fields a card renders and nothing more', () => {
+    expect(P1_CARDS_QUERY).toContain('SELECT id, title, due_date, due_time');
+  });
+});
+
+describe('getP1CardTasks', () => {
+  it('returns the rows the query produces', async () => {
+    const rows = [{ id: 't1', title: 'Ship it', due_date: '2026-08-30', due_time: null }];
+    const db = makeMockDb({ getAll: vi.fn().mockResolvedValue(rows) });
+
+    expect(await getP1CardTasks(db)).toEqual(rows);
+    expect(db.getAll).toHaveBeenCalledWith(P1_CARDS_QUERY);
+  });
+
+  it('returns an empty list when nothing qualifies', async () => {
+    const db = makeMockDb({ getAll: vi.fn().mockResolvedValue([]) });
+
+    expect(await getP1CardTasks(db)).toEqual([]);
   });
 });

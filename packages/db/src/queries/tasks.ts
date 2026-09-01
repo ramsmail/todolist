@@ -51,6 +51,42 @@ export const AGENDA_QUERY = `
   ORDER BY priority, sort_order
 `;
 
+// How many P1 cards may sit in the notification shade at once. Three keeps the
+// shade readable next to the Inbox triage card; a user with a large P1 backlog
+// sees the three closest to breaching, not all of them.
+export const P1_CARD_LIMIT = 3;
+
+export interface P1CardTaskRow {
+  id:       string;
+  title:    string;
+  due_date: string | null;
+  due_time: string | null;
+}
+
+// Backs the mobile P1 notification cards: priority-1 work that is open and has
+// already arrived (overdue or due today).
+//
+// due_date IS NOT NULL is redundant against `due_date <= date('now')` in
+// SQLite, but it is written explicitly because it states the actual product
+// rule: undated P1 work belongs to the Today tab's Do First band, not to a
+// notification. Without it, a future edit widening the date clause would
+// silently start paging the user about work with no deadline.
+export const P1_CARDS_QUERY = `
+  SELECT id, title, due_date, due_time
+  FROM tasks
+  WHERE status NOT IN ('completed', 'cancelled')
+    AND deleted_at IS NULL
+    AND priority = 1
+    AND due_date IS NOT NULL
+    AND due_date <= date('now')
+  ORDER BY due_date, sort_order
+  LIMIT ${P1_CARD_LIMIT}
+`;
+
+export async function getP1CardTasks(db: AbstractPowerSyncDatabase): Promise<P1CardTaskRow[]> {
+  return db.getAll<P1CardTaskRow>(P1_CARDS_QUERY);
+}
+
 export const UPCOMING_QUERY = `
   SELECT id, title, priority, due_date, project_id, status, labels, recurrence_rule
   FROM tasks
