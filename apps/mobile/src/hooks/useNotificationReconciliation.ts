@@ -2,7 +2,9 @@ import { useEffect } from 'react';
 import { AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { usePowerSync } from '@powersync/react';
-import { getPendingReminders, getUserSettings, getInboxCount } from '@todolist/db';
+import { getPendingReminders, getUserSettings, getInboxCount, getP1CardTasks } from '@todolist/db';
+import { formatP1CardBody } from '../notifications/p1CardContent';
+import { formatDueDateForStorage } from '../lib/dueDateFormat';
 import { useAuth } from '../auth/AuthContext';
 import { createReconciler, type PendingReminder } from '../notifications/reconciliation';
 import { registerNotificationInfrastructure } from '../notifications/setup';
@@ -85,11 +87,47 @@ export function useNotificationReconciliation() {
               channelId: 'triage',
             },
           }),
+
+        getP1CardTasks: () => getP1CardTasks(db),
+
+        // P1 cards share nudge_time with the inbox nudge but have their own
+        // on/off column, so a user can run either one alone. The 09:00 fallback
+        // covers a user who enables cards without ever having set a nudge time.
+        getP1CardSettings: async () => {
+          const settings = await getUserSettings(db);
+          return {
+            enabled: !!settings?.p1_cards_enabled,
+            time: settings?.nudge_time ?? '09:00',
+          };
+        },
+
+        scheduleP1CardNotification: (task, time) =>
+          Notifications.scheduleNotificationAsync({
+            // Deterministic id so a card can be cancelled without consulting
+            // Expo's scheduled-notification list.
+            identifier: `p1:${task.id}`,
+            content: {
+              title: task.title,
+              body: formatP1CardBody(task, formatDueDateForStorage(new Date())),
+              categoryIdentifier: 'p1_card',
+              data: {
+                url: `/task/${task.id}`,
+                taskId: task.id,
+                type: 'p1_card',
+              },
+            },
+            trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.DATE,
+              date: nextOccurrence(time),
+              channelId: 'triage',
+            },
+          }),
       });
 
       const reconcileAll = () => {
         reconciler.reconcileReminders().catch(console.error);
         reconciler.reconcileNudge().catch(console.error);
+        reconciler.reconcileP1Cards().catch(console.error);
       };
 
       reconcileAll();
@@ -98,7 +136,10 @@ export function useNotificationReconciliation() {
 
       const appStateSub = AppState.addEventListener('change', (nextState) => {
         if (nextState === 'active') reconcileAll();
-        if (nextState === 'background') reconciler.reconcileNudge().catch(console.error);
+        if (nextState === 'background') {
+          reconciler.reconcileNudge().catch(console.error);
+          reconciler.reconcileP1Cards().catch(console.error);
+        }
       });
 
       cleanup = () => {
