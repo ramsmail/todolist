@@ -6,6 +6,7 @@ import { usePowerSync } from '@powersync/react';
 import { useSubtasks, createTask, completeTask } from '@todolist/db';
 import { useAuth } from '../auth/AuthContext';
 import { TaskCheckbox, colors, typography } from '@todolist/ui';
+import { CAPTURE_DEFAULT_PRIORITY } from '../lib/resolveTaskPriority';
 
 interface Props {
   parentTaskId: string;
@@ -36,7 +37,7 @@ export function SubTaskList({ parentTaskId, projectId }: Props) {
       await createTask(db as any, {
         userId:       session.user.id,
         title:        trimmed,
-        priority:     4,
+        priority:     CAPTURE_DEFAULT_PRIORITY,
         status:       'active',
         projectId:    projectId ?? null,
         parentTaskId: parentTaskId,

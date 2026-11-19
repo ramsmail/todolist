@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { resolveTaskPriority } from '../src/lib/resolveTaskPriority';
+import { resolveTaskPriority, CAPTURE_DEFAULT_PRIORITY } from '../src/lib/resolveTaskPriority';
+
+describe('CAPTURE_DEFAULT_PRIORITY', () => {
+  it('is Plan (P2), so untagged captures from Home and share do not land in Drop (P4)', () => {
+    expect(CAPTURE_DEFAULT_PRIORITY).toBe(2);
+    expect(resolveTaskPriority(4, CAPTURE_DEFAULT_PRIORITY)).toBe(2);
+  });
+});
 
 describe('resolveTaskPriority', () => {
   it('uses the explicit priority parsed from the input when it is not the silent default', () => {

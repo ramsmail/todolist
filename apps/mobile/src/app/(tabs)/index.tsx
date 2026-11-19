@@ -11,6 +11,7 @@ import { TodayHeader } from '../../components/home/TodayHeader';
 import { FAB } from '../../components/FAB';
 import { QuickCaptureModal } from '../../components/QuickCaptureModal';
 import { useTaskActions } from '../../hooks/useTaskActions';
+import { CAPTURE_DEFAULT_PRIORITY } from '../../lib/resolveTaskPriority';
 
 // The app's landing tab. Merges what used to be three overlapping screens:
 // the old Home dashboard's real widgets live in TodayHeader, and its "Top
@@ -78,7 +79,7 @@ export default function TodayScreen() {
       />
 
       <FAB onPress={openCapture} />
-      <QuickCaptureModal visible={capturing} onClose={closeCapture} />
+      <QuickCaptureModal visible={capturing} onClose={closeCapture} defaultPriority={CAPTURE_DEFAULT_PRIORITY} />
     </SafeAreaView>
   );
 }

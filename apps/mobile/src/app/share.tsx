@@ -13,6 +13,7 @@ import { supabase } from '../supabase/client';
 import { uploadQueue } from '../lib/uploadQueue';
 import { handleShareIntent, type NormalizedShare } from '../share/handleShareIntent';
 import { readFileBytes } from '../share/readFileBytes';
+import { CAPTURE_DEFAULT_PRIORITY } from '../lib/resolveTaskPriority';
 
 type Phase = 'loading' | 'ready' | 'saving' | 'saved' | 'error';
 
@@ -101,6 +102,7 @@ export default function ShareScreen() {
         userId: session.user.id,
         title: trimmed,
         status: 'inbox',
+        priority: CAPTURE_DEFAULT_PRIORITY,
         sourceUrl: payload.sourceUrl,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
