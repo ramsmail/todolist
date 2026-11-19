@@ -9,12 +9,17 @@ import { useAuth } from '../auth/AuthContext';
 import { createReconciler, type PendingReminder } from '../notifications/reconciliation';
 import { registerNotificationInfrastructure } from '../notifications/setup';
 
-function nextOccurrence(time: string): Date {
+// Repeating daily trigger for the nudge and P1 cards. A one-shot DATE trigger
+// only fires once, so the next day's alert depended on the app happening to
+// reconcile again. DAILY lets the OS deliver it every day at the same time.
+function dailyTrigger(time: string, channelId: string) {
   const [hour, minute] = time.split(':').map(Number);
-  const next = new Date();
-  next.setHours(hour, minute, 0, 0);
-  if (next.getTime() <= Date.now()) next.setDate(next.getDate() + 1);
-  return next;
+  return {
+    type: Notifications.SchedulableTriggerInputTypes.DAILY,
+    hour,
+    minute,
+    channelId,
+  };
 }
 
 export function useNotificationReconciliation() {
@@ -81,11 +86,7 @@ export function useNotificationReconciliation() {
               categoryIdentifier: 'nudge',
               data: { url: '/tasks', type: 'nudge' },
             },
-            trigger: {
-              type: Notifications.SchedulableTriggerInputTypes.DATE,
-              date: nextOccurrence(time),
-              channelId: 'triage',
-            },
+            trigger: dailyTrigger(time, 'triage'),
           }),
 
         getP1CardTasks: () => getP1CardTasks(db),
@@ -116,11 +117,7 @@ export function useNotificationReconciliation() {
                 type: 'p1_card',
               },
             },
-            trigger: {
-              type: Notifications.SchedulableTriggerInputTypes.DATE,
-              date: nextOccurrence(time),
-              channelId: 'triage',
-            },
+            trigger: dailyTrigger(time, 'triage'),
           }),
       });
 
