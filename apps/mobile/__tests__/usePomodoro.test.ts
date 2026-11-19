@@ -102,6 +102,41 @@ describe('usePomodoro', () => {
     expect(result.current.displayTime).toBe('02:05');
   });
 
+  it('resumes from the paused value after multiple pause/resume cycles', () => {
+    const { result } = renderHook(() => usePomodoro());
+
+    act(() => {
+      result.current.start();
+    });
+    act(() => {
+      vi.advanceTimersByTime(60000);
+    });
+    act(() => {
+      result.current.pause();
+    });
+    act(() => {
+      result.current.start();
+    });
+    act(() => {
+      vi.advanceTimersByTime(60000);
+    });
+    act(() => {
+      result.current.pause();
+    });
+
+    const pausedAt = result.current.timeRemaining;
+    expect(pausedAt).toBe(1380);
+
+    act(() => {
+      result.current.start();
+    });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(result.current.timeRemaining).toBe(1379);
+  });
+
   it('cleans up the interval on unmount', () => {
     const { unmount, result } = renderHook(() => usePomodoro());
 

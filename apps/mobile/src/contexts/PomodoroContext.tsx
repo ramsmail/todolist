@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useMemo, ReactNode } from 'react';
 import { usePomodoro as useTimerHook, type PomodoroState } from '../hooks/usePomodoro';
 
-type PomodoroContextValue = PomodoroState;
+type PomodoroContextValue = Pick<
+  PomodoroState,
+  'displayTime' | 'isRunning' | 'start' | 'pause' | 'reset'
+>;
 
 const PomodoroContext = createContext<PomodoroContextValue | undefined>(undefined);
 

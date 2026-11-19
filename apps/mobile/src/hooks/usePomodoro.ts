@@ -22,7 +22,7 @@ export function usePomodoro(): PomodoroState {
   const [isRunning, setIsRunning] = useState(false);
   const startTimeRef = useRef<number | null>(null);
   const pausedTimeRef = useRef(DEFAULT_DURATION);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const displayTime = useCallback((): string => {
     const minutes = Math.floor(timeRemaining / 60);
@@ -40,11 +40,7 @@ export function usePomodoro(): PomodoroState {
 
     setIsRunning(true);
     startTimeRef.current = Date.now();
-    // If pausedTimeRef hasn't been explicitly set yet (still equals default or the previous state),
-    // set it to the current timeRemaining. Otherwise, preserve the explicitly set value.
-    if (pausedTimeRef.current === DEFAULT_DURATION) {
-      pausedTimeRef.current = timeRemaining;
-    }
+    // pausedTimeRef is the base for this run; pause(), reset() and setTimeRemaining keep it current.
 
     intervalRef.current = setInterval(() => {
       if (startTimeRef.current === null) return;
@@ -65,7 +61,15 @@ export function usePomodoro(): PomodoroState {
   const pause = useCallback(() => {
     if (!isRunning) return;
 
+    // Snapshot the exact remaining time so the next start() resumes from it.
+    const startedAt = startTimeRef.current;
+    const elapsedSeconds = startedAt === null ? 0 : Math.floor((Date.now() - startedAt) / 1000);
+    const remaining = Math.max(0, pausedTimeRef.current - elapsedSeconds);
+
     setIsRunning(false);
+    setTimeRemaining(remaining);
+    pausedTimeRef.current = remaining;
+    startTimeRef.current = null;
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
