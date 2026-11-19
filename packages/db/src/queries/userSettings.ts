@@ -15,7 +15,7 @@ export async function getUserSettings(db: AbstractPowerSyncDatabase): Promise<Us
 // Limited to what's needed so far — extend this Pick when `theme` or
 // `web_push_subscription` get a write path, rather than adding a second
 // upsert function for this table.
-type WritableFields = Partial<Pick<UserSettingsRecord, 'timezone' | 'expo_push_token' | 'nudge_enabled' | 'nudge_time' | 'p1_cards_enabled'>>;
+type WritableFields = Partial<Pick<UserSettingsRecord, 'timezone' | 'expo_push_token' | 'nudge_enabled' | 'nudge_time' | 'p1_cards_enabled' | 'checkin_enabled' | 'checkin_time'>>;
 
 export async function upsertUserSettings(
   db: AbstractPowerSyncDatabase,
@@ -35,10 +35,23 @@ export async function upsertUserSettings(
       [...values, now, userId]
     );
   } else {
+    // checkin_time defaults to '10:00' to mirror the Postgres column default —
+    // inserting NULL here would violate its NOT NULL constraint on upload.
     await db.execute(
-      `INSERT INTO user_settings (id, timezone, expo_push_token, nudge_enabled, nudge_time, p1_cards_enabled, created_at, updated_at)
-       VALUES (?,?,?,?,?,?,?,?)`,
-      [userId, fields.timezone ?? null, fields.expo_push_token ?? null, fields.nudge_enabled ?? 0, fields.nudge_time ?? null, fields.p1_cards_enabled ?? 0, now, now]
+      `INSERT INTO user_settings (id, timezone, expo_push_token, nudge_enabled, nudge_time, p1_cards_enabled, checkin_enabled, checkin_time, created_at, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      [
+        userId,
+        fields.timezone ?? null,
+        fields.expo_push_token ?? null,
+        fields.nudge_enabled ?? 0,
+        fields.nudge_time ?? null,
+        fields.p1_cards_enabled ?? 0,
+        fields.checkin_enabled ?? 0,
+        fields.checkin_time ?? '10:00',
+        now,
+        now,
+      ]
     );
   }
 }

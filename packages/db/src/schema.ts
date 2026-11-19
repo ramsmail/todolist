@@ -119,6 +119,8 @@ const user_settings = new Table({
   nudge_enabled:         column.integer,
   nudge_time:            column.text,
   p1_cards_enabled:      column.integer,
+  checkin_enabled:       column.integer,
+  checkin_time:          column.text,
   created_at:            column.text,
   updated_at:            column.text,
 });

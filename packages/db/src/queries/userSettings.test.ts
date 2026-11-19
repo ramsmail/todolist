@@ -34,4 +34,22 @@ describe('upsertUserSettings', () => {
     await upsertUserSettings(db, 'user-1', {});
     expect(db.execute).not.toHaveBeenCalled();
   });
+
+  it('inserts checkin defaults (off, 10:00) when a new row is created without them', async () => {
+    const db = makeMockDb(null);
+    await upsertUserSettings(db, 'user-1', { timezone: 'Asia/Kolkata' });
+    const [sql, params] = db.execute.mock.calls[0];
+    expect(sql).toContain('checkin_enabled');
+    expect(sql).toContain('checkin_time');
+    expect(params).toContain('10:00');
+  });
+
+  it('writes checkin fields on update', async () => {
+    const db = makeMockDb({ id: 'user-1' });
+    await upsertUserSettings(db, 'user-1', { checkin_enabled: 1, checkin_time: '10:30' });
+    const [sql, params] = db.execute.mock.calls[0];
+    expect(sql).toContain('checkin_enabled = ?');
+    expect(sql).toContain('checkin_time = ?');
+    expect(params).toEqual(expect.arrayContaining([1, '10:30', 'user-1']));
+  });
 });
