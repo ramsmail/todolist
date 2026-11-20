@@ -20,18 +20,22 @@ function formatTime(date: Date): string {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
+type TimeField = 'nudge_time' | 'checkin_time';
+
 export default function SettingsScreen() {
   const db = usePowerSync();
   const router = useRouter();
   const { session } = useAuth();
   const { data: rows } = useUserSettings();
   const settings = rows?.[0] ?? null;
-  const [showIosPicker, setShowIosPicker] = useState(false);
+  const [iosPickerFor, setIosPickerFor] = useState<TimeField | null>(null);
 
   const userId = session?.user.id ?? '';
   const nudgeEnabled = !!settings?.nudge_enabled;
   const nudgeTime = settings?.nudge_time ?? '09:00';
   const p1CardsEnabled = !!settings?.p1_cards_enabled;
+  const checkinEnabled = !!settings?.checkin_enabled;
+  const checkinTime = settings?.checkin_time ?? '10:00';
 
   // TEMPORARY DIAGNOSTIC — tracks each handleToggle invocation to catch a
   // double-fire of Switch's onValueChange (a known Android RN issue) sending
@@ -113,27 +117,57 @@ export default function SettingsScreen() {
     }
   }, [db, userId]);
 
-  const applyTime = useCallback((date: Date) => {
+  const handleCheckinToggle = useCallback(async (value: boolean) => {
+    if (!userId) {
+      Alert.alert('Not signed in', 'Your session is not ready yet — try again in a moment.');
+      return;
+    }
+    try {
+      if (value) {
+        const { granted, canAskAgain } = await ensureNotificationPermission();
+        if (!granted) {
+          Alert.alert(
+            'Notifications disabled',
+            canAskAgain
+              ? 'Notification permission was not granted. Please allow notifications to use the daily check-in.'
+              : 'Notifications are blocked for this app. Enable them in your device Settings > Apps > TodoList > Notifications to use the daily check-in.'
+          );
+          return;
+        }
+      }
+      await upsertUserSettings(db as any, userId, { checkin_enabled: value ? 1 : 0, checkin_time: checkinTime });
+    } catch (err) {
+      console.error('[settings] failed to update daily check-in setting:', err);
+      Alert.alert('Something went wrong', `Could not update the daily check-in setting: ${String((err as any)?.message ?? err)}`);
+    }
+  }, [db, userId, checkinTime]);
+
+  const applyTime = useCallback((field: TimeField, date: Date) => {
     if (!userId) return;
-    upsertUserSettings(db as any, userId, { nudge_time: formatTime(date) }).catch(console.error);
+    const value = formatTime(date);
+    // Explicit branches rather than a computed key: `{ [field]: value }` widens
+    // to an index signature that isn't assignable to WritableFields.
+    const fields = field === 'nudge_time' ? { nudge_time: value } : { checkin_time: value };
+    upsertUserSettings(db as any, userId, fields).catch(console.error);
   }, [db, userId]);
 
-  const openTimePicker = useCallback(() => {
-    const value = parseTime(nudgeTime);
+  const openTimePicker = useCallback((field: TimeField) => {
+    const value = parseTime(field === 'nudge_time' ? nudgeTime : checkinTime);
     if (Platform.OS === 'android') {
       DateTimePickerAndroid.open({
         value, mode: 'time', display: 'default',
-        onValueChange: (_e, selectedDate) => { if (selectedDate) applyTime(selectedDate); },
+        onValueChange: (_e, selectedDate) => { if (selectedDate) applyTime(field, selectedDate); },
       });
     } else {
-      setShowIosPicker(true);
+      setIosPickerFor(field);
     }
-  }, [nudgeTime, applyTime]);
+  }, [nudgeTime, checkinTime, applyTime]);
 
   const handleIosChange = useCallback((_event: unknown, selectedDate?: Date) => {
-    setShowIosPicker(false);
-    if (selectedDate) applyTime(selectedDate);
-  }, [applyTime]);
+    const field = iosPickerFor;
+    setIosPickerFor(null);
+    if (field && selectedDate) applyTime(field, selectedDate);
+  }, [iosPickerFor, applyTime]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -143,24 +177,36 @@ export default function SettingsScreen() {
       <Text style={styles.heading}>Settings</Text>
 
       <View style={styles.row}>
+        <Text style={styles.label}>Daily check-in</Text>
+        <Switch value={checkinEnabled} onValueChange={handleCheckinToggle} />
+      </View>
+
+      {checkinEnabled && (
+        <Pressable style={styles.row} onPress={() => openTimePicker('checkin_time')}>
+          <Text style={styles.label}>Check-in time</Text>
+          <Text style={styles.value}>{checkinTime}</Text>
+        </Pressable>
+      )}
+
+      <View style={styles.row}>
         <Text style={styles.label}>Daily inbox nudge</Text>
         <Switch value={nudgeEnabled} onValueChange={handleToggle} />
       </View>
 
       {nudgeEnabled && (
-        <Pressable style={styles.row} onPress={openTimePicker}>
+        <Pressable style={styles.row} onPress={() => openTimePicker('nudge_time')}>
           <Text style={styles.label}>Time</Text>
           <Text style={styles.value}>{nudgeTime}</Text>
         </Pressable>
       )}
 
-      {showIosPicker && (
+      {iosPickerFor && (
         <DateTimePicker
-          value={parseTime(nudgeTime)}
+          value={parseTime(iosPickerFor === 'nudge_time' ? nudgeTime : checkinTime)}
           mode="time"
           display="default"
           onValueChange={handleIosChange}
-          onDismiss={() => setShowIosPicker(false)}
+          onDismiss={() => setIosPickerFor(null)}
         />
       )}
 
