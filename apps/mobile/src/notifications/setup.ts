@@ -32,6 +32,7 @@ export async function registerNotificationInfrastructure(): Promise<void> {
     { identifier: 'complete', buttonTitle: 'Complete', options: { opensAppToForeground: false } },
     { identifier: 'reschedule_tomorrow', buttonTitle: 'Reschedule', options: { opensAppToForeground: false } },
   ]);
+  await Notifications.setNotificationCategoryAsync('checkin', []);
 
   // Sound is intentionally left at the Android default (on) for both channels
   // — shouldPlaySound: false above only silences the in-app foreground banner;
@@ -49,6 +50,15 @@ export async function registerNotificationInfrastructure(): Promise<void> {
     await Notifications.setNotificationChannelAsync('triage', {
       name: 'Triage',
       importance: Notifications.AndroidImportance.DEFAULT,
+    });
+    // Separate channel because Android locks a channel's sound at creation —
+    // the custom chime can't be added to 'triage' for existing installs. The
+    // sound name is the base filename registered via the expo-notifications
+    // plugin's `sounds` array in app.json.
+    await Notifications.setNotificationChannelAsync('checkin', {
+      name: 'Daily check-in',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'checkin.wav',
     });
   }
 }

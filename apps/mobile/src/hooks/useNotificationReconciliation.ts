@@ -7,6 +7,7 @@ import { formatP1CardBody } from '../notifications/p1CardContent';
 import { formatDueDateForStorage } from '../lib/dueDateFormat';
 import { useAuth } from '../auth/AuthContext';
 import { createReconciler, type PendingReminder } from '../notifications/reconciliation';
+import { normalizeCheckinTime } from '../notifications/checkinContent';
 import { registerNotificationInfrastructure } from '../notifications/setup';
 
 // Repeating daily trigger for the nudge and P1 cards. A one-shot DATE trigger
@@ -119,12 +120,36 @@ export function useNotificationReconciliation() {
             },
             trigger: dailyTrigger(time, 'triage'),
           }),
+
+        getCheckinSettings: async () => {
+          const settings = await getUserSettings(db);
+          return {
+            enabled: !!settings?.checkin_enabled,
+            time: normalizeCheckinTime(settings?.checkin_time),
+          };
+        },
+
+        scheduleCheckinNotification: (time, body) =>
+          Notifications.scheduleNotificationAsync({
+            // Fixed identifier: rescheduling replaces the OS-level entry even
+            // after an app restart, when the reconciler's in-memory id is gone.
+            identifier: 'checkin',
+            content: {
+              title: 'Daily check-in',
+              body,
+              sound: 'checkin.wav', // iOS; Android plays the channel's sound
+              categoryIdentifier: 'checkin',
+              data: { url: '/', type: 'checkin' },
+            },
+            trigger: dailyTrigger(time, 'checkin'),
+          }),
       });
 
       const reconcileAll = () => {
         reconciler.reconcileReminders().catch(console.error);
         reconciler.reconcileNudge().catch(console.error);
         reconciler.reconcileP1Cards().catch(console.error);
+        reconciler.reconcileCheckin().catch(console.error);
       };
 
       reconcileAll();
@@ -136,6 +161,7 @@ export function useNotificationReconciliation() {
         if (nextState === 'background') {
           reconciler.reconcileNudge().catch(console.error);
           reconciler.reconcileP1Cards().catch(console.error);
+          reconciler.reconcileCheckin().catch(console.error);
         }
       });
 
