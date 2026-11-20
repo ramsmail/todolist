@@ -38,7 +38,12 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "sounds": ["./assets/sounds/checkin.wav"]
+        }
+      ],
       [
         "expo-speech-recognition",
         {
