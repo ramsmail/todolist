@@ -1,13 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { usePowerSync } from '@powersync/react';
-import { getPendingReminders, getUserSettings, getInboxCount, getP1CardTasks } from '@todolist/db';
+import { getPendingReminders, getUserSettings, getInboxCount, getP1CardTasks, useUserSettings } from '@todolist/db';
 import { formatP1CardBody } from '../notifications/p1CardContent';
 import { formatDueDateForStorage } from '../lib/dueDateFormat';
 import { useAuth } from '../auth/AuthContext';
 import { createReconciler, type PendingReminder } from '../notifications/reconciliation';
 import { normalizeCheckinTime } from '../notifications/checkinContent';
+import { buildCheckinRequest } from '../notifications/checkinRequest';
 import { registerNotificationInfrastructure } from '../notifications/setup';
 
 // Repeating daily trigger for the nudge and P1 cards. A one-shot DATE trigger
@@ -26,6 +27,10 @@ function dailyTrigger(time: string, channelId: string) {
 export function useNotificationReconciliation() {
   const db = usePowerSync();
   const { session } = useAuth();
+  const reconcilerRef = useRef<ReturnType<typeof createReconciler> | null>(null);
+  const { data: settingsRows } = useUserSettings();
+  const checkinEnabled = !!settingsRows?.[0]?.checkin_enabled;
+  const checkinTime = normalizeCheckinTime(settingsRows?.[0]?.checkin_time);
 
   useEffect(() => {
     if (!session) return;
@@ -130,20 +135,9 @@ export function useNotificationReconciliation() {
         },
 
         scheduleCheckinNotification: (time, body) =>
-          Notifications.scheduleNotificationAsync({
-            // Fixed identifier: rescheduling replaces the OS-level entry even
-            // after an app restart, when the reconciler's in-memory id is gone.
-            identifier: 'checkin',
-            content: {
-              title: 'Daily check-in',
-              body,
-              sound: 'checkin.wav', // iOS; Android plays the channel's sound
-              categoryIdentifier: 'checkin',
-              data: { url: '/', type: 'checkin' },
-            },
-            trigger: dailyTrigger(time, 'checkin'),
-          }),
+          Notifications.scheduleNotificationAsync(buildCheckinRequest(time, body)),
       });
+      reconcilerRef.current = reconciler;
 
       const reconcileAll = () => {
         reconciler.reconcileReminders().catch(console.error);
@@ -174,6 +168,14 @@ export function useNotificationReconciliation() {
     return () => {
       cancelled = true;
       cleanup?.();
+      reconcilerRef.current = null;
     };
   }, [db, session]);
+
+  // Settings edits made while the app is open must reschedule the check-in
+  // immediately; otherwise the old OS notification keeps firing. Kept out of
+  // the main effect so a settings change does not re-run the full reconcile.
+  useEffect(() => {
+    reconcilerRef.current?.reconcileCheckin().catch(console.error);
+  }, [checkinEnabled, checkinTime, session]);
 }

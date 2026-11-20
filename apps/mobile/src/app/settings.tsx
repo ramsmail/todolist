@@ -7,6 +7,7 @@ import { usePowerSync } from '@powersync/react';
 import { useUserSettings, upsertUserSettings, getUserSettings } from '@todolist/db';
 import { useAuth } from '../auth/AuthContext';
 import { ensureNotificationPermission } from '../notifications/registerPushToken';
+import { normalizeCheckinTime } from '../notifications/checkinContent';
 import { colors, typography } from '@todolist/ui';
 
 function parseTime(time: string | null): Date {
@@ -35,7 +36,7 @@ export default function SettingsScreen() {
   const nudgeTime = settings?.nudge_time ?? '09:00';
   const p1CardsEnabled = !!settings?.p1_cards_enabled;
   const checkinEnabled = !!settings?.checkin_enabled;
-  const checkinTime = settings?.checkin_time ?? '10:00';
+  const checkinTime = normalizeCheckinTime(settings?.checkin_time);
 
   // TEMPORARY DIAGNOSTIC — tracks each handleToggle invocation to catch a
   // double-fire of Switch's onValueChange (a known Android RN issue) sending
@@ -135,12 +136,12 @@ export default function SettingsScreen() {
           return;
         }
       }
-      await upsertUserSettings(db as any, userId, { checkin_enabled: value ? 1 : 0, checkin_time: checkinTime });
+      await upsertUserSettings(db as any, userId, { checkin_enabled: value ? 1 : 0 });
     } catch (err) {
       console.error('[settings] failed to update daily check-in setting:', err);
       Alert.alert('Something went wrong', `Could not update the daily check-in setting: ${String((err as any)?.message ?? err)}`);
     }
-  }, [db, userId, checkinTime]);
+  }, [db, userId]);
 
   const applyTime = useCallback((field: TimeField, date: Date) => {
     if (!userId) return;
