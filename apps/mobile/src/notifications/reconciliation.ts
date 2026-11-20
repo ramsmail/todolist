@@ -1,4 +1,5 @@
 import type { P1CardTask } from './p1CardContent';
+import { pickCheckinLine } from './checkinContent';
 
 export interface PendingReminder {
   id: string;
@@ -16,6 +17,11 @@ export interface P1CardSettings {
   time: string | null;
 }
 
+export interface CheckinSettings {
+  enabled: boolean;
+  time: string;
+}
+
 export interface ReconciliationDeps {
   getPendingReminders: () => Promise<PendingReminder[]>;
   scheduleReminderNotification: (reminder: PendingReminder) => Promise<string>;
@@ -26,12 +32,15 @@ export interface ReconciliationDeps {
   getP1CardTasks: () => Promise<P1CardTask[]>;
   getP1CardSettings: () => Promise<P1CardSettings>;
   scheduleP1CardNotification: (task: P1CardTask, time: string) => Promise<string>;
+  getCheckinSettings: () => Promise<CheckinSettings>;
+  scheduleCheckinNotification: (time: string, body: string) => Promise<string>;
 }
 
 export function createReconciler(deps: ReconciliationDeps) {
   const scheduledReminders = new Map<string, string>(); // reminderId -> scheduledNotificationId
   let scheduledNudgeId: string | null = null;
   const scheduledP1Cards = new Map<string, string>(); // taskId -> scheduledNotificationId
+  let scheduledCheckinId: string | null = null;
 
   async function reconcileReminders(): Promise<void> {
     const pending = await deps.getPendingReminders();
@@ -108,5 +117,20 @@ export function createReconciler(deps: ReconciliationDeps) {
     }
   }
 
-  return { reconcileReminders, reconcileNudge, reconcileP1Cards };
+  // Like the nudge, content is frozen at schedule time, so rescheduling on
+  // every pass is what rotates the line. Unlike the nudge, there is no
+  // emptiness condition: the check-in always fires when enabled.
+  async function reconcileCheckin(): Promise<void> {
+    if (scheduledCheckinId) {
+      await deps.cancelNotification(scheduledCheckinId);
+      scheduledCheckinId = null;
+    }
+
+    const settings = await deps.getCheckinSettings();
+    if (!settings.enabled) return;
+
+    scheduledCheckinId = await deps.scheduleCheckinNotification(settings.time, pickCheckinLine(new Date()));
+  }
+
+  return { reconcileReminders, reconcileNudge, reconcileP1Cards, reconcileCheckin };
 }

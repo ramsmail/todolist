@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createReconciler } from '../src/notifications/reconciliation';
+import { CHECKIN_LINES } from '../src/notifications/checkinContent';
 
 function makeDeps(overrides: Partial<Record<string, any>> = {}) {
   return {
@@ -12,6 +13,8 @@ function makeDeps(overrides: Partial<Record<string, any>> = {}) {
     getP1CardTasks: vi.fn().mockResolvedValue([]),
     getP1CardSettings: vi.fn().mockResolvedValue({ enabled: false, time: null }),
     scheduleP1CardNotification: vi.fn().mockResolvedValue('p1-notif-1'),
+    getCheckinSettings: vi.fn().mockResolvedValue({ enabled: false, time: '10:00' }),
+    scheduleCheckinNotification: vi.fn().mockResolvedValue('checkin-1'),
     ...overrides,
   };
 }
@@ -269,5 +272,64 @@ describe('reconcileP1Cards', () => {
     await reconciler.reconcileP1Cards();
     await expect(reconciler.reconcileP1Cards()).resolves.toBeUndefined();
     expect(deps.scheduleP1CardNotification).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('reconcileCheckin', () => {
+  it('schedules nothing when disabled', async () => {
+    const deps = makeDeps();
+    const reconciler = createReconciler(deps as any);
+    await reconciler.reconcileCheckin();
+    expect(deps.scheduleCheckinNotification).not.toHaveBeenCalled();
+  });
+
+  it('schedules at the configured time with a check-in line when enabled, even with an empty inbox', async () => {
+    const deps = makeDeps({
+      getCheckinSettings: vi.fn().mockResolvedValue({ enabled: true, time: '10:00' }),
+      getInboxCount: vi.fn().mockResolvedValue(0),
+    });
+    const reconciler = createReconciler(deps as any);
+    await reconciler.reconcileCheckin();
+    expect(deps.scheduleCheckinNotification).toHaveBeenCalledTimes(1);
+    const [time, body] = deps.scheduleCheckinNotification.mock.calls[0];
+    expect(time).toBe('10:00');
+    expect(CHECKIN_LINES).toContain(body);
+  });
+
+  it('replaces rather than stacks: cancels the previous check-in before rescheduling', async () => {
+    const deps = makeDeps({
+      getCheckinSettings: vi.fn().mockResolvedValue({ enabled: true, time: '10:00' }),
+      scheduleCheckinNotification: vi.fn().mockResolvedValueOnce('checkin-1').mockResolvedValueOnce('checkin-2'),
+    });
+    const reconciler = createReconciler(deps as any);
+    await reconciler.reconcileCheckin();
+    await reconciler.reconcileCheckin();
+    expect(deps.cancelNotification).toHaveBeenCalledWith('checkin-1');
+    expect(deps.scheduleCheckinNotification).toHaveBeenCalledTimes(2);
+  });
+
+  it('reschedules at the new time after the time setting changes', async () => {
+    const deps = makeDeps({
+      getCheckinSettings: vi.fn()
+        .mockResolvedValueOnce({ enabled: true, time: '10:00' })
+        .mockResolvedValueOnce({ enabled: true, time: '07:30' }),
+    });
+    const reconciler = createReconciler(deps as any);
+    await reconciler.reconcileCheckin();
+    await reconciler.reconcileCheckin();
+    expect(deps.scheduleCheckinNotification.mock.calls[1][0]).toBe('07:30');
+  });
+
+  it('cancels and does not reschedule after being disabled', async () => {
+    const deps = makeDeps({
+      getCheckinSettings: vi.fn()
+        .mockResolvedValueOnce({ enabled: true, time: '10:00' })
+        .mockResolvedValueOnce({ enabled: false, time: '10:00' }),
+    });
+    const reconciler = createReconciler(deps as any);
+    await reconciler.reconcileCheckin();
+    await reconciler.reconcileCheckin();
+    expect(deps.cancelNotification).toHaveBeenCalledWith('checkin-1');
+    expect(deps.scheduleCheckinNotification).toHaveBeenCalledTimes(1);
   });
 });
