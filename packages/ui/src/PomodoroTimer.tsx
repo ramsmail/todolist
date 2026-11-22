@@ -18,15 +18,21 @@ export const PomodoroTimer = React.memo(function PomodoroTimer({ displayTime, is
       testID="pomodoro-timer"
       accessibilityRole="timer"
     >
+      <Text style={styles.icon} importantForAccessibility="no">🍅</Text>
       <Text style={styles.time}>{displayTime}</Text>
     </View>
   );
 });
 
+// Softer than colors.p1 so the timer reads as a tint, not an alert.
+const TIMER_RED = '#F87171';
+
 const styles = StyleSheet.create({
   container: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -37,9 +43,12 @@ const styles = StyleSheet.create({
   running: {
     borderColor: colors.accent,
   },
+  icon: {
+    fontSize: 14,
+  },
   time: {
     ...typography.heading2,
-    color: colors.textPrimary,
+    color: TIMER_RED,
     fontFamily: 'monospace', // Monospace so digits don't shift width
   },
 });
