@@ -5,6 +5,7 @@ import { generateKeyBetween } from 'fractional-indexing';
 import { parseRule, computeNext, quadrantLabel } from '@todolist/core';
 import type { TaskRecord } from '../schema';
 import { deleteRemindersForTask } from './reminders';
+import { deleteLinksFor } from './links';
 
 // --- Read helpers (used in hooks) ---
 
@@ -506,6 +507,7 @@ export async function deleteTask(db: AbstractPowerSyncDatabase, id: string): Pro
     [now, now, id]
   );
   await deleteRemindersForTask(db, id);
+  await deleteLinksFor(db, 'task', id);
 }
 
 export async function toggleFocus(db: AbstractPowerSyncDatabase, id: string): Promise<void> {

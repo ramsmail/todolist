@@ -232,12 +232,12 @@ describe('completeTask', () => {
 });
 
 describe('deleteTask', () => {
-  it("soft-deletes the task and cancels its pending reminder(s)", async () => {
+  it("soft-deletes the task and cancels its pending reminder(s), and removes all task links", async () => {
     const db = makeMockDb();
 
     await deleteTask(db, 'task-1');
 
-    expect(db.execute).toHaveBeenCalledTimes(2);
+    expect(db.execute).toHaveBeenCalledTimes(3);
     const [taskSql, taskParams] = db.execute.mock.calls[0];
     expect(taskSql).toContain('UPDATE tasks SET deleted_at = ?');
     expect(taskParams[taskParams.length - 1]).toBe('task-1');
@@ -247,6 +247,10 @@ describe('deleteTask', () => {
     expect(reminderSql).toContain('deleted_at = ?');
     expect(reminderSql).toContain('task_id = ?');
     expect(reminderParams).toEqual([expect.any(String), expect.any(String), 'task-1']);
+
+    const [linkSql, linkParams] = db.execute.mock.calls[2];
+    expect(linkSql).toContain('DELETE FROM links');
+    expect(linkParams).toEqual(['task', 'task-1', 'task', 'task-1']);
   });
 });
 
