@@ -23,3 +23,4 @@ export * from './queries/reminders';
 export * from './queries/userSettings';
 export * from './queries/streak';
 export * from './queries/weeklyActivity';
+export * from './queries/syncTables';

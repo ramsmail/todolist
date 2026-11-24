@@ -5,6 +5,7 @@ import {
 } from '@powersync/react-native';
 import { Alert } from 'react-native';
 import { supabase } from '../supabase/client';
+import { isHardDeleteTable } from '@todolist/db';
 
 const FATAL_CODES = [/^22/, /^23/]; // Postgres class 22 (data), 23 (integrity)
 
@@ -50,10 +51,12 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
             result = await table.update(op.opData ?? {}).eq('id', op.id);
             break;
           case UpdateType.DELETE:
-            // Soft delete — deleted_at triggers the DB updated_at trigger; don't pass updated_at client-side
-            result = await table
-              .update({ deleted_at: new Date().toISOString() })
-              .eq('id', op.id);
+            // Tables without deleted_at (see HARD_DELETE_TABLES) get a real DELETE.
+            result = isHardDeleteTable(op.table)
+              ? await table.delete().eq('id', op.id)
+              : await table
+                  .update({ deleted_at: new Date().toISOString() })
+                  .eq('id', op.id);
             break;
           default:
             throw new Error(`Unknown UpdateType: ${(op as any).op}`);
