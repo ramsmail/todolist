@@ -51,6 +51,7 @@ All three representations change together, in this order and in the same commit:
 | `project_id` | `uuid null → projects on delete set null` | no project = "resource" |
 | `labels` | `jsonb not null default '[]'` | same shape as `tasks.labels`; GIN index |
 | `is_archived` | `boolean not null default false` | |
+| `is_processed` | `boolean not null default false` | for capture-inbox review; false = unprocessed, true = reviewed |
 | `source_url` | `text null` | set for link captures |
 | `link_title`, `link_excerpt`, `link_image_url`, `link_site_name` | `text null` | written only by `enrich-url` |
 | `link_status` | `text null check (link_status in ('pending','ok','failed'))` | |
@@ -90,15 +91,18 @@ trigger conflicts.
 |---|---|
 | `id` | `uuid pk` |
 | `user_id` | `uuid not null → auth.users on delete cascade` |
-| `from_type`, `to_type` | `text not null check (… in ('note','task'))` |
+| `from_type`, `to_type` | `text not null check (… in ('note','task','person','project'))` |
 | `from_id`, `to_id` | `uuid not null` |
+| `origin` | `text not null default 'manual' check (origin in ('manual','wikilink'))` | phase 2 sets `'wikilink'` for `[[links]]`; never auto-deletes `'manual'` links |
 | `created_at` | `timestamptz not null default now()` |
 
 - Unique `(user_id, from_type, from_id, to_type, to_id)`.
 - **Hard delete** (no `deleted_at`): links have no content worth keeping, and soft
   delete would collide with the unique constraint when re-linking.
 - v1 stores note→task only; queries read both directions so phase 2 can add
-  note→note without migration.
+  note→note and future entity types (person, project) without migration.
+- `origin = 'manual'` protects hand-made links: phase 2 `[[wikilink]]` sync must
+  only create/delete `wikilink`-origin rows and never touch `manual` ones.
 - Polymorphic ids have no FKs. Acceptable because all reads are `user_id`-scoped: a
   link to a foreign id resolves to nothing. The client deletes a note's or task's
   links in the same local transaction as the soft delete.
