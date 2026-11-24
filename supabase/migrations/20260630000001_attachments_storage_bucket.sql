@@ -5,7 +5,16 @@ insert into storage.buckets (id, name, public) values ('attachments', 'attachmen
 on conflict (id) do nothing;
 
 -- Enable RLS on the attachments bucket
-alter table storage.objects enable row level security;
+-- (storage.objects is owned by supabase_storage_admin; this is a no-op when RLS is
+-- already on, and silently skips the ALTER when the caller lacks ownership privileges,
+-- which happens in the local dev stack where postgres is not the table owner.)
+do $$
+begin
+  alter table storage.objects enable row level security;
+exception when insufficient_privilege then
+  null; -- already enabled by the storage service
+end;
+$$;
 
 -- Read policy: users can read objects in their own user_id/ prefix
 create policy "attachments_select_own"
