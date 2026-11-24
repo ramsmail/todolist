@@ -2,7 +2,7 @@ import type { AbstractPowerSyncDatabase } from '@powersync/common';
 import { INBOX_QUERY } from './queries/tasks';
 
 export { AppSchema } from './schema';
-export type { Database, TaskRecord, ProjectRecord, LabelRecord, SavedFilterRecord, DailyLogRecord, UserSettingsRecord } from './schema';
+export type { Database, TaskRecord, ProjectRecord, LabelRecord, SavedFilterRecord, DailyLogRecord, UserSettingsRecord, NoteRecord, LinkRecord } from './schema';
 
 // Plain (non-hook) inbox count for use outside component render — e.g. the
 // notification reconciliation service, which runs in a useEffect, not a

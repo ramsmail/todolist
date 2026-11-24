@@ -135,7 +135,48 @@ const daily_log = new Table(
   { indexes: { by_date: ['log_date'] } }
 );
 
-export const AppSchema = new Schema({ tasks, projects, labels, saved_filters, attachments, reminders, user_settings, daily_log });
+// notes: second-brain notes. body is markdown; revision/base_revision drive the
+// server-side conflict-copy trigger (see migration 20261125000001).
+const notes = new Table(
+  {
+    user_id:        column.text,
+    title:          column.text,
+    body:           column.text,
+    project_id:     column.text,
+    labels:         column.text,    // JSON array stored as text
+    is_archived:    column.integer,
+    is_processed:   column.integer,  // boolean: 0 = unprocessed, 1 = processed
+    source_url:     column.text,
+    link_title:     column.text,
+    link_excerpt:   column.text,
+    link_image_url: column.text,
+    link_site_name: column.text,
+    link_status:    column.text,    // 'pending' | 'ok' | 'failed' | null
+    revision:       column.integer,
+    base_revision:  column.integer,
+    conflict_of:    column.text,
+    created_at:     column.text,
+    updated_at:     column.text,
+    deleted_at:     column.text,
+  },
+  { indexes: { by_updated: ['updated_at'], by_project: ['project_id'], by_link_status: ['link_status'] } }
+);
+
+// links: generic note<->task (later note<->note) association. Hard-deleted (no deleted_at).
+const links = new Table(
+  {
+    user_id:    column.text,
+    from_type:  column.text,
+    from_id:    column.text,
+    to_type:    column.text,
+    to_id:      column.text,
+    origin:     column.text,  // 'manual' | 'wikilink'
+    created_at: column.text,
+  },
+  { indexes: { by_from: ['from_type', 'from_id'], by_to: ['to_type', 'to_id'] } }
+);
+
+export const AppSchema = new Schema({ tasks, projects, labels, saved_filters, attachments, reminders, user_settings, daily_log, notes, links });
 
 export type Database               = (typeof AppSchema)['types'];
 export type TaskRecord             = Database['tasks'];
@@ -146,3 +187,5 @@ export type AttachmentRecord       = Database['attachments'];
 export type ReminderRecord         = Database['reminders'];
 export type UserSettingsRecord     = Database['user_settings'];
 export type DailyLogRecord         = Database['daily_log'];
+export type NoteRecord             = Database['notes'];
+export type LinkRecord             = Database['links'];
