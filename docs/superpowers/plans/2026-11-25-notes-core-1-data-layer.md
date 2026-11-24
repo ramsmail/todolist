@@ -238,6 +238,39 @@ do $$ begin
   assert (select title from notes where id = 'aaaaaaaa-0000-0000-0000-000000000009') = 'spoof', 'T10 RLS: B updated A''s note';
 end $$;
 
+-- T11: is_processed defaults to false and can be toggled.
+do $$ begin
+  assert (select is_processed from notes where id = 'aaaaaaaa-0000-0000-0000-000000000009') = false, 'T11 is_processed default not false';
+end $$;
+update notes set is_processed = true where id = 'aaaaaaaa-0000-0000-0000-000000000009';
+do $$ begin
+  assert (select is_processed from notes where id = 'aaaaaaaa-0000-0000-0000-000000000009') = true, 'T11 is_processed update failed';
+end $$;
+
+-- T12: links origin defaults to 'manual' and rejects unknown values.
+insert into links (user_id, from_type, from_id, to_type, to_id) values
+  ('11111111-1111-1111-1111-111111111111', 'note', gen_random_uuid(), 'task', gen_random_uuid());
+do $$ begin
+  assert (select origin from links order by created_at desc limit 1) = 'manual', 'T12 links origin default not manual';
+  begin
+    insert into links (user_id, from_type, from_id, to_type, to_id, origin) values
+      ('11111111-1111-1111-1111-111111111111', 'note', gen_random_uuid(), 'task', gen_random_uuid(), 'auto');
+    assert false, 'T12 unknown origin accepted';
+  exception when check_violation then null;
+  end;
+end $$;
+
+-- T13: link types include person and project (future entity types).
+do $$ begin
+  begin
+    -- These types are now valid; they just have no rows yet.
+    insert into links (user_id, from_type, from_id, to_type, to_id) values
+      ('11111111-1111-1111-1111-111111111111', 'person', gen_random_uuid(), 'note', gen_random_uuid());
+    -- clean up
+    delete from links where from_type = 'person';
+  end;
+end $$;
+
 \echo 'ALL NOTES TESTS PASSED'
 rollback;
 ```
@@ -277,6 +310,7 @@ create table notes (
   project_id     uuid        references projects(id) on delete set null,
   labels         jsonb       not null default '[]',
   is_archived    boolean     not null default false,
+  is_processed   boolean     not null default false,  -- capture-inbox flag: false = unprocessed
   source_url     text,
   link_title     text,
   link_excerpt   text,
@@ -301,10 +335,11 @@ create index notes_labels_gin_idx   on notes using gin (labels);
 create table links (
   id         uuid        primary key default gen_random_uuid(),
   user_id    uuid        not null references auth.users(id) on delete cascade,
-  from_type  text        not null check (from_type in ('note','task')),
+  from_type  text        not null check (from_type in ('note','task','person','project')),
   from_id    uuid        not null,
-  to_type    text        not null check (to_type in ('note','task')),
+  to_type    text        not null check (to_type in ('note','task','person','project')),
   to_id      uuid        not null,
+  origin     text        not null default 'manual' check (origin in ('manual','wikilink')),
   created_at timestamptz not null default now(),
   constraint links_unique unique (user_id, from_type, from_id, to_type, to_id)
 );
@@ -576,6 +611,7 @@ const notes = new Table(
     project_id:     column.text,
     labels:         column.text,    // JSON array stored as text
     is_archived:    column.integer,
+    is_processed:   column.integer,  // boolean: 0 = unprocessed, 1 = processed
     source_url:     column.text,
     link_title:     column.text,
     link_excerpt:   column.text,
@@ -600,6 +636,7 @@ const links = new Table(
     from_id:    column.text,
     to_type:    column.text,
     to_id:      column.text,
+    origin:     column.text,  // 'manual' | 'wikilink'
     created_at: column.text,
   },
   { indexes: { by_from: ['from_type', 'from_id'], by_to: ['to_type', 'to_id'] } }
@@ -1018,8 +1055,8 @@ describe('linkNoteToTask', () => {
     await linkNoteToTask(db as any, 'u1', 'n1', 't1');
     const [sql, params] = db.execute.mock.calls[0];
     expect(sql).toContain('INSERT INTO links');
-    // id, user_id, from_type, from_id, to_type, to_id, created_at
-    expect(params.slice(1, 6)).toEqual(['u1', 'note', 'n1', 'task', 't1']);
+    // id, user_id, from_type, from_id, to_type, to_id, origin, created_at
+    expect(params.slice(1, 7)).toEqual(['u1', 'note', 'n1', 'task', 't1', 'manual']);
   });
 
   it('is idempotent: no insert when the link already exists in either direction', async () => {
@@ -1140,9 +1177,9 @@ export async function linkNoteToTask(
   );
   if (existing) return;
   await db.execute(
-    `INSERT INTO links (id, user_id, from_type, from_id, to_type, to_id, created_at)
-     VALUES (?,?,?,?,?,?,?)`,
-    [crypto.randomUUID(), userId, 'note', noteId, 'task', taskId, new Date().toISOString()]
+    `INSERT INTO links (id, user_id, from_type, from_id, to_type, to_id, origin, created_at)
+     VALUES (?,?,?,?,?,?,?,?)`,
+    [crypto.randomUUID(), userId, 'note', noteId, 'task', taskId, 'manual', new Date().toISOString()]
   );
 }
 
@@ -1341,16 +1378,17 @@ describe('createNote', () => {
     const id = await createNote(db as any, { userId: 'u1', body: 'hello' });
     const [sql, params] = db.execute.mock.calls[0];
     expect(sql).toContain('INSERT INTO notes');
-    // id, user_id, title, body, project_id, labels, is_archived, source_url, link_status, revision, base_revision, created_at, updated_at
+    // id, user_id, title, body, project_id, labels, is_archived, is_processed, source_url, link_status, revision, base_revision, created_at, updated_at
     expect(params[0]).toBe(id);
-    expect(params.slice(1, 11)).toEqual(['u1', '', 'hello', null, '[]', 0, null, null, 0, 0]);
+    expect(params.slice(1, 12)).toEqual(['u1', '', 'hello', null, '[]', 0, 0, null, null, 0, 0]);
   });
   it('marks link captures pending', async () => {
     const db = fakeDb();
     await createNote(db as any, { userId: 'u1', sourceUrl: 'https://a.b' });
     const params = db.execute.mock.calls[0][1];
-    expect(params[7]).toBe('https://a.b');
-    expect(params[8]).toBe('pending');
+    // params: id, user_id, title, body, project_id, labels, is_archived, is_processed, source_url, link_status, ...
+    expect(params[8]).toBe('https://a.b');
+    expect(params[9]).toBe('pending');
   });
 });
 
@@ -1409,13 +1447,13 @@ describe('createLinkedTask / createLinkedNote', () => {
     expect(db.execute.mock.calls[0][0]).toContain('INSERT INTO tasks');
     const [linkSql, linkParams] = db.execute.mock.calls[1];
     expect(linkSql).toContain('INSERT INTO links');
-    expect(linkParams.slice(1, 6)).toEqual(['u1', 'note', 'n1', 'task', taskId]);
+    expect(linkParams.slice(1, 7)).toEqual(['u1', 'note', 'n1', 'task', taskId, 'manual']);
   });
   it('creates a note and links it to the task', async () => {
     const db = fakeDb();
     const noteId = await createLinkedNote(db as any, { userId: 'u1', taskId: 't1', title: 'Ctx' });
     expect(db.execute.mock.calls[0][0]).toContain('INSERT INTO notes');
-    expect(db.execute.mock.calls[1][1].slice(1, 6)).toEqual(['u1', 'note', noteId, 'task', 't1']);
+    expect(db.execute.mock.calls[1][1].slice(1, 7)).toEqual(['u1', 'note', noteId, 'task', 't1', 'manual']);
   });
 });
 ```
@@ -1544,9 +1582,9 @@ export async function createNote(
   const sourceUrl = fields.sourceUrl ?? null;
   await db.execute(
     `INSERT INTO notes
-       (id, user_id, title, body, project_id, labels, is_archived, source_url, link_status,
+       (id, user_id, title, body, project_id, labels, is_archived, is_processed, source_url, link_status,
         revision, base_revision, created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id,
       fields.userId,
@@ -1555,6 +1593,7 @@ export async function createNote(
       fields.projectId ?? null,
       JSON.stringify(fields.labels ?? []),
       0,
+      0,  // is_processed: false
       sourceUrl,
       sourceUrl ? 'pending' : null,
       0,
