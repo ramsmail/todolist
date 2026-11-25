@@ -1,6 +1,7 @@
 import type { AbstractPowerSyncDatabase } from '@powersync/common';
 import { useQuery } from '@powersync/react';
 import { generateKeyBetween } from 'fractional-indexing';
+import { deleteLinksFor } from './links';
 import type { NoteRecord } from '../schema';
 
 export type NoteFields = {
@@ -145,10 +146,13 @@ export async function deleteNote(
   noteId: string
 ): Promise<void> {
   const now = new Date().toISOString();
-  await db.execute(
-    `UPDATE notes SET deleted_at = ?, updated_at = ? WHERE id = ?`,
-    [now, now, noteId]
-  );
+  await db.writeTransaction(async (tx) => {
+    await tx.execute(
+      `UPDATE notes SET deleted_at = ?, updated_at = ? WHERE id = ?`,
+      [now, now, noteId]
+    );
+    await deleteLinksFor(tx, 'note', noteId);
+  });
 }
 
 export async function createLinkedTask(

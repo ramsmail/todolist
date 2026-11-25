@@ -122,12 +122,19 @@ describe('archiveNote', () => {
 });
 
 describe('deleteNote', () => {
-  it('soft-deletes the note', async () => {
+  it('soft-deletes the note and removes its links in one transaction', async () => {
     const db = fakeDb();
     await deleteNote(db as any, 'n1');
-    const [sql, params] = db.execute.mock.calls[0];
+    expect(db.writeTransaction).toHaveBeenCalledTimes(1);
+    const tx = await db.writeTransaction.mock.results[0].value;
+
+    const [sql, params] = tx.execute.mock.calls[0];
     expect(sql).toContain('UPDATE notes SET deleted_at = ?');
     expect(params[params.length - 1]).toBe('n1');
+
+    const [linkSql, linkParams] = tx.execute.mock.calls[1];
+    expect(linkSql).toContain('DELETE FROM links');
+    expect(linkParams).toEqual(['note', 'n1', 'note', 'n1']);
   });
 });
 
