@@ -25,3 +25,4 @@ export * from './queries/streak';
 export * from './queries/weeklyActivity';
 export * from './queries/syncTables';
 export * from './queries/links';
+export * from './queries/notes';
