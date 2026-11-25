@@ -11,17 +11,70 @@ export function useProjects() {
   );
 }
 
+export function useProjectsWithStats() {
+  return useQuery<{
+    id: string;
+    name: string;
+    description: string | null;
+    category: string;
+    color: string;
+    icon: string;
+    due_date: string | null;
+    total_tasks: number;
+    completed_tasks: number;
+    open_tasks: number;
+  }>(
+    `SELECT
+       p.id,
+       p.name,
+       p.description,
+       p.category,
+       p.color,
+       p.icon,
+       p.due_date,
+       COUNT(CASE WHEN t.status != 'cancelled' AND t.deleted_at IS NULL THEN 1 END) as total_tasks,
+       COUNT(CASE WHEN t.status = 'completed' AND t.deleted_at IS NULL THEN 1 END) as completed_tasks,
+       COUNT(CASE WHEN t.status NOT IN ('completed', 'cancelled') AND t.deleted_at IS NULL THEN 1 END) as open_tasks
+     FROM projects p
+     LEFT JOIN tasks t ON t.project_id = p.id
+     WHERE p.is_archived = 0 AND p.deleted_at IS NULL
+     GROUP BY p.id, p.name, p.description, p.category, p.color, p.icon, p.due_date
+     ORDER BY p.sort_order`
+  );
+}
+
 export async function createProject(
   db: AbstractPowerSyncDatabase,
-  fields: { userId: string; name: string; color?: string; icon?: string; afterSortOrder?: string | null }
+  fields: {
+    userId: string;
+    name: string;
+    description?: string;
+    category?: string;
+    due_date?: string;
+    color?: string;
+    icon?: string;
+    afterSortOrder?: string | null;
+  }
 ): Promise<string> {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const sortOrder = generateKeyBetween(fields.afterSortOrder ?? null, null);
   await db.execute(
-    `INSERT INTO projects (id, user_id, name, color, icon, is_archived, sort_order, created_at, updated_at)
-     VALUES (?,?,?,?,?,0,?,?,?)`,
-    [id, fields.userId, fields.name, fields.color ?? '#6366F1', fields.icon ?? '📁', sortOrder, now, now]
+    `INSERT INTO projects (id, user_id, name, description, category, due_date, color, icon, is_archived, sort_order, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,?,?,0,?,?,?)`,
+    [
+      id,
+      fields.userId,
+      fields.name,
+      fields.description ?? null,
+      fields.category ?? 'Personal',
+      fields.due_date ?? null,
+      fields.color ?? '#6366F1',
+      fields.icon ?? '📁',
+      sortOrder,
+      now,
+      now
+    ]
   );
   return id;
 }

@@ -4,6 +4,7 @@ import {
   UpdateType,
 } from '@powersync/web';
 import { createClient } from '@/lib/supabase/client';
+import { isHardDeleteTable } from '@todolist/db';
 
 const FATAL_CODES = [/^22/, /^23/];
 
@@ -39,9 +40,11 @@ export class WebConnector implements PowerSyncBackendConnector {
             result = await table.update(op.opData ?? {}).eq('id', op.id);
             break;
           case UpdateType.DELETE:
-            result = await table
-              .update({ deleted_at: new Date().toISOString() })
-              .eq('id', op.id);
+            result = isHardDeleteTable(op.table)
+              ? await table.delete().eq('id', op.id)
+              : await table
+                  .update({ deleted_at: new Date().toISOString() })
+                  .eq('id', op.id);
             break;
           default:
             throw new Error(`Unknown UpdateType: ${(op as any).op}`);

@@ -10,8 +10,8 @@ const PRIORITY_COLOR: Record<number, string> = {
 
 interface FocusTaskItem {
   id:             string;
-  title:          string;
-  priority:       number;
+  title:          string | null;
+  priority:       number | null;
   due_date?:      string | null;
   due_time?:      string | null;
   labels?:        string | null;
@@ -31,7 +31,14 @@ export const FocusTaskCard = memo(function FocusTaskCard({
 }: Props) {
   const { data: allLabels } = useLabels();
   const colorOf = (name: string) => allLabels.find(l => l.name === name)?.color ?? '#9CA3AF';
-  const names: string[] = task.labels ? JSON.parse(task.labels) : [];
+  let names: string[] = [];
+  try {
+    if (task.labels) {
+      names = Array.isArray(task.labels) ? task.labels : JSON.parse(task.labels);
+    }
+  } catch {
+    names = [];
+  }
 
   return (
     <div className="relative border border-border rounded-xl bg-surface-alt/60 overflow-hidden group">
@@ -41,7 +48,7 @@ export const FocusTaskCard = memo(function FocusTaskCard({
         <button
           onClick={e => { e.stopPropagation(); onComplete(task.id); }}
           className="mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 hover:bg-surface transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
-          style={{ borderColor: PRIORITY_COLOR[task.priority] ?? '#9CA3AF' }}
+          style={{ borderColor: PRIORITY_COLOR[task.priority ?? 4] ?? '#9CA3AF' }}
           aria-label={`Complete ${task.title}`}
         />
 
@@ -64,16 +71,16 @@ export const FocusTaskCard = memo(function FocusTaskCard({
             {task.due_time && (
               <span className="text-xs text-text-muted">· {task.due_time.slice(0, 5)}</span>
             )}
-            {names.map(n => <LabelChip key={n} name={n} color={colorOf(n)} />)}
+            {Array.isArray(names) && names.map(n => <LabelChip key={n} name={n} color={colorOf(n)} />)}
           </div>
         </button>
 
         <span
           className="text-xs font-semibold px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5"
-          style={{ color: PRIORITY_COLOR[task.priority], border: `1px solid ${PRIORITY_COLOR[task.priority]}20` }}
-          aria-label={`Priority ${task.priority}`}
+          style={{ color: PRIORITY_COLOR[task.priority ?? 4], border: `1px solid ${PRIORITY_COLOR[task.priority ?? 4]}20` }}
+          aria-label={`Priority ${task.priority ?? 4}`}
         >
-          P{task.priority}
+          P{task.priority ?? 4}
         </span>
 
         <button

@@ -2,51 +2,38 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useProjects, useLabels, useSavedFilters, useTodayTasks, useInboxTasks, useStreak } from '@todolist/db';
-import { useSyncStatus } from '@/hooks/useSyncStatus';
+import { useProjects, useLabels, useSavedFilters, useInboxTasks, useTodayTasks } from '@todolist/db';
+import { SyncStatusIndicator } from './SyncStatusIndicator';
 import { createClient } from '@/lib/supabase/client';
 import { useState } from 'react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { FilterBuilderModal } from '@/components/filters/FilterBuilderModal';
 
-const SYNC_DOT: Record<string, string> = {
-  synced:  'bg-success',
-  syncing: 'bg-accent animate-pulse',
-  stale:   'bg-warning',
-  offline: 'bg-error',
-};
-
 const NAV = [
-  { href: '/today',    label: 'Today',     countKey: 'today'    },
-  { href: '/inbox',    label: 'Inbox',     countKey: 'inbox'    },
-  { href: '/upcoming', label: 'Upcoming',  countKey: null       },
-  { href: '/logbook',  label: 'Logbook',   countKey: null       },
-  { href: '/all',      label: 'All tasks', countKey: null       },
+  { href: '/inbox',    label: 'Inbox',    icon: '📥' },
+  { href: '/today',    label: 'Today',    icon: '☀️' },
+  { href: '/focus',    label: 'Focus',    icon: '🎯' },
+  { href: '/matrix',   label: 'Matrix',   icon: '⊞' },
+  { href: '/upcoming', label: 'Upcoming', icon: '📅' },
+  { href: '/logbook',  label: 'Logbook',  icon: '✓' },
+  { href: '/search',   label: 'Search',   icon: '🔍' },
 ];
 
 interface Props {
-  onNewProject:  () => void;
-  onQuickCapture: () => void;
+  onQuickAdd: () => void;
 }
 
-export function Sidebar({ onNewProject, onQuickCapture }: Props) {
-  const pathname  = usePathname();
-  const router    = useRouter();
-  const { status }              = useSyncStatus();
-  const { data: projects }      = useProjects();
-  const { data: labels }        = useLabels();
-  const { userId }              = useCurrentUser();
-  const { data: savedFilters }  = useSavedFilters(userId ?? '');
-  const { data: todayTasks }    = useTodayTasks();
-  const { data: inboxTasks }    = useInboxTasks();
-  const { count: streakCount, days: streakDays } = useStreak();
+export function Sidebar({ onQuickAdd }: Props) {
+  const pathname        = usePathname();
+  const router          = useRouter();
+  const { data: inboxTasks, count: inboxCount } = useInboxTasks();
+  const { data: projects } = useProjects();
+  const { data: labels } = useLabels();
+  const { userId } = useCurrentUser();
+  const { data: todayTasks, count: todayCount } = useTodayTasks();
+  const { data: savedFilters } = useSavedFilters(userId ?? '');
   const [signingOut, setSigningOut] = useState(false);
   const [filterModal, setFilterModal] = useState<{ open: boolean; filter?: any }>({ open: false });
-
-  const counts: Record<string, number> = {
-    today: todayTasks.length,
-    inbox: inboxTasks.length,
-  };
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -61,40 +48,50 @@ export function Sidebar({ onNewProject, onQuickCapture }: Props) {
       className="w-60 flex-shrink-0 bg-sidebar border-r border-border flex flex-col h-screen sticky top-0"
       aria-label="Main navigation"
     >
-      {/* Header: app name + sync dot */}
-      <div className="px-4 py-5 border-b border-border flex items-center gap-2">
+      {/* App name */}
+      <div className="px-4 py-5 border-b border-border">
         <span className="text-text-primary font-bold text-lg tracking-tight">TodoList</span>
-        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${SYNC_DOT[status]}`} aria-hidden="true" />
       </div>
 
-      {/* Quick Add */}
-      <div className="px-3 pt-3 pb-1">
+      {/* Quick add */}
+      <div className="px-2 mt-3">
         <button
-          onClick={onQuickCapture}
-          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-accent hover:bg-accent-dark text-white text-sm font-semibold transition-colors"
+          onClick={onQuickAdd}
+          className="w-full flex items-center gap-2 bg-accent text-white font-semibold rounded-xl px-3 py-2.5 text-sm hover:bg-accent-dark transition-colors"
         >
-          + Quick add
+          <span aria-hidden="true" className="text-base leading-none">+</span>
+          Quick add
         </button>
       </div>
 
       {/* Core nav */}
-      <ul className="mt-1 space-y-0.5 px-2" role="list">
-        {NAV.map(({ href, label, countKey }) => {
+      <ul className="mt-2 space-y-0.5 px-2" role="list">
+        {NAV.map(({ href, label, icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/');
-          const count = countKey ? counts[countKey] : null;
+          let count: number | null = null;
+
+          if (label === 'Today') count = todayCount;
+          if (label === 'Inbox') count = inboxCount;
+
           return (
-            <li key={href + label}>
+            <li key={href}>
               <Link
                 href={href}
-                className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
                   ${active
                     ? 'bg-surface text-text-primary font-medium'
-                    : 'text-text-secondary hover:bg-surface hover:text-text-primary'}`}
+                    : 'text-text-secondary hover:bg-surface hover:text-text-primary'
+                  }`}
                 aria-current={active ? 'page' : undefined}
               >
-                <span>{label}</span>
-                {count != null && count > 0 && (
-                  <span className="text-xs text-text-muted bg-surface-alt px-1.5 py-0.5 rounded-full">
+                <span aria-hidden="true">{icon}</span>
+                {label}
+                {count !== null && (
+                  <span className={`ml-auto text-xs px-2 py-0.5 rounded-full font-medium ${
+                    count > 0
+                      ? 'bg-accent text-white'
+                      : 'bg-gray-300 text-gray-500 opacity-50'
+                  }`}>
                     {count}
                   </span>
                 )}
@@ -104,9 +101,14 @@ export function Sidebar({ onNewProject, onQuickCapture }: Props) {
         })}
       </ul>
 
-      {/* Projects + Labels + Filters */}
-      <div className="mt-4 px-2 flex-1 overflow-y-auto">
-        <p className="px-3 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider">Projects</p>
+      {/* Projects */}
+      <div className="mt-4 px-2 flex-1 overflow-y-auto scrollable">
+        <Link
+          href="/projects"
+          className="px-3 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-secondary transition-colors block"
+        >
+          Projects
+        </Link>
         <ul className="space-y-0.5" role="list">
           {projects.map(p => {
             const active = pathname === `/projects/${p.id}`;
@@ -117,7 +119,8 @@ export function Sidebar({ onNewProject, onQuickCapture }: Props) {
                   className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors
                     ${active
                       ? 'bg-surface text-text-primary font-medium'
-                      : 'text-text-secondary hover:bg-surface hover:text-text-primary'}`}
+                      : 'text-text-secondary hover:bg-surface hover:text-text-primary'
+                    }`}
                   aria-current={active ? 'page' : undefined}
                 >
                   <span
@@ -131,21 +134,21 @@ export function Sidebar({ onNewProject, onQuickCapture }: Props) {
             );
           })}
         </ul>
-        <button
-          onClick={onNewProject}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-accent hover:bg-surface transition-colors mt-1"
+        <Link
+          href="/labels"
+          className="px-3 pt-4 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-secondary transition-colors block"
         >
-          + New project
-        </button>
-
-        <p className="px-3 pt-4 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider">Labels</p>
+          Labels
+        </Link>
         <ul className="space-y-0.5" role="list">
-          {labels.filter(l => l.name).map(l => {
-            const active = pathname === `/labels/${encodeURIComponent(l.name as string)}`;
+          {labels.filter(l => l.name).map((l) => {
+            const labelName = l.name as string;
+            const active = pathname === `/labels/${encodeURIComponent(labelName)}`;
+            const labelColor = l.color ?? '#6366F1';
             return (
               <li key={l.id}>
                 <Link
-                  href={`/labels/${encodeURIComponent(l.name as string)}`}
+                  href={`/labels/${encodeURIComponent(labelName)}`}
                   className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors
                     ${active
                       ? 'bg-surface text-text-primary font-medium'
@@ -153,21 +156,17 @@ export function Sidebar({ onNewProject, onQuickCapture }: Props) {
                   aria-current={active ? 'page' : undefined}
                 >
                   <span className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: l.color ?? '#6366F1' }} aria-hidden="true" />
-                  <span className="truncate">{l.name as string}</span>
+                    style={{ backgroundColor: labelColor }} aria-hidden="true" />
+                  <span className="truncate">{labelName}</span>
                 </Link>
               </li>
             );
           })}
         </ul>
-        <Link
-          href="/labels"
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-accent hover:bg-surface transition-colors mt-1"
-        >
-          + Manage labels
-        </Link>
 
-        <p className="px-3 pt-4 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider">Filters</p>
+        <p className="px-3 pt-4 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider">
+          Filters
+        </p>
         <ul className="space-y-0.5" role="list">
           {savedFilters.map(f => {
             const active = pathname === `/filters/${f.id}`;
@@ -196,25 +195,9 @@ export function Sidebar({ onNewProject, onQuickCapture }: Props) {
         </button>
       </div>
 
-      {/* Daily Streak */}
-      <div className="px-4 py-3 border-t border-border">
-        <p className="text-xs text-text-muted mb-1">Daily streak</p>
-        <p className="text-text-primary font-bold text-lg leading-none">
-          {streakCount} <span className="text-sm font-normal text-text-muted">days</span>
-        </p>
-        <div className="flex gap-1 mt-2" aria-label={`${streakCount} day streak`}>
-          {streakDays.map((met, i) => (
-            <span
-              key={i}
-              className={`w-4 h-4 rounded-full ${met ? 'bg-accent' : 'bg-surface-alt border border-border'}`}
-              aria-hidden="true"
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Sign out */}
+      {/* Bottom: sync + sign out */}
       <div className="border-t border-border pb-2">
+        <SyncStatusIndicator />
         <button
           onClick={handleSignOut}
           disabled={signingOut}

@@ -40,6 +40,18 @@ export const priorityLabel: Record<1 | 2 | 3 | 4, string> = {
   4: 'P4',
 };
 
+export const priorityPanelTint: Record<1 | 2 | 3 | 4, string> = {
+  1: `${colors.p1}26`, // ~15% alpha wash over the dark surface
+  2: `${colors.p2}26`,
+  3: `${colors.p3}26`,
+  4: `${colors.p4}26`,
+};
+
+export function resolvePanelTint(priority: number | null | undefined): string {
+  const key = (priority ?? 4) as 1 | 2 | 3 | 4;
+  return priorityPanelTint[key] ?? priorityPanelTint[4];
+}
+
 export const typography = {
   heading1: { fontSize: 28, fontWeight: '700' as const, letterSpacing: -0.5 },
   heading2: { fontSize: 22, fontWeight: '600' as const },

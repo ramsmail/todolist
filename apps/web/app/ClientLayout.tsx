@@ -2,12 +2,14 @@
 
 import { PropsWithChildren, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Sidebar } from '@/components/layout/Sidebar';
+import { AppShell } from '@/components/layout/AppShell';
 import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
 import { QuickCaptureModal } from '@/components/tasks/QuickCaptureModal';
 import { ShortcutProvider } from '@/lib/shortcuts/ShortcutContext';
 import { ShortcutsOverlay } from '@/components/layout/ShortcutsOverlay';
 import { KeyboardShortcuts } from '@/components/layout/KeyboardShortcuts';
+import { FocusSessionProvider } from '@/lib/focus/FocusSessionContext';
+import { ImmersiveProvider } from '@/lib/focus/ImmersiveContext';
 import { usePathname } from 'next/navigation';
 
 const PowerSyncProvider = dynamic(
@@ -25,22 +27,20 @@ export function ClientLayout({ children }: PropsWithChildren) {
 
   return (
     <PowerSyncProvider>
-      <ShortcutProvider>
-        <KeyboardShortcuts onOpenQuickCapture={() => setShowCapture(true)}>
-          <div className="flex h-screen bg-bg overflow-hidden">
-            <Sidebar
-              onNewProject={() => setShowCreate(true)}
-              onQuickCapture={() => setShowCapture(true)}
-            />
-            <main className="flex-1 overflow-y-auto">
-              {children}
-            </main>
-          </div>
-          <CreateProjectModal open={showCreate} onClose={() => setShowCreate(false)} />
-          <QuickCaptureModal  open={showCapture} onClose={() => setShowCapture(false)} />
-          <ShortcutsOverlay />
-        </KeyboardShortcuts>
-      </ShortcutProvider>
+      <FocusSessionProvider>
+        <ImmersiveProvider>
+          <ShortcutProvider>
+            <KeyboardShortcuts onOpenQuickCapture={() => setShowCapture(true)}>
+              <AppShell onQuickAdd={() => setShowCapture(true)}>
+                {children}
+              </AppShell>
+              <CreateProjectModal open={showCreate} onClose={() => setShowCreate(false)} />
+              <QuickCaptureModal  open={showCapture} onClose={() => setShowCapture(false)} />
+              <ShortcutsOverlay />
+            </KeyboardShortcuts>
+          </ShortcutProvider>
+        </ImmersiveProvider>
+      </FocusSessionProvider>
     </PowerSyncProvider>
   );
 }

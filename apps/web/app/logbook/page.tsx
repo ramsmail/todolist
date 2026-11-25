@@ -45,7 +45,7 @@ export default function LogbookPage() {
           <p className="text-text-muted text-sm">Tasks you finish will appear here.</p>
         </div>
       ) : (
-        <div className="overflow-y-auto flex-1">
+        <div className="overflow-y-auto flex-1 scrollable">
           {(['today', 'this_week', 'earlier'] as const).map((b) => {
             if (buckets[b].length === 0) return null;
             return (
@@ -53,7 +53,7 @@ export default function LogbookPage() {
                 <h2 className="px-6 py-2 text-xs font-semibold text-text-muted uppercase tracking-wider border-b border-border bg-bg/50">
                   {BUCKET_LABELS[b]}
                 </h2>
-                <ul role="list" aria-label={`${BUCKET_LABELS[b]} completed tasks`}>
+                <ul role="list" aria-label={`${BUCKET_LABELS[b]} completed tasks`} className="px-6 py-4 space-y-2">
                   {buckets[b].map((t) => (
                     <li key={t.id}>
                       <TaskRow

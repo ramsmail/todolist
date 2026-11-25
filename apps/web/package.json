@@ -6,14 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test"
   },
   "dependencies": {
     "@journeyapps/wa-sqlite": "*",
-    "@powersync/react": "^1.4.0",
-    "@powersync/web": "^1.0.0",
+    "@powersync/react": "^1.10.0",
+    "@powersync/web": "^1.38.6",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.44.0",
     "@tanstack/react-virtual": "^3.10.0",

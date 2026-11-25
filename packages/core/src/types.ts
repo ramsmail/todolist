@@ -1,6 +1,14 @@
 export type Priority = 1 | 2 | 3 | 4;
 export type TaskStatus = 'inbox' | 'active' | 'completed' | 'cancelled';
 
+// Eisenhower-matrix quadrant name for each priority level.
+export const quadrantLabel: Record<Priority, string> = {
+  1: 'Do First',
+  2: 'Plan',
+  3: 'Pass',
+  4: 'Drop',
+};
+
 export interface Task {
   id: string;
   userId: string;
