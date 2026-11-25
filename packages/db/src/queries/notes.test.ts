@@ -80,17 +80,22 @@ describe('deleteNote', () => {
 });
 
 describe('createLinkedTask', () => {
-  it('inserts the task and the note->task link in one transaction', async () => {
+  it('inserts a task that satisfies the Postgres constraints, and the note->task link, in one transaction', async () => {
     const db = fakeDb();
     await createLinkedTask(db as any, { userId: 'u1', noteId: 'n1', title: 'Fix it' });
     expect(db.writeTransaction).toHaveBeenCalledTimes(1);
     const tx = await db.writeTransaction.mock.results[0].value;
     expect(tx.execute).toHaveBeenCalledTimes(2);
+
     const [taskSql, taskParams] = tx.execute.mock.calls[0];
     expect(taskSql).toContain('INSERT INTO tasks');
-    expect(taskParams.slice(1, 7)).toEqual(['u1', 'Fix it', null, 'todo', 1, 'note:n1']);
-    const [linkSql] = tx.execute.mock.calls[1];
+    // id, user_id, title, description, status, priority, labels, sort_order, created_at, updated_at
+    // status must be one Postgres allows; priority 4 = normal; labels NOT NULL; sort_order a valid fractional key
+    expect(taskParams.slice(1, 8)).toEqual(['u1', 'Fix it', null, 'inbox', 4, '[]', 'a0']);
+
+    const [linkSql, linkParams] = tx.execute.mock.calls[1];
     expect(linkSql).toContain('INSERT INTO links');
+    expect(linkParams.slice(1, 7)).toEqual(['u1', 'note', 'n1', 'task', taskParams[0], 'manual']);
   });
 });
 

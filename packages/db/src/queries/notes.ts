@@ -1,5 +1,6 @@
 import type { AbstractPowerSyncDatabase } from '@powersync/common';
 import { useQuery } from '@powersync/react';
+import { generateKeyBetween } from 'fractional-indexing';
 import type { NoteRecord } from '../schema';
 
 export type NoteFields = {
@@ -119,9 +120,9 @@ export async function createLinkedTask(
   await db.writeTransaction(async (tx) => {
     await tx.execute(
       `INSERT INTO tasks
-         (id, user_id, title, description, status, priority, sort_order, created_at, updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?)`,
-      [taskId, opts.userId, opts.title, null, 'todo', 1, `note:${opts.noteId}`, now, now]
+         (id, user_id, title, description, status, priority, labels, sort_order, created_at, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      [taskId, opts.userId, opts.title, null, 'inbox', 4, '[]', generateKeyBetween(null, null), now, now]
     );
     await tx.execute(
       `INSERT INTO links (id, user_id, from_type, from_id, to_type, to_id, origin, created_at)
