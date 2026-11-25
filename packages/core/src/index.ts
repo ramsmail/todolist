@@ -6,3 +6,4 @@ export * from './linkify';
 export * from './labels';
 export * from './notes/noteText';
 export * from './notes/markdownEdit';
+export * from './notes/noteFilter';
