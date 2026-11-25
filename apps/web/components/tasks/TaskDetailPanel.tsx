@@ -15,6 +15,7 @@ import { DatePicker } from './DatePicker';
 import { LabelPicker } from './LabelPicker';
 import { createClient } from '@/lib/supabase/client';
 import { LinkifiedText } from './LinkifiedText';
+import { LinkedNotesSection } from '@/components/notes/LinkedNotesSection';
 
 function activateOnKey(fn: () => void) {
   return (e: ReactKeyboardEvent) => {
@@ -365,6 +366,9 @@ export function TaskDetailPanel({ taskId, onClose }: Props) {
                 </button>
               )}
             </div>
+
+            {/* Linked notes */}
+            <LinkedNotesSection taskId={task.id} />
 
             {/* Delete */}
             <div className="pt-4 border-t border-border">

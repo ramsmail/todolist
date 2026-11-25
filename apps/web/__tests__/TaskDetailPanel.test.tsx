@@ -6,6 +6,8 @@ vi.mock('@powersync/react', () => ({
   usePowerSync: () => ({ execute: vi.fn() }),
 }));
 
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     auth: { getUser: async () => ({ data: { user: { id: 'user-1' } } }) },
@@ -21,6 +23,7 @@ vi.mock('@todolist/db', async () => {
     useTask: vi.fn(() => ({ data: [mockTask] })),
     useSubtasks: vi.fn(() => ({ data: [] })),
     useAttachmentsForTask: vi.fn(() => ({ data: [] })),
+    useLinkedNotes: vi.fn(() => ({ data: [] })),
     useProjects: vi.fn(() => ({ data: [] })),
     useLabels: vi.fn(() => ({ data: [{ id: '1', name: 'work', color: '#6366F1' }, { id: '2', name: 'home', color: '#10B981' }] })),
     updateTaskTitle: vi.fn(),
@@ -39,6 +42,11 @@ vi.mock('@todolist/db', async () => {
 import { updateTaskDescription, setTaskLabels } from '@todolist/db';
 
 describe('TaskDetailPanel description field', () => {
+  it('renders a Linked notes section', () => {
+    render(<TaskDetailPanel taskId="task-1" onClose={vi.fn()} />);
+    expect(screen.getByText('Linked notes')).toBeInTheDocument();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockTask = {
