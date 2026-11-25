@@ -26,5 +26,6 @@ export * from './queries/weeklyActivity';
 export * from './queries/syncTables';
 export * from './queries/links';
 export * from './queries/notes';
+export * from './queries/search';
 
 export * from './queries/noteEnricher';
