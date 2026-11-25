@@ -16,6 +16,7 @@ const NAV = [
   { href: '/matrix',   label: 'Matrix',   icon: '⊞' },
   { href: '/upcoming', label: 'Upcoming', icon: '📅' },
   { href: '/logbook',  label: 'Logbook',  icon: '✓' },
+  { href: '/notes',    label: 'Notes',    icon: '📝' },
   { href: '/search',   label: 'Search',   icon: '🔍' },
 ];
 
