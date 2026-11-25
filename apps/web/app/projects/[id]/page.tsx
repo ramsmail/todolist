@@ -7,6 +7,7 @@ import { useProjectTasks, useProjects, completeTask } from '@todolist/db';
 import { TaskList } from '@/components/tasks/TaskList';
 import { QuickCaptureModal } from '@/components/tasks/QuickCaptureModal';
 import { TaskDetailPanel } from '@/components/tasks/TaskDetailPanel';
+import { ProjectNotesSection } from '@/components/notes/ProjectNotesSection';
 
 export default function ProjectPage() {
   const params          = useParams();
@@ -54,6 +55,8 @@ export default function ProjectPage() {
             <TaskList tasks={tasks as any} onPress={setDetailId} onComplete={handleComplete} />
           </div>
         )}
+
+        <ProjectNotesSection projectId={id} />
       </div>
 
       <TaskDetailPanel taskId={detailId} onClose={() => setDetailId(null)} />
