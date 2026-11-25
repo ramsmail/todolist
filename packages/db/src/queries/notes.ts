@@ -75,16 +75,57 @@ export async function createNote(
 export async function updateNote(
   db: AbstractPowerSyncDatabase,
   noteId: string,
-  patch: { body?: string; title?: string; revision: number }
+  patch: { body?: string; title?: string }
 ): Promise<void> {
-  const now = new Date().toISOString();
   const sets: string[] = [];
   const params: unknown[] = [];
-  if (patch.body !== undefined) { sets.push('body = ?'); params.push(patch.body); }
-  if (patch.title !== undefined) { sets.push('title = ?'); params.push(patch.title); }
-  sets.push('base_revision = ?', 'revision = ?', 'updated_at = ?');
-  params.push(patch.revision, patch.revision + 1, now, noteId);
+  if (patch.title !== undefined) {
+    sets.push('title = ?');
+    params.push(patch.title);
+  }
+  if (patch.body !== undefined) {
+    // Same statement, evaluated against the pre-update row: the server conflict
+    // trigger compares base_revision with its stored revision. Reading the
+    // revision here (not from the caller) keeps back-to-back autosaves chained.
+    sets.push('body = ?', 'base_revision = revision', 'revision = revision + 1');
+    params.push(patch.body);
+  }
+  sets.push('updated_at = ?');
+  params.push(new Date().toISOString(), noteId);
   await db.execute(`UPDATE notes SET ${sets.join(', ')} WHERE id = ?`, params);
+}
+
+export async function setNoteSourceUrl(
+  db: AbstractPowerSyncDatabase,
+  noteId: string,
+  url: string
+): Promise<void> {
+  await db.execute(
+    `UPDATE notes SET source_url = ?, link_status = 'pending', updated_at = ? WHERE id = ?`,
+    [url, new Date().toISOString(), noteId]
+  );
+}
+
+export async function setNoteProject(
+  db: AbstractPowerSyncDatabase,
+  noteId: string,
+  projectId: string | null
+): Promise<void> {
+  await db.execute(
+    `UPDATE notes SET project_id = ?, updated_at = ? WHERE id = ?`,
+    [projectId, new Date().toISOString(), noteId]
+  );
+}
+
+export async function setNoteLabels(
+  db: AbstractPowerSyncDatabase,
+  noteId: string,
+  labels: string[]
+): Promise<void> {
+  await db.execute(
+    `UPDATE notes SET labels = ?, updated_at = ? WHERE id = ?`,
+    [JSON.stringify(labels), new Date().toISOString(), noteId]
+  );
 }
 
 export async function archiveNote(

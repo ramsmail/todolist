@@ -6,6 +6,9 @@ import {
   deleteNote,
   createLinkedTask,
   createLinkedNote,
+  setNoteSourceUrl,
+  setNoteProject,
+  setNoteLabels,
   NOTES_LIST_QUERY,
   NOTES_INBOX_QUERY,
 } from './notes';
@@ -47,14 +50,63 @@ describe('createNote', () => {
 });
 
 describe('updateNote', () => {
-  it('increments base_revision to match current revision before the write', async () => {
+  it('bumps the revision chain in SQL when the body changes', async () => {
     const db = fakeDb();
-    await updateNote(db as any, 'n1', { body: 'new body', revision: 3 });
+    await updateNote(db as any, 'n1', { body: 'new body' });
     const [sql, params] = db.execute.mock.calls[0];
-    expect(sql).toContain('UPDATE notes SET body = ?, base_revision = ?, revision = ?, updated_at = ?');
-    expect(params[0]).toBe('new body');
-    expect(params[1]).toBe(3);  // base_revision = old revision
-    expect(params[2]).toBe(4);  // revision = old revision + 1
+    expect(sql).toContain('body = ?');
+    // evaluated against the pre-update row, so base_revision = old, revision = old + 1
+    expect(sql).toContain('base_revision = revision');
+    expect(sql).toContain('revision = revision + 1');
+    expect(params).toEqual(['new body', expect.any(String), 'n1']);
+  });
+
+  it('leaves the revision columns alone for a title-only change', async () => {
+    const db = fakeDb();
+    await updateNote(db as any, 'n1', { title: 'Plan' });
+    const [sql, params] = db.execute.mock.calls[0];
+    expect(sql).not.toContain('revision');
+    expect(params).toEqual(['Plan', expect.any(String), 'n1']);
+  });
+
+  it('writes title and body together, bumping once', async () => {
+    const db = fakeDb();
+    await updateNote(db as any, 'n1', { title: 'T', body: 'B' });
+    const [sql, params] = db.execute.mock.calls[0];
+    expect(sql).toContain('title = ?');
+    expect(sql).toContain('revision = revision + 1');
+    expect(params).toEqual(['T', 'B', expect.any(String), 'n1']);
+  });
+});
+
+describe('setNoteSourceUrl', () => {
+  it('stores the url and marks the preview pending', async () => {
+    const db = fakeDb();
+    await setNoteSourceUrl(db as any, 'n1', 'https://example.com');
+    const [sql, params] = db.execute.mock.calls[0];
+    expect(sql).toContain('UPDATE notes SET source_url = ?');
+    expect(sql).toContain("link_status = 'pending'");
+    expect(params).toEqual(['https://example.com', expect.any(String), 'n1']);
+  });
+});
+
+describe('setNoteProject / setNoteLabels', () => {
+  it('setNoteProject updates project_id without touching revisions', async () => {
+    const db = fakeDb();
+    await setNoteProject(db as any, 'n1', 'p1');
+    const [sql, params] = db.execute.mock.calls[0];
+    expect(sql).toContain('UPDATE notes SET project_id = ?');
+    expect(sql).not.toContain('revision');
+    expect(params).toEqual(['p1', expect.any(String), 'n1']);
+  });
+
+  it('setNoteLabels stores the labels as a JSON array', async () => {
+    const db = fakeDb();
+    await setNoteLabels(db as any, 'n1', ['work', 'idea']);
+    const [sql, params] = db.execute.mock.calls[0];
+    expect(sql).toContain('UPDATE notes SET labels = ?');
+    expect(sql).not.toContain('revision');
+    expect(params).toEqual(['["work","idea"]', expect.any(String), 'n1']);
   });
 });
 
