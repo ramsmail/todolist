@@ -30,6 +30,10 @@ export function ShortcutsOverlay() {
             <span className="text-gray-700">Open Filters</span>
             <kbd className="px-2 py-1 bg-gray-200 rounded">Cmd+/</kbd>
           </div>
+          <div className="flex justify-between items-center py-2 border-b">
+            <span className="text-gray-700">New note</span>
+            <kbd className="px-2 py-1 bg-gray-200 rounded">n</kbd>
+          </div>
         </div>
         <button
           onClick={closeShortcuts}
