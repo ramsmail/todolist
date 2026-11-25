@@ -11,6 +11,7 @@ import { KeyboardShortcuts } from '@/components/layout/KeyboardShortcuts';
 import { FocusSessionProvider } from '@/lib/focus/FocusSessionContext';
 import { ImmersiveProvider } from '@/lib/focus/ImmersiveContext';
 import { usePathname } from 'next/navigation';
+import { NoteEnricherRunner } from '@/components/notes/NoteEnricherRunner';
 
 const PowerSyncProvider = dynamic(
   () => import('@/lib/powersync/PowerSyncProvider').then(m => m.PowerSyncProvider),
@@ -27,6 +28,7 @@ export function ClientLayout({ children }: PropsWithChildren) {
 
   return (
     <PowerSyncProvider>
+      <NoteEnricherRunner />
       <FocusSessionProvider>
         <ImmersiveProvider>
           <ShortcutProvider>
