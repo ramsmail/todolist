@@ -11,6 +11,9 @@ import {
   setNoteLabels,
   NOTES_LIST_QUERY,
   NOTES_INBOX_QUERY,
+  NOTES_LIST_WITH_ARCHIVED_QUERY,
+  NOTES_BY_PROJECT_QUERY,
+  NOTE_QUERY,
 } from './notes';
 
 function fakeDb() {
@@ -174,11 +177,31 @@ describe('createLinkedNote', () => {
 });
 
 describe('query constants', () => {
-  it('NOTES_LIST_QUERY excludes deleted notes', () => {
+  it('NOTES_LIST_QUERY excludes deleted and archived notes', () => {
     expect(NOTES_LIST_QUERY).toContain('deleted_at IS NULL');
+    expect(NOTES_LIST_QUERY).toContain('is_archived = 0');
   });
-  it('NOTES_LIST_QUERY excludes conflict copies', () => {
-    expect(NOTES_LIST_QUERY).toContain('conflict_of IS NULL');
+  it('NOTES_LIST_QUERY includes conflict copies so they can be found and resolved', () => {
+    expect(NOTES_LIST_QUERY).not.toContain('conflict_of IS NULL');
+    expect(NOTES_LIST_QUERY).toContain('conflict_of');
+  });
+  it('NOTES_LIST_QUERY selects what a list row renders', () => {
+    for (const col of ['link_excerpt', 'link_image_url', 'link_site_name', 'source_url', 'link_status', 'labels', 'project_id']) {
+      expect(NOTES_LIST_QUERY).toContain(col);
+    }
+  });
+  it('NOTES_LIST_WITH_ARCHIVED_QUERY keeps archived notes', () => {
+    expect(NOTES_LIST_WITH_ARCHIVED_QUERY).toContain('deleted_at IS NULL');
+    expect(NOTES_LIST_WITH_ARCHIVED_QUERY).not.toContain('is_archived = 0');
+  });
+  it('NOTES_BY_PROJECT_QUERY filters by project and hides archived', () => {
+    expect(NOTES_BY_PROJECT_QUERY).toContain('project_id = ?');
+    expect(NOTES_BY_PROJECT_QUERY).toContain('is_archived = 0');
+    expect(NOTES_BY_PROJECT_QUERY).toContain('deleted_at IS NULL');
+  });
+  it('NOTE_QUERY loads one live note by id', () => {
+    expect(NOTE_QUERY).toContain('WHERE id = ?');
+    expect(NOTE_QUERY).toContain('deleted_at IS NULL');
   });
   it('NOTES_INBOX_QUERY filters for unprocessed, non-archived notes', () => {
     expect(NOTES_INBOX_QUERY).toContain('is_processed = 0');

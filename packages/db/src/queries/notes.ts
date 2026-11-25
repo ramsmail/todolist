@@ -13,13 +13,38 @@ export type NoteFields = {
   sourceUrl?: string | null;
 };
 
+export type NoteListRow = Pick<
+  NoteRecord,
+  | 'title' | 'body' | 'link_title' | 'link_excerpt' | 'link_image_url' | 'link_site_name'
+  | 'source_url' | 'link_status' | 'is_archived' | 'is_processed' | 'project_id'
+  | 'labels' | 'conflict_of' | 'updated_at'
+> & { id: string };
+
+export const NOTE_LIST_COLUMNS = `id, title, body, link_title, link_excerpt, link_image_url, link_site_name,
+         source_url, link_status, is_archived, is_processed, project_id, labels, conflict_of, updated_at`;
+
 export const NOTES_LIST_QUERY = `
-  SELECT id, title, body, link_title, source_url, link_status, is_archived, is_processed,
-         project_id, labels, updated_at
+  SELECT ${NOTE_LIST_COLUMNS}
   FROM notes
-  WHERE deleted_at IS NULL AND conflict_of IS NULL AND is_archived = 0
+  WHERE deleted_at IS NULL AND is_archived = 0
   ORDER BY updated_at DESC
 `;
+
+export const NOTES_LIST_WITH_ARCHIVED_QUERY = `
+  SELECT ${NOTE_LIST_COLUMNS}
+  FROM notes
+  WHERE deleted_at IS NULL
+  ORDER BY updated_at DESC
+`;
+
+export const NOTES_BY_PROJECT_QUERY = `
+  SELECT ${NOTE_LIST_COLUMNS}
+  FROM notes
+  WHERE deleted_at IS NULL AND is_archived = 0 AND project_id = ?
+  ORDER BY updated_at DESC
+`;
+
+export const NOTE_QUERY = `SELECT * FROM notes WHERE id = ? AND deleted_at IS NULL LIMIT 1`;
 
 export const NOTES_INBOX_QUERY = `
   SELECT id, title, body, link_title, source_url, updated_at
@@ -28,10 +53,16 @@ export const NOTES_INBOX_QUERY = `
   ORDER BY created_at DESC
 `;
 
-export function useNotesList() {
-  return useQuery<
-    Pick<NoteRecord, 'title' | 'body' | 'link_title' | 'source_url' | 'link_status' | 'is_archived' | 'is_processed' | 'project_id' | 'labels' | 'updated_at'> & { id: string }
-  >(NOTES_LIST_QUERY);
+export function useNotesList(includeArchived = false) {
+  return useQuery<NoteListRow>(includeArchived ? NOTES_LIST_WITH_ARCHIVED_QUERY : NOTES_LIST_QUERY);
+}
+
+export function useNotesByProject(projectId: string) {
+  return useQuery<NoteListRow>(NOTES_BY_PROJECT_QUERY, [projectId]);
+}
+
+export function useNote(id: string) {
+  return useQuery<NoteRecord>(NOTE_QUERY, [id]);
 }
 
 export function useNotesInbox() {
