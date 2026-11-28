@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useProjects, useLabels, useSavedFilters, useInboxTasks, useTodayTasks } from '@todolist/db';
+import { useProjects, useLabels, useSavedFilters, useInboxTasks, useTodayTasks } from '@thinkdo/db';
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 import { createClient } from '@/lib/supabase/client';
 import { useState } from 'react';
@@ -12,6 +12,7 @@ import { FilterBuilderModal } from '@/components/filters/FilterBuilderModal';
 const NAV = [
   { href: '/inbox',    label: 'Inbox',    icon: '📥' },
   { href: '/today',    label: 'Today',    icon: '☀️' },
+  { href: '/focus',    label: 'Focus',    icon: '🎯' },
   { href: '/matrix',   label: 'Matrix',   icon: '⊞' },
   { href: '/upcoming', label: 'Upcoming', icon: '📅' },
   { href: '/logbook',  label: 'Logbook',  icon: '✓' },
@@ -49,7 +50,7 @@ export function Sidebar({ onQuickAdd }: Props) {
     >
       {/* App name */}
       <div className="px-4 py-5 border-b border-border">
-        <span className="text-text-primary font-bold text-lg tracking-tight">TodoList</span>
+        <span className="text-text-primary font-bold text-lg tracking-tight">ThinkDo</span>
       </div>
 
       {/* Quick add */}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useWeeklyActivity } from '@todolist/db';
+import { useWeeklyActivity } from '@thinkdo/db';
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F'];
 

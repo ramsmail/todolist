@@ -5,10 +5,10 @@ import {
 } from 'react-native';
 import { usePowerSync } from '@powersync/react';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
-import { parseTaskInput, mergeLabels } from '@todolist/core';
-import { createTask, ensureLabels, useLabels } from '@todolist/db';
+import { parseTaskInput, mergeLabels } from '@thinkdo/core';
+import { createTask, ensureLabels, useLabels } from '@thinkdo/db';
 import { useAuth }       from '../auth/AuthContext';
-import { colors, typography } from '@todolist/ui';
+import { colors, typography } from '@thinkdo/ui';
 import { resolveTaskPriority } from '../lib/resolveTaskPriority';
 import { LabelChip } from './LabelChip';
 import { LabelPickerSheet } from './LabelPickerSheet';

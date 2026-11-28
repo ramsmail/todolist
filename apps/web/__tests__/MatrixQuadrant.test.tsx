@@ -2,7 +2,7 @@ import { render, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MatrixQuadrant } from '@/app/matrix/MatrixQuadrant';
 
-vi.mock('@todolist/db', () => ({
+vi.mock('@thinkdo/db', () => ({
   useLabels: vi.fn().mockReturnValue({ data: [] }),
 }));
 

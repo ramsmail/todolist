@@ -1,5 +1,5 @@
 {
-  "name": "@todolist/db",
+  "name": "@thinkdo/db",
   "version": "0.0.1",
   "private": true,
   "main": "./dist/index.js",
@@ -12,11 +12,11 @@
   },
   "dependencies": {
     "@powersync/common": "^1.57.0",
-    "@todolist/core": "workspace:*",
+    "@thinkdo/core": "workspace:*",
     "fractional-indexing": "^3.2.0"
   },
   "devDependencies": {
-    "@todolist/config": "workspace:*",
+    "@thinkdo/config": "workspace:*",
     "@types/react": "^18.2.0",
     "react": "^18.2.0",
     "vitest": "^1.6.0"

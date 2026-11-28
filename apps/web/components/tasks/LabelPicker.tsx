@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { useLabels } from '@todolist/db';
+import { useLabels } from '@thinkdo/db';
 import { LabelChip } from './LabelChip';
 
 interface Props {

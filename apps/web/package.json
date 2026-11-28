@@ -1,5 +1,5 @@
 {
-  "name": "@todolist/web",
+  "name": "@thinkdo/web",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -18,8 +18,8 @@
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.44.0",
     "@tanstack/react-virtual": "^3.10.0",
-    "@todolist/core": "workspace:*",
-    "@todolist/db": "workspace:*",
+    "@thinkdo/core": "workspace:*",
+    "@thinkdo/db": "workspace:*",
     "fractional-indexing": "^3.2.0",
     "next": "^14.2.0",
     "react": "^18.3.0",
@@ -30,7 +30,7 @@
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.0",
-    "@todolist/config": "workspace:*",
+    "@thinkdo/config": "workspace:*",
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",

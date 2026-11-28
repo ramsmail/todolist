@@ -1,7 +1,7 @@
 'use client';
 
 import { memo } from 'react';
-import { useLabels } from '@todolist/db';
+import { useLabels } from '@thinkdo/db';
 import { LabelChip } from '@/components/tasks/LabelChip';
 
 const PRIORITY_COLOR: Record<number, string> = {

@@ -1,24 +1,29 @@
 {
   "expo": {
-    "name": "TodoList",
-    "slug": "todolist",
+    "name": "ThinkDo",
+    "slug": "thinkdo",
     "owner": "ramsmail",
     "version": "1.0.0",
-    "scheme": "todolist",
+    "scheme": "thinkdo",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/images/icon.png",
     "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
       "backgroundColor": "#0A0A0A"
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.rameshv.todolist"
+      "bundleIdentifier": "com.rameshv.thinkdo"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0A0A0A"
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundColor": "#F4F1EB",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "package": "com.rameshv.todolist"
+      "package": "com.rameshv.thinkdo"
     },
     "plugins": [
       "expo-secure-store",
@@ -38,11 +43,12 @@
         }
       ],
       "@react-native-community/datetimepicker",
+      "expo-notifications",
       [
         "expo-speech-recognition",
         {
-          "microphonePermission": "Allow TodoList to use the microphone for voice capture.",
-          "speechRecognitionPermission": "Allow TodoList to use speech recognition for voice capture."
+          "microphonePermission": "Allow ThinkDo to use the microphone for voice capture.",
+          "speechRecognitionPermission": "Allow ThinkDo to use speech recognition for voice capture."
         }
       ]
     ],

@@ -12,8 +12,8 @@ vi.mock('@/lib/supabase/client', () => ({
   }),
 }));
 
-vi.mock('@todolist/db', async () => {
-  const actual = await vi.importActual<any>('@todolist/db');
+vi.mock('@thinkdo/db', async () => {
+  const actual = await vi.importActual<any>('@thinkdo/db');
   return {
     ...actual,
     useLabelsWithStats: vi.fn(),
@@ -29,7 +29,7 @@ vi.mock('@/components/labels/CreateLabelModal', () => ({
     open ? <div data-testid="create-label-modal"><button onClick={onClose}>Close modal</button></div> : null,
 }));
 
-import { useLabelsWithStats, deleteLabel } from '@todolist/db';
+import { useLabelsWithStats, deleteLabel } from '@thinkdo/db';
 
 const mockLabels = [
   { id: 'l1', name: 'work', color: '#6366F1', open_tasks: 5 },

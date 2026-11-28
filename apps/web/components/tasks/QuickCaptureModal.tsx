@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { usePowerSync } from '@powersync/react';
-import { parseTaskInput, mergeLabels } from '@todolist/core';
-import { createTask, ensureLabels } from '@todolist/db';
+import { parseTaskInput, mergeLabels } from '@thinkdo/core';
+import { createTask, ensureLabels } from '@thinkdo/db';
 import { createClient } from '@/lib/supabase/client';
 import { DatePicker } from './DatePicker';
 import { LabelPicker } from './LabelPicker';

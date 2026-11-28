@@ -1,12 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('@todolist/db', async () => {
-  const actual = await vi.importActual<any>('@todolist/db');
+vi.mock('@thinkdo/db', async () => {
+  const actual = await vi.importActual<any>('@thinkdo/db');
   return { ...actual, useLogbook: vi.fn(), useLabels: vi.fn() };
 });
 
-import { useLogbook, useLabels } from '@todolist/db';
+import { useLogbook, useLabels } from '@thinkdo/db';
 import LogbookPage from '@/app/logbook/page';
 
 const TASKS = [

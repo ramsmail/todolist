@@ -14,7 +14,7 @@ vi.mock('@powersync/react', () => ({
   }),
 }));
 
-vi.mock('@todolist/db', () => ({
+vi.mock('@thinkdo/db', () => ({
   useLabels:          vi.fn().mockReturnValue({ data: [] }),
   completeTask:       vi.fn().mockResolvedValue(undefined),
   updateTaskPriority: vi.fn().mockResolvedValue(undefined),

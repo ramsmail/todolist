@@ -2,16 +2,20 @@
 
 Follow-ups deferred from active work, not yet done.
 
-## Deploy `enrich-url` Edge Function update
+## ~~P1 notification cards~~ — done 2026-09-01
 
-- **What:** `supabase/functions/enrich-url/index.ts` was extended to also extract
-  `og:description`/`meta[name=description]` and backfill the task's description
-  (only when currently empty), alongside the existing title enrichment.
-- **Why deferred:** no Deno runtime available in the dev environment used to build
-  this — the function was written and reviewed but never deployed or run.
-- **To do:** `supabase functions deploy enrich-url`, then verify by sharing a real
-  URL from the mobile app and confirming both `title` and `description` populate
-  on the resulting task within a few seconds.
+High-priority (P1) tasks show as separate local notification cards in the Android notification shade, alongside the existing Inbox triage card. Fires at the daily nudge time; gated by its own `p1_cards_enabled` toggle in settings. Implemented via `expo-notifications` local scheduled notifications, NOT native home screen widgets. See plan: `docs/superpowers/plans/2026-09-01-mobile-p1-notification-cards.md`. The complete and reschedule actions (both handled by `deepLinkHandler.ts`) require no app reopening — Firebase-style action-only notifications.
+
+## ~~Mobile Home tab consolidated into Today tab~~ — done 2026-09-01
+
+Mobile Home tab (greeting, progress ring, energy strip) merged into Today tab as the summary header and top sections. See implementation plan: `docs/superpowers/plans/2026-09-01-mobile-today-consolidation.md`.
+
+## ~~Deploy `enrich-url` Edge Function update~~ — done 2026-07-11
+
+Deployed via `supabase functions deploy enrich-url` (version 2, `ACTIVE`).
+**Still to do:** verify end-to-end by sharing a real URL from the mobile app and
+confirming both `title` and `description` populate on the resulting task within
+a few seconds — not yet manually confirmed post-deploy.
 
 ## Fix jsonb double-encoding in label-filter SQL queries
 
@@ -34,3 +38,31 @@ Follow-ups deferred from active work, not yet done.
   `packages/db` queries in that order, and add a test that exercises a
   round-tripped (double-encoded) label value through the SQL queries, not just
   the JS parser.
+
+## Recreate a reminder when a recurring task's due date advances
+
+- **What:** `docs/superpowers/specs/2026-07-15-notifications-design.md` and its
+  implementation plan originally assumed a recurring task's next occurrence
+  "just" gets a new `Reminder` row automatically when recurrence advances — no
+  separate mechanism needed. That was never actually built anywhere in this
+  codebase; `createReminder` (`packages/db/src/queries/reminders.ts`) has
+  exactly one call site, a manual user action in
+  `apps/mobile/src/app/task/[id].tsx`.
+- **What's still broken:** a fix landed to correctly cancel a task's reminder
+  when the task is completed or deleted (`completeTask`/`deleteTask` in
+  `packages/db/src/queries/tasks.ts`, both soft-delete via
+  `deleteRemindersForTask`). For a recurring task this is correct for the
+  just-finished occurrence, but nothing creates a reminder for the *next*
+  occurrence. Net effect: a recurring task's reminder currently fires once,
+  ever, then silently never again on any later occurrence.
+- **Why deferred:** this is a real, separate feature (recreate reminder offset
+  relative to the new `due_date`/`due_time` when `completeTask`'s recurring
+  branch advances a task), not covered by the notifications spec despite its
+  Overview text originally claiming otherwise (now corrected in that doc).
+- **To do:** decide whether recurrence should carry forward the *same* offset
+  the user originally chose (e.g. "10 min before") and, if so, persist that
+  offset somewhere (today only the resolved `remind_at_local`/`remind_at_utc`
+  are stored, not the offset itself) so `completeTask`'s recurring branch in
+  `packages/db/src/queries/tasks.ts` can call `createReminder` for the new
+  occurrence inside the same `writeTransaction` it already cancels the old
+  reminder in.

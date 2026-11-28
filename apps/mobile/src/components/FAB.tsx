@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { Pressable, Text, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { colors } from '@todolist/ui';
+import { colors } from '@thinkdo/ui';
 
 interface Props {
   onPress: () => void;

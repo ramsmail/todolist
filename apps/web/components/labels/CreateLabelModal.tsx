@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { usePowerSync } from '@powersync/react';
-import { createLabel } from '@todolist/db';
+import { createLabel } from '@thinkdo/db';
 import { createClient } from '@/lib/supabase/client';
 
 const SWATCHES = ['#6366F1', '#10B981', '#EF4444', '#F59E0B', '#3B82F6', '#EC4899', '#14B8A6', '#8B5CF6'];

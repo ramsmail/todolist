@@ -6,8 +6,8 @@ vi.mock('@powersync/react', () => ({
   useQuery: vi.fn(() => ({ data: [] })),
 }));
 
-vi.mock('@todolist/db', async () => {
-  const actual = await vi.importActual<any>('@todolist/db');
+vi.mock('@thinkdo/db', async () => {
+  const actual = await vi.importActual<any>('@thinkdo/db');
   return {
     ...actual,
     useTodayTasks:  vi.fn(),
@@ -23,8 +23,13 @@ vi.mock('@todolist/db', async () => {
 import {
   useTodayTasks, useTodayStats, useProjects, useLabels,
   useWeeklyActivity,
-} from '@todolist/db';
+} from '@thinkdo/db';
 import TodayPage from '@/app/today/page';
+import { FocusSessionProvider } from '@/lib/focus/FocusSessionContext';
+
+function renderTodayPage() {
+  return render(<FocusSessionProvider><TodayPage /></FocusSessionProvider>);
+}
 
 const FOCUS_TASK = {
   id: 'f1', title: 'Ship MVP', priority: 1,
@@ -58,40 +63,40 @@ beforeEach(() => {
 describe('TodayPage', () => {
   it('shows empty state when no tasks', () => {
     (useTodayTasks as any).mockReturnValue({ data: [] });
-    render(<TodayPage />);
+    renderTodayPage();
     expect(screen.getByText(/All done for today/)).toBeInTheDocument();
   });
 
   it('renders IN FOCUS section for tasks with in_focus=1', () => {
     (useTodayTasks as any).mockReturnValue({ data: [FOCUS_TASK, LATER_TASK] });
-    render(<TodayPage />);
+    renderTodayPage();
     expect(screen.getByText('In Focus')).toBeInTheDocument();
     expect(screen.getByText('Ship MVP')).toBeInTheDocument();
   });
 
   it('renders LATER TODAY section for non-focus tasks', () => {
     (useTodayTasks as any).mockReturnValue({ data: [FOCUS_TASK, LATER_TASK] });
-    render(<TodayPage />);
+    renderTodayPage();
     expect(screen.getByText('Later Today')).toBeInTheDocument();
     expect(screen.getByText('Reply emails')).toBeInTheDocument();
   });
 
   it('hides IN FOCUS section when no focus tasks', () => {
     (useTodayTasks as any).mockReturnValue({ data: [LATER_TASK] });
-    render(<TodayPage />);
+    renderTodayPage();
     expect(screen.queryByText('In Focus')).not.toBeInTheDocument();
   });
 
   it('renders Focus Session widget', () => {
     (useTodayTasks as any).mockReturnValue({ data: [FOCUS_TASK] });
-    render(<TodayPage />);
+    renderTodayPage();
     expect(screen.getByText('Focus Session')).toBeInTheDocument();
     expect(screen.getByText('25:00')).toBeInTheDocument();
   });
 
   it('shows task + in focus count in subtitle', () => {
     (useTodayTasks as any).mockReturnValue({ data: [FOCUS_TASK, LATER_TASK] });
-    render(<TodayPage />);
+    renderTodayPage();
     expect(screen.getByText(/2 tasks · 1 in focus/)).toBeInTheDocument();
   });
 });

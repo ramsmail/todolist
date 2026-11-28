@@ -1,6 +1,6 @@
 import { Text, Linking, type TextStyle, type StyleProp } from 'react-native';
-import { splitTextWithLinks, toHref } from '@todolist/core';
-import { colors } from '@todolist/ui';
+import { splitTextWithLinks, toHref } from '@thinkdo/core';
+import { colors } from '@thinkdo/ui';
 
 export function LinkifiedText({ text, style }: { text: string | null | undefined; style?: StyleProp<TextStyle> }) {
   const segments = splitTextWithLinks(text ?? '');

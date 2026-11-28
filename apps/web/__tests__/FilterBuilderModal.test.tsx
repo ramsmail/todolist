@@ -7,8 +7,8 @@ vi.mock('@powersync/react', () => ({
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({ auth: { getUser: async () => ({ data: { user: { id: 'u1' } } }) } }),
 }));
-vi.mock('@todolist/db', async () => {
-  const actual = await vi.importActual<any>('@todolist/db');
+vi.mock('@thinkdo/db', async () => {
+  const actual = await vi.importActual<any>('@thinkdo/db');
   return {
     ...actual,
     useLabels:          vi.fn(),
@@ -17,8 +17,8 @@ vi.mock('@todolist/db', async () => {
     updateSavedFilter:  vi.fn().mockResolvedValue(undefined),
   };
 });
-vi.mock('@todolist/core', async () => {
-  const actual = await vi.importActual<any>('@todolist/core');
+vi.mock('@thinkdo/core', async () => {
+  const actual = await vi.importActual<any>('@thinkdo/core');
   return {
     ...actual,
     serializeFilterQuery: (q: any) => JSON.stringify(q),
@@ -33,7 +33,7 @@ vi.mock('@todolist/core', async () => {
   };
 });
 
-import { useLabels, useProjects, createSavedFilter, updateSavedFilter } from '@todolist/db';
+import { useLabels, useProjects, createSavedFilter, updateSavedFilter } from '@thinkdo/db';
 import { FilterBuilderModal } from '@/components/filters/FilterBuilderModal';
 
 describe.skip('FilterBuilderModal', () => {

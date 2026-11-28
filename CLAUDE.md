@@ -1,4 +1,4 @@
-# TodoList — Project Notes for Claude
+# ThinkDo — Project Notes for Claude
 
 Productivity app. Monorepo (pnpm workspaces + Turbo) with Next.js 14 web app, Expo mobile app, and shared code in `packages/*`. Deployed on Vercel.
 
@@ -118,7 +118,7 @@ vercel build --prod
 
 ### Other Deploy Gotchas
 
-- **Never upload `.worktrees/` to Vercel:** It's git-ignored, but CLI deploys without `.vercelignore` upload it anyway (~1.6 GB of node_modules + colliding `@todolist/web` package.json). The `.vercelignore` file excludes it; keep it.
+- **Never upload `.worktrees/` to Vercel:** It's git-ignored, but CLI deploys without `.vercelignore` upload it anyway (~1.6 GB of node_modules + colliding `@thinkdo/web` package.json). The `.vercelignore` file excludes it; keep it.
 - **`next build` hides deploy-only bugs:** `next build` always bundles middleware correctly locally. Use `vercel build` to see what actually ships to production.
 - **Node version mismatch:** Run `npm run check-versions` before pushing to catch Node version drift between `.nvmrc` and `package.json`.
 

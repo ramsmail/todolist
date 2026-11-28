@@ -2,13 +2,13 @@
 
 import { useEffect, useState, useCallback, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { usePowerSync } from '@powersync/react';
-import { parseLabelsJson } from '@todolist/core';
+import { parseLabelsJson } from '@thinkdo/core';
 import {
   useTask, useSubtasks,
   updateTaskTitle, updateTaskDescription, updateTaskPriority, updateTaskProject,
   updateTaskDue, deleteTask, createTask, completeTask,
   updateTaskRecurrence, setTaskLabels, useAttachmentsForTask,
-} from '@todolist/db';
+} from '@thinkdo/db';
 import { ProjectPicker } from '@/components/projects/ProjectPicker';
 import { RecurrencePicker } from './RecurrencePicker';
 import { DatePicker } from './DatePicker';

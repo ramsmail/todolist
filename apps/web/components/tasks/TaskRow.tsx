@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { useLabels } from '@todolist/db';
+import { useLabels } from '@thinkdo/db';
 import { LabelChip } from './LabelChip';
 
 const PRIORITY_COLOR: Record<number, string> = {

@@ -3,8 +3,8 @@ import {
   View, Image, Text, Pressable, Modal, StyleSheet,
   FlatList, ActivityIndicator, Dimensions,
 } from 'react-native';
-import { useAttachmentsForTask } from '@todolist/db';
-import { colors, typography } from '@todolist/ui';
+import { useAttachmentsForTask } from '@thinkdo/db';
+import { colors, typography } from '@thinkdo/ui';
 import { supabase } from '../supabase/client';
 
 const { width: SCREEN_W } = Dimensions.get('window');

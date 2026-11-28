@@ -119,7 +119,7 @@ async function fetchPageMeta(url: string): Promise<PageMeta> {
       signal: controller.signal,
       redirect: 'follow',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; TodoListBot/1.0; +https://todolist.app)',
+        'User-Agent': 'Mozilla/5.0 (compatible; ThinkDoBot/1.0; +https://todolist.app)',
         Accept: 'text/html,application/xhtml+xml',
       },
     });

@@ -14,8 +14,8 @@ vi.mock('@/lib/supabase/client', () => ({
 
 let mockTask: any;
 
-vi.mock('@todolist/db', async () => {
-  const actual = await vi.importActual<any>('@todolist/db');
+vi.mock('@thinkdo/db', async () => {
+  const actual = await vi.importActual<any>('@thinkdo/db');
   return {
     ...actual,
     useTask: vi.fn(() => ({ data: [mockTask] })),
@@ -36,7 +36,7 @@ vi.mock('@todolist/db', async () => {
   };
 });
 
-import { updateTaskDescription, setTaskLabels } from '@todolist/db';
+import { updateTaskDescription, setTaskLabels } from '@thinkdo/db';
 
 describe('TaskDetailPanel description field', () => {
   beforeEach(() => {

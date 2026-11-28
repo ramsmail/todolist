@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { usePowerSync } from '@powersync/react';
-import { useProjectTasks, useProjects, completeTask } from '@todolist/db';
+import { useProjectTasks, useProjects, completeTask } from '@thinkdo/db';
 import { TaskList } from '@/components/tasks/TaskList';
 import { QuickCaptureModal } from '@/components/tasks/QuickCaptureModal';
 import { TaskDetailPanel } from '@/components/tasks/TaskDetailPanel';

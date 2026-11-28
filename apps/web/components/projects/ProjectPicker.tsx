@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { useProjects } from '@todolist/db';
+import { useProjects } from '@thinkdo/db';
 
 interface Props {
   value:    string | null;

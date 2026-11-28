@@ -4,11 +4,10 @@ import { useState } from 'react';
 import { usePowerSync } from '@powersync/react';
 import {
   useTodayTasks, useTodayStats, useProjects, completeTask, toggleFocus,
-} from '@todolist/db';
+} from '@thinkdo/db';
 import { useViewMode } from '@/hooks/useViewMode';
 import { ViewToggle } from '@/components/today/ViewToggle';
 import { BoardView } from '@/components/today/BoardView';
-import { FocusSessionProvider } from '@/lib/focus/FocusSessionContext';
 import { TaskRow } from '@/components/tasks/TaskRow';
 import { FocusTaskCard } from '@/components/today/FocusTaskCard';
 import { RightPanel } from '@/components/today/RightPanel';
@@ -46,7 +45,7 @@ export default function TodayPage() {
   }
 
   return (
-    <FocusSessionProvider>
+    <>
       <div className="flex h-full">
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto scrollable">
           {/* Header with view toggle */}
@@ -172,6 +171,6 @@ export default function TodayPage() {
 
       <TaskDetailPanel taskId={detailId} onClose={() => setDetailId(null)} />
       <QuickCaptureModal open={capture} onClose={() => setCapture(false)} />
-    </FocusSessionProvider>
+    </>
   );
 }

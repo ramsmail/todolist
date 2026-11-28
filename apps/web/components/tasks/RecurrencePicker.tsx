@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { parseRule, serializeRule, describeRule, WD_ORDER, type Weekday, type Freq } from '@todolist/core';
+import { parseRule, serializeRule, describeRule, WD_ORDER, type Weekday, type Freq } from '@thinkdo/core';
 
 interface Props {
   value:    string | null;

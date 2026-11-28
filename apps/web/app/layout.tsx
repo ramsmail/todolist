@@ -3,7 +3,7 @@ import './globals.css';
 import { ClientLayout } from './ClientLayout';
 
 export const metadata: Metadata = {
-  title: 'TodoList',
+  title: 'ThinkDo',
   description: 'Personal task management',
 };
 

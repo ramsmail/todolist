@@ -4,9 +4,9 @@ import {
   KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
 } from 'react-native';
 import { usePowerSync } from '@powersync/react';
-import { createProject } from '@todolist/db';
+import { createProject } from '@thinkdo/db';
 import { useAuth } from '../auth/AuthContext';
-import { colors, typography } from '@todolist/ui';
+import { colors, typography } from '@thinkdo/ui';
 
 interface Props {
   visible: boolean;

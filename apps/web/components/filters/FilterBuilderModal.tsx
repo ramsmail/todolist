@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { usePowerSync } from '@powersync/react';
-import { createSavedFilter, updateSavedFilter } from '@todolist/db';
+import { createSavedFilter, updateSavedFilter } from '@thinkdo/db';
 import { createClient } from '@/lib/supabase/client';
 
 interface Props {

@@ -1,6 +1,6 @@
 import { PowerSyncDatabase } from '@powersync/react-native';
 import { OPSqliteOpenFactory } from '@powersync/op-sqlite';
-import { AppSchema } from '@todolist/db';
+import { AppSchema } from '@thinkdo/db';
 
 // op-sqlite is the native SQLite adapter PowerSync uses on React Native.
 // Without an explicit SQLOpenFactory, PowerSync has no on-device SQLite to

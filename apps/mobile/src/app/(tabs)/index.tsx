@@ -1,119 +1,107 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, FlatList, Text, StyleSheet } from 'react-native';
+import { View, SectionList, Text, StyleSheet } from 'react-native';
+import type { SectionListData } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useMatrixTasks, useProjects, completeTask, updateTaskDue, updateTaskPriority } from '@todolist/db';
-import { usePowerSync } from '@powersync/react';
-import { colors, typography } from '@todolist/ui';
+import { StatusBar } from 'expo-status-bar';
+import { useAgendaTasks, useTodayStats, groupAgendaTasks, type AgendaSection } from '@thinkdo/db';
+import { typography } from '@thinkdo/ui';
+import { homeColors, homePriorityColor } from '../../components/home/homeTheme';
 import { SwipeableTaskRow, type TaskRowData } from '../../components/SwipeableTaskRow';
-import { QuadrantTabs } from '../../components/QuadrantTabs';
-import { QuadrantPickerSheet } from '../../components/QuadrantPickerSheet';
+import { TodayHeader } from '../../components/home/TodayHeader';
 import { FAB } from '../../components/FAB';
 import { QuickCaptureModal } from '../../components/QuickCaptureModal';
+import { useTaskActions } from '../../hooks/useTaskActions';
 
-const EMPTY_COPY: Record<1 | 2 | 3 | 4, string> = {
-  1: 'Nothing urgent right now.',
-  2: 'Nothing to plan yet.',
-  3: 'Nothing to pass along.',
-  4: 'Nothing to drop 🎉',
-};
-
-type MatrixTask = TaskRowData & { project_id: string | null };
-
-export default function TasksScreen() {
-  const db = usePowerSync();
-  const router = useRouter();
-  const { byQuadrant } = useMatrixTasks();
-  const { data: projects } = useProjects();
-  const [active, setActive] = useState<1 | 2 | 3 | 4>(1);
+// The app's landing tab. Merges what used to be three overlapping screens:
+// the old Home dashboard's real widgets live in TodayHeader, and its "Top
+// Priorities" list is now the Do First section — the only band a date filter
+// alone could not produce.
+export default function TodayScreen() {
+  const { data: tasks } = useAgendaTasks();
+  const { data: stats } = useTodayStats();
+  const { handlePress, handleComplete, handleReschedule } = useTaskActions();
   const [capturing, setCapturing] = useState(false);
-  const [reassigningId, setReassigningId] = useState<string | null>(null);
 
-  const projectNameById = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const project of projects ?? []) {
-      if (project.name) map.set(project.id, project.name);
-    }
-    return map;
-  }, [projects]);
+  const { completed, total } = useMemo(() => {
+    const row = stats?.[0];
+    return { completed: Number(row?.completed ?? 0), total: Number(row?.total ?? 0) };
+  }, [stats]);
 
-  const tasks = (byQuadrant[active] ?? []) as MatrixTask[];
+  const sections = useMemo(
+    () => groupAgendaTasks(
+      (tasks ?? []) as TaskRowData[],
+      new Date().toISOString().split('T')[0]
+    ),
+    [tasks]
+  );
 
-  const handlePress = useCallback((id: string) => router.push(`/task/${id}`), [router]);
-
-  const handleComplete = useCallback((id: string) => {
-    completeTask(db as any, id).catch(console.error);
-  }, [db]);
-
-  const handleReschedule = useCallback((id: string) => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    updateTaskDue(db as any, id, tomorrow.toISOString().split('T')[0], null).catch(console.error);
-  }, [db]);
-
-  const handlePriorityPress = useCallback((id: string) => setReassigningId(id), []);
-
-  const closeReassign = useCallback(() => setReassigningId(null), []);
-
-  const handleReassign = useCallback((quadrant: 1 | 2 | 3 | 4) => {
-    if (!reassigningId) return;
-    updateTaskPriority(db as any, reassigningId, quadrant).catch(console.error);
-  }, [db, reassigningId]);
-
-  const renderItem = useCallback(({ item }: { item: MatrixTask }) => (
+  const renderItem = useCallback(({ item }: { item: TaskRowData }) => (
     <SwipeableTaskRow
       task={item}
       onPress={handlePress}
       onComplete={handleComplete}
       onReschedule={handleReschedule}
-      onPriorityPress={handlePriorityPress}
-      projectName={item.project_id ? projectNameById.get(item.project_id) : null}
-      variant="panel"
     />
-  ), [handlePress, handleComplete, handleReschedule, handlePriorityPress, projectNameById]);
+  ), [handlePress, handleComplete, handleReschedule]);
 
-  const keyExtractor = useCallback((item: MatrixTask) => item.id, []);
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: SectionListData<TaskRowData, AgendaSection<TaskRowData>> }) => (
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, section.key === 'overdue' && styles.sectionTitleOverdue]}>
+          {section.title}
+        </Text>
+      </View>
+    ),
+    []
+  );
+
+  const keyExtractor = useCallback((item: TaskRowData) => item.id, []);
 
   const openCapture = useCallback(() => setCapturing(true), []);
   const closeCapture = useCallback(() => setCapturing(false), []);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Tasks</Text>
-        <Text style={styles.count}>{tasks.length}</Text>
-      </View>
+      <StatusBar style="dark" />
 
-      <QuadrantTabs active={active} onChange={setActive} />
-
-      <FlatList
-        data={tasks}
+      <SectionList
+        sections={sections}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
-        contentContainerStyle={tasks.length === 0 ? styles.emptyContainer : undefined}
+        renderSectionHeader={renderSectionHeader}
+        ListHeaderComponent={<TodayHeader completed={completed} total={total} />}
         ListEmptyComponent={
-          <Text style={styles.empty}>{EMPTY_COPY[active]}</Text>
+          <Text style={styles.empty}>Nothing due today, and no P1 waiting.</Text>
         }
+        contentContainerStyle={styles.listContent}
+        stickySectionHeadersEnabled
       />
 
       <FAB onPress={openCapture} />
-
-      <QuickCaptureModal visible={capturing} onClose={closeCapture} defaultPriority={active} />
-
-      <QuadrantPickerSheet
-        visible={reassigningId !== null}
-        onSelect={handleReassign}
-        onClose={closeReassign}
-      />
+      <QuickCaptureModal visible={capturing} onClose={closeCapture} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  title: { ...typography.heading1, color: colors.textPrimary, flex: 1 },
-  count: { ...typography.caption, color: colors.textMuted, fontSize: 14 },
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  empty: { ...typography.body, color: colors.textMuted, marginTop: 80, textAlign: 'center' },
+  container: { flex: 1, backgroundColor: homeColors.page },
+  listContent: { paddingBottom: 100 },
+  sectionHeader: {
+    backgroundColor: homeColors.sectionBg,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  sectionTitle: {
+    ...typography.caption,
+    color: homeColors.textMuted,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  sectionTitleOverdue: { color: homePriorityColor[1] },
+  empty: {
+    ...typography.body,
+    color: homeColors.textMuted,
+    marginTop: 40,
+    textAlign: 'center',
+  },
 });

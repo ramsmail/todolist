@@ -1,17 +1,17 @@
 import { Tabs } from 'expo-router';
-import { LayoutGrid, CheckSquare } from 'lucide-react-native';
-import { colors } from '@todolist/ui';
+import { CheckSquare, LayoutGrid } from 'lucide-react-native';
+import { homeColors } from '../../components/home/homeTheme';
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: homeColors.accent,
+        tabBarInactiveTintColor: homeColors.textMuted,
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
+          backgroundColor: homeColors.card,
+          borderTopColor: homeColors.cardBorder,
           borderTopWidth: 1,
         },
       }}
@@ -19,15 +19,15 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tasks',
-          tabBarIcon: ({ color, size }) => <LayoutGrid size={size} color={color} strokeWidth={2} />,
+          title: 'Today',
+          tabBarIcon: ({ color, size }) => <CheckSquare size={size} color={color} strokeWidth={2} />,
         }}
       />
       <Tabs.Screen
-        name="today"
+        name="tasks"
         options={{
-          title: 'Today',
-          tabBarIcon: ({ color, size }) => <CheckSquare size={size} color={color} strokeWidth={2} />,
+          title: 'Tasks',
+          tabBarIcon: ({ color, size }) => <LayoutGrid size={size} color={color} strokeWidth={2} />,
         }}
       />
     </Tabs>

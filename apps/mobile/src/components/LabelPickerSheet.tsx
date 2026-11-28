@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
-import { useLabels } from '@todolist/db';
-import { colors, typography } from '@todolist/ui';
+import { useLabels } from '@thinkdo/db';
+import { colors, typography } from '@thinkdo/ui';
 
 interface Props {
   visible: boolean;

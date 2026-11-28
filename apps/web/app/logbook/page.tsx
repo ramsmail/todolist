@@ -1,6 +1,6 @@
 'use client';
 
-import { useLogbook } from '@todolist/db';
+import { useLogbook } from '@thinkdo/db';
 import { TaskRow, type TaskRowItem } from '@/components/tasks/TaskRow';
 
 type LogbookEntry = {

@@ -7,9 +7,14 @@ import { useEffect } from 'react';
 import { ShareIntentProvider, useShareIntentContext } from 'expo-share-intent';
 import { AuthProvider, useAuth } from '../auth/AuthContext';
 import { PowerSyncProvider } from '../powersync/PowerSyncProvider';
+import { PomodoroProvider } from '../contexts/PomodoroContext';
+import { usePowerSync } from '@powersync/react';
 import { useOfflineAttachmentSync } from '../hooks/useOfflineAttachmentSync';
+import { useNotificationReconciliation } from '../hooks/useNotificationReconciliation';
+import { registerDeepLinkListener, handleColdStartNotification } from '../notifications/deepLink';
 
 function RootLayoutNav() {
+  const db = usePowerSync();
   const { session, loading } = useAuth();
   const { hasShareIntent } = useShareIntentContext();
   const segments = useSegments();
@@ -27,6 +32,12 @@ function RootLayoutNav() {
   }, [session, loading, segments, router]);
 
   useOfflineAttachmentSync();
+  useNotificationReconciliation();
+
+  useEffect(() => {
+    handleColdStartNotification(db, (url) => router.push(url)).catch(console.error);
+    return registerDeepLinkListener(db, (url) => router.push(url));
+  }, [db, router]);
 
   // Warm start: app already running when a share arrives. Cold starts are routed
   // by app/+native-intent.ts. Only capture once authenticated; otherwise the auth
@@ -52,7 +63,9 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <AuthProvider>
             <PowerSyncProvider>
-              <RootLayoutNav />
+              <PomodoroProvider>
+                <RootLayoutNav />
+              </PomodoroProvider>
             </PowerSyncProvider>
           </AuthProvider>
         </SafeAreaProvider>

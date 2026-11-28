@@ -224,7 +224,7 @@ SUPABASE_ANON_KEY=your-anon-key \
 POWERSYNC_URL=https://your-instance.powersync.journeyapps.com \
 SUPABASE_EMAIL=test@example.com \
 SUPABASE_PASSWORD=Password123! \
-pnpm --filter @todolist/spike start
+pnpm --filter @thinkdo/spike start
 ```
 
 ---

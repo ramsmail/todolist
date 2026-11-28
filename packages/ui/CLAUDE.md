@@ -71,8 +71,8 @@ export function TaskRow({ taskId }) {
 **Right pattern:**
 ```typescript
 // apps/web/components/TaskList.tsx
-import { getTasks } from '@todolist/db';
-import { TaskRow } from '@todolist/ui';
+import { getTasks } from '@thinkdo/db';
+import { TaskRow } from '@thinkdo/ui';
 
 export function TaskList() {
   const tasks = getTasks();
