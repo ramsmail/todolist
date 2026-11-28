@@ -1,6 +1,7 @@
 'use client';
 
-import { useLogbook } from '@todolist/db';
+import { usePowerSync } from '@powersync/react';
+import { useLogbook, reopenTask } from '@todolist/db';
 import { TaskRow, type TaskRowItem } from '@/components/tasks/TaskRow';
 
 type LogbookEntry = {
@@ -24,6 +25,7 @@ const BUCKET_LABELS = {
 } as const;
 
 export default function LogbookPage() {
+  const db = usePowerSync();
   const { data: tasks } = useLogbook();
 
   const buckets: Record<'today' | 'this_week' | 'earlier', LogbookEntry[]> = {
@@ -60,6 +62,7 @@ export default function LogbookPage() {
                         task={t as TaskRowItem}
                         onPress={() => {}}
                         onComplete={() => {}}
+                        onReopen={(id) => { void reopenTask(db as any, id); }}
                         readOnly
                         completedAt={t.updated_at}
                       />

@@ -1,12 +1,14 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('@powersync/react', () => ({ usePowerSync: () => ({ fake: 'db' }) }));
 
 vi.mock('@todolist/db', async () => {
   const actual = await vi.importActual<any>('@todolist/db');
-  return { ...actual, useLogbook: vi.fn(), useLabels: vi.fn() };
+  return { ...actual, useLogbook: vi.fn(), useLabels: vi.fn(), reopenTask: vi.fn() };
 });
 
-import { useLogbook, useLabels } from '@todolist/db';
+import { useLogbook, useLabels, reopenTask } from '@todolist/db';
 import LogbookPage from '@/app/logbook/page';
 
 const TASKS = [
@@ -54,5 +56,12 @@ describe('LogbookPage', () => {
     expect(screen.getByText('Today')).toBeInTheDocument();
     expect(screen.queryByText('This week')).not.toBeInTheDocument();
     expect(screen.queryByText('Earlier')).not.toBeInTheDocument();
+  });
+
+  it('reopens a completed task from the Reopen button', () => {
+    (useLogbook as any).mockReturnValue({ data: [TASKS[0]] });
+    render(<LogbookPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen Task A' }));
+    expect(reopenTask).toHaveBeenCalledWith({ fake: 'db' }, '1');
   });
 });

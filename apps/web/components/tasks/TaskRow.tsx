@@ -20,6 +20,8 @@ interface Props {
   task:         TaskRowItem;
   onPress:      (id: string) => void;
   onComplete:   (id: string) => void;
+  /** When set on a readOnly (completed) row, shows a Reopen button. */
+  onReopen?:    (id: string) => void;
   readOnly?:    boolean;
   completedAt?: string;
   tabIndex?:    number;
@@ -33,7 +35,7 @@ function isOverdue(dueDate: string) {
 }
 
 export const TaskRow = memo(function TaskRow({
-  task, onPress, onComplete, readOnly = false, completedAt, tabIndex, draggable = false, onDragStart, onDragEnd,
+  task, onPress, onComplete, onReopen, readOnly = false, completedAt, tabIndex, draggable = false, onDragStart, onDragEnd,
 }: Props) {
   const { data: allLabels } = useLabels();
   const colorOf = (name: string) =>
@@ -105,6 +107,16 @@ export const TaskRow = memo(function TaskRow({
           </p>
         ) : null}
       </button>
+
+      {readOnly && onReopen && (
+        <button
+          onClick={e => { e.stopPropagation(); onReopen(task.id); }}
+          className="text-xs text-accent hover:underline flex-shrink-0 mt-0.5 focus:outline-none focus:ring-2 focus:ring-accent rounded"
+          aria-label={`Reopen ${task.title}`}
+        >
+          Reopen
+        </button>
+      )}
 
       {/* Priority badge */}
       <span
