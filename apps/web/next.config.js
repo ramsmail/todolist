@@ -11,8 +11,8 @@ const nextConfig = {
     ],
   },
   transpilePackages: [
-    '@todolist/core',
-    '@todolist/db',
+    '@thinkdo/core',
+    '@thinkdo/db',
     '@powersync/react',
   ],
   async headers() {

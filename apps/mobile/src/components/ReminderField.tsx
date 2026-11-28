@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { colors, typography } from '@todolist/ui';
+import { colors, typography } from '@thinkdo/ui';
 import {
   REMINDER_OFFSET_MINUTES, computeReminderFromOffset, computeReminderFromCustomDate,
   type ReminderOffsetKey,

@@ -6,8 +6,8 @@ import {
 import { useRouter } from 'expo-router';
 import { useShareIntentContext } from 'expo-share-intent';
 import { usePowerSync } from '@powersync/react';
-import { createTask } from '@todolist/db';
-import { colors, typography } from '@todolist/ui';
+import { createTask } from '@thinkdo/db';
+import { colors, typography } from '@thinkdo/ui';
 import { useAuth } from '../auth/AuthContext';
 import { supabase } from '../supabase/client';
 import { uploadQueue } from '../lib/uploadQueue';

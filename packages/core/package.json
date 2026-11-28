@@ -1,5 +1,5 @@
 {
-  "name": "@todolist/core",
+  "name": "@thinkdo/core",
   "version": "0.0.1",
   "private": true,
   "main": "./dist/index.js",
@@ -15,7 +15,7 @@
     "date-fns": "^3.6.0"
   },
   "devDependencies": {
-    "@todolist/config": "workspace:*",
+    "@thinkdo/config": "workspace:*",
     "vitest": "^1.6.0"
   }
 }

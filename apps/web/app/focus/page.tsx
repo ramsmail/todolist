@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { useTodayTasks } from '@todolist/db';
+import { useTodayTasks } from '@thinkdo/db';
 import {
   useFocusSession, FOCUS_SECONDS, SHORT_BREAK_SECONDS, LONG_BREAK_SECONDS, type FocusPhase,
 } from '@/lib/focus/FocusSessionContext';

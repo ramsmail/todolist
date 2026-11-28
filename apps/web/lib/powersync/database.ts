@@ -1,5 +1,5 @@
 import { PowerSyncDatabase, type WebSQLOpenFactoryOptions } from '@powersync/web';
-import { AppSchema } from '@todolist/db';
+import { AppSchema } from '@thinkdo/db';
 
 let instance: PowerSyncDatabase | undefined;
 

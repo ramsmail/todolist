@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { usePowerSync } from '@powersync/react';
 import { generateKeyBetween } from 'fractional-indexing';
-import { completeTask, toggleFocus, moveTask } from '@todolist/db';
+import { completeTask, toggleFocus, moveTask } from '@thinkdo/db';
 import { BoardTaskCard } from './BoardTaskCard';
 import { KanbanColumn } from './KanbanColumn';
 

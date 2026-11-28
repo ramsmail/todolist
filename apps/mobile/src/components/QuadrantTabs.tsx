@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { quadrantLabel } from '@todolist/core';
-import { typography, priorityColor } from '@todolist/ui';
+import { quadrantLabel } from '@thinkdo/core';
+import { typography, priorityColor } from '@thinkdo/ui';
 import { homeColors } from './home/homeTheme';
 
 const QUADRANTS = [1, 2, 3, 4] as const;

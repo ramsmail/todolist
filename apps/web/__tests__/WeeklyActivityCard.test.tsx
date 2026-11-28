@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { WeeklyActivityCard } from '@/components/today/WeeklyActivityCard';
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('@todolist/db', () => ({
+vi.mock('@thinkdo/db', () => ({
   useWeeklyActivity: () => [
     { day: '2026-06-19', count: 3 },
     { day: '2026-06-20', count: 5 },

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { LOGBOOK_QUERY, MATRIX_QUERY, TODAY_QUERY, AGENDA_QUERY, FOCUS_TASKS_QUERY, TOP_PRIORITIES_QUERY, P1_CARDS_QUERY, P1_CARD_LIMIT, groupTasksByPriority, groupAgendaTasks, completeTask, deleteTask, getP1CardTasks } from './tasks';
-import { quadrantLabel } from '@todolist/core';
+import { quadrantLabel } from '@thinkdo/core';
 
 function makeMockDb(overrides: Partial<Record<string, any>> = {}) {
   const txExecute = vi.fn().mockResolvedValue(undefined);

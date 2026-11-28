@@ -10,7 +10,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 const TASK = { id: '1', title: 'Test task', priority: 3, due_date: '2026-12-01', status: 'inbox' };
 
-vi.mock('@todolist/db', async (importOriginal) => {
+vi.mock('@thinkdo/db', async (importOriginal) => {
   const actual = await importOriginal<any>();
   return {
     ...actual,

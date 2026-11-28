@@ -4,10 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { usePowerSync } from '@powersync/react';
-import { useUserSettings, upsertUserSettings, getUserSettings } from '@todolist/db';
+import { useUserSettings, upsertUserSettings, getUserSettings } from '@thinkdo/db';
 import { useAuth } from '../auth/AuthContext';
 import { ensureNotificationPermission } from '../notifications/registerPushToken';
-import { colors, typography } from '@todolist/ui';
+import { colors, typography } from '@thinkdo/ui';
 
 function parseTime(time: string | null): Date {
   const date = new Date();
@@ -61,7 +61,7 @@ export default function SettingsScreen() {
             'Notifications disabled',
             canAskAgain
               ? 'Notification permission was not granted. Please allow notifications to use the daily inbox nudge.'
-              : 'Notifications are blocked for this app. Enable them in your device Settings > Apps > TodoList > Notifications to use the daily inbox nudge.'
+              : 'Notifications are blocked for this app. Enable them in your device Settings > Apps > ThinkDo > Notifications to use the daily inbox nudge.'
           );
           return;
         }
@@ -101,7 +101,7 @@ export default function SettingsScreen() {
             'Notifications disabled',
             canAskAgain
               ? 'Notification permission was not granted. Please allow notifications to use high-priority cards.'
-              : 'Notifications are blocked for this app. Enable them in your device Settings > Apps > TodoList > Notifications to use high-priority cards.'
+              : 'Notifications are blocked for this app. Enable them in your device Settings > Apps > ThinkDo > Notifications to use high-priority cards.'
           );
           return;
         }

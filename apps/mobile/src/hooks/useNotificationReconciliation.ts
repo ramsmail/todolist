@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { usePowerSync } from '@powersync/react';
-import { getPendingReminders, getUserSettings, getInboxCount, getP1CardTasks } from '@todolist/db';
+import { getPendingReminders, getUserSettings, getInboxCount, getP1CardTasks } from '@thinkdo/db';
 import { formatP1CardBody } from '../notifications/p1CardContent';
 import { formatDueDateForStorage } from '../lib/dueDateFormat';
 import { useAuth } from '../auth/AuthContext';

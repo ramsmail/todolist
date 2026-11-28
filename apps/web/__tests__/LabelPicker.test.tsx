@@ -2,8 +2,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { LabelPicker } from '@/components/tasks/LabelPicker';
 
-vi.mock('@todolist/db', async () => {
-  const actual = await vi.importActual<any>('@todolist/db');
+vi.mock('@thinkdo/db', async () => {
+  const actual = await vi.importActual<any>('@thinkdo/db');
   return {
     ...actual,
     useLabels: () => ({

@@ -1,6 +1,6 @@
 // Body text for a P1 notification card. Pure and native-module-free so the
 // wording can be unit tested; the row type is declared here rather than
-// imported from @todolist/db so the notification modules keep the structural
+// imported from @thinkdo/db so the notification modules keep the structural
 // boundary that PendingReminder already establishes in reconciliation.ts.
 
 export interface P1CardTask {

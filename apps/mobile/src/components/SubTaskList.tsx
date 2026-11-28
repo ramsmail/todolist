@@ -3,9 +3,9 @@ import {
   View, Text, TextInput, Pressable, FlatList, StyleSheet, Alert,
 } from 'react-native';
 import { usePowerSync } from '@powersync/react';
-import { useSubtasks, createTask, completeTask } from '@todolist/db';
+import { useSubtasks, createTask, completeTask } from '@thinkdo/db';
 import { useAuth } from '../auth/AuthContext';
-import { TaskCheckbox, colors, typography } from '@todolist/ui';
+import { TaskCheckbox, colors, typography } from '@thinkdo/ui';
 
 interface Props {
   parentTaskId: string;

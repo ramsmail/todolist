@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { usePowerSync } from '@powersync/react';
-import { createProject } from '@todolist/db';
+import { createProject } from '@thinkdo/db';
 import { createClient } from '@/lib/supabase/client';
 
 const COLORS = ['#6366F1','#EF4444','#F97316','#22C55E','#3B82F6','#EC4899','#F59E0B'];

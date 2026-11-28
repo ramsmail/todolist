@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import type { AbstractPowerSyncDatabase } from '@powersync/common';
-import { completeTask, snoozeReminder, updateTaskDue } from '@todolist/db';
+import { completeTask, snoozeReminder, updateTaskDue } from '@thinkdo/db';
 import { formatDueDateForStorage } from '../lib/dueDateFormat';
 import { handleNotificationResponse, type NotificationResponseData } from './deepLinkHandler';
 

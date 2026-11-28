@@ -7,7 +7,7 @@ import { ProgressRing } from './ProgressRing';
 import { EnergyStrip } from './EnergyStrip';
 import { homeColors, homeSpace, homePriorityColor } from './homeTheme';
 import { usePomodoro } from '../../contexts/PomodoroContext';
-import { PomodoroTimer, TimerControls } from '@todolist/ui';
+import { PomodoroTimer, TimerControls } from '@thinkdo/ui';
 
 interface Props {
   completed: number;

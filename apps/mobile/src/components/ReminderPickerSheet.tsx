@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors, typography } from '@todolist/ui';
+import { colors, typography } from '@thinkdo/ui';
 import type { ReminderOffsetKey } from '../lib/reminderOffsets';
 
 interface Props {

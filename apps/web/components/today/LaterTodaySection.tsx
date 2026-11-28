@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { usePowerSync } from '@powersync/react';
-import { toggleFocus, moveTask } from '@todolist/db';
+import { toggleFocus, moveTask } from '@thinkdo/db';
 import { generateKeyBetween } from 'fractional-indexing';
 
 type Task = {

@@ -6,12 +6,12 @@ vi.mock('@powersync/react', () => ({
   useQuery: vi.fn(() => ({ data: [] })),
 }));
 
-vi.mock('@todolist/db', async () => {
-  const actual = await vi.importActual<any>('@todolist/db');
+vi.mock('@thinkdo/db', async () => {
+  const actual = await vi.importActual<any>('@thinkdo/db');
   return { ...actual, useTodayTasks: vi.fn() };
 });
 
-import { useTodayTasks } from '@todolist/db';
+import { useTodayTasks } from '@thinkdo/db';
 import FocusPage from '@/app/focus/page';
 import { FocusSessionProvider } from '@/lib/focus/FocusSessionContext';
 import { ImmersiveProvider } from '@/lib/focus/ImmersiveContext';

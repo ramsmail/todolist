@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('@powersync/react', () => ({
   usePowerSync: vi.fn(() => ({ execute: vi.fn() })),
 }));
-vi.mock('@todolist/db', () => ({
+vi.mock('@thinkdo/db', () => ({
   completeTask: vi.fn(),
   moveTask: vi.fn(),
   toggleFocus: vi.fn(),

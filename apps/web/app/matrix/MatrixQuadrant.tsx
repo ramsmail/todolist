@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { quadrantLabel } from '@todolist/core';
+import { quadrantLabel } from '@thinkdo/core';
 import { TaskRow, type TaskRowItem } from '@/components/tasks/TaskRow';
 
 const QUADRANT_CONFIG = {

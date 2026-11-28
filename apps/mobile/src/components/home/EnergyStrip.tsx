@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Zap } from 'lucide-react-native';
 import { usePowerSync } from '@powersync/react';
-import { useTodayEnergy, setEnergy } from '@todolist/db';
+import { useTodayEnergy, setEnergy } from '@thinkdo/db';
 import { useAuth } from '../../auth/AuthContext';
 import { homeColors } from './homeTheme';
 

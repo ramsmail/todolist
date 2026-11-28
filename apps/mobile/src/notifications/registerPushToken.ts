@@ -18,7 +18,7 @@
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import type { AbstractPowerSyncDatabase } from '@powersync/common';
-import { upsertUserSettings } from '@todolist/db';
+import { upsertUserSettings } from '@thinkdo/db';
 
 export async function ensureNotificationPermission(): Promise<{ granted: boolean; canAskAgain: boolean }> {
   const existing = await Notifications.getPermissionsAsync();

@@ -6,8 +6,8 @@ vi.mock('@powersync/react', () => ({
   useQuery: vi.fn(() => ({ data: [] })),
 }));
 
-vi.mock('@todolist/db', async () => {
-  const actual = await vi.importActual<any>('@todolist/db');
+vi.mock('@thinkdo/db', async () => {
+  const actual = await vi.importActual<any>('@thinkdo/db');
   return {
     ...actual,
     useTodayTasks:  vi.fn(),
@@ -23,7 +23,7 @@ vi.mock('@todolist/db', async () => {
 import {
   useTodayTasks, useTodayStats, useProjects, useLabels,
   useWeeklyActivity,
-} from '@todolist/db';
+} from '@thinkdo/db';
 import TodayPage from '@/app/today/page';
 import { FocusSessionProvider } from '@/lib/focus/FocusSessionContext';
 

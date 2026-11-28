@@ -43,7 +43,7 @@ export default function LoginScreen() {
         style={styles.flex}
       >
         <View style={styles.content}>
-          <Text style={styles.title}>TodoList</Text>
+          <Text style={styles.title}>ThinkDo</Text>
           <Text style={styles.subtitle}>Capture ideas on the go</Text>
 
           <TextInput

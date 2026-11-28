@@ -7,9 +7,9 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
-import { TaskCheckbox, PriorityBadge, typography } from '@todolist/ui';
-import { parseLabelsJson, parseRule, describeRule } from '@todolist/core';
-import { useLabels } from '@todolist/db';
+import { TaskCheckbox, PriorityBadge, typography } from '@thinkdo/ui';
+import { parseLabelsJson, parseRule, describeRule } from '@thinkdo/core';
+import { useLabels } from '@thinkdo/db';
 import { LabelChip } from './LabelChip';
 import { homeColors, homePriorityColor, homeRowTint } from './home/homeTheme';
 

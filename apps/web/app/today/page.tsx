@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { usePowerSync } from '@powersync/react';
 import {
   useTodayTasks, useTodayStats, useProjects, completeTask, toggleFocus,
-} from '@todolist/db';
+} from '@thinkdo/db';
 import { useViewMode } from '@/hooks/useViewMode';
 import { ViewToggle } from '@/components/today/ViewToggle';
 import { BoardView } from '@/components/today/BoardView';

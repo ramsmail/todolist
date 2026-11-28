@@ -9,10 +9,10 @@ import {
   useTask, updateTaskTitle, updateTaskDescription, updateTaskPriority, updateTaskDue,
   setTaskLabels, deleteTask, completeTask, useLabels,
   useTaskReminder, createReminder, updateReminderTime, deleteReminder, getReminderForTask,
-} from '@todolist/db';
-import { parseLabelsJson } from '@todolist/core';
+} from '@thinkdo/db';
+import { parseLabelsJson } from '@thinkdo/core';
 import { usePowerSync } from '@powersync/react';
-import { PriorityBadge, colors, typography } from '@todolist/ui';
+import { PriorityBadge, colors, typography } from '@thinkdo/ui';
 import { SubTaskList } from '../../components/SubTaskList';
 import { AttachmentGallery } from '../../components/AttachmentGallery';
 import { DueDateField } from '../../components/DueDateField';

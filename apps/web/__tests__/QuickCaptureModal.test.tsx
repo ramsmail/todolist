@@ -14,9 +14,9 @@ vi.mock('@/lib/supabase/client', () => ({
   }),
 }));
 
-// Mock @todolist/db createTask and ensureLabels
-vi.mock('@todolist/db', async () => {
-  const actual = await vi.importActual<any>('@todolist/db');
+// Mock @thinkdo/db createTask and ensureLabels
+vi.mock('@thinkdo/db', async () => {
+  const actual = await vi.importActual<any>('@thinkdo/db');
   return {
     ...actual,
     createTask: vi.fn().mockResolvedValue('new-id'),
@@ -25,7 +25,7 @@ vi.mock('@todolist/db', async () => {
   };
 });
 
-import { createTask, ensureLabels } from '@todolist/db';
+import { createTask, ensureLabels } from '@thinkdo/db';
 
 describe('QuickCaptureModal', () => {
   beforeEach(() => {

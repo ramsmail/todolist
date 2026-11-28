@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { usePowerSync, useQuery } from '@powersync/react';
-import { completeTask, updateTaskPriority } from '@todolist/db';
+import { completeTask, updateTaskPriority } from '@thinkdo/db';
 import { TaskDetailPanel } from '@/components/tasks/TaskDetailPanel';
 import { QuickCaptureModal } from '@/components/tasks/QuickCaptureModal';
 import { MatrixQuadrant } from './MatrixQuadrant';

@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
-import { quadrantLabel } from '@todolist/core';
-import { colors, typography } from '@todolist/ui';
+import { quadrantLabel } from '@thinkdo/core';
+import { colors, typography } from '@thinkdo/ui';
 
 const QUADRANTS = [1, 2, 3, 4] as const;
 

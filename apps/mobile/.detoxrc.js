@@ -7,9 +7,9 @@ module.exports = {
   apps: {
     'ios.debug': {
       type: 'ios.app',
-      binaryPath: 'ios/build/Build/Products/Debug-iphonesimulator/TodoList.app',
+      binaryPath: 'ios/build/Build/Products/Debug-iphonesimulator/ThinkDo.app',
       // expo prebuild generates ios/ — must run before xcodebuild in a clean checkout
-      build: 'expo prebuild --clean && xcodebuild -workspace ios/TodoList.xcworkspace -scheme TodoList -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build',
+      build: 'expo prebuild --clean && xcodebuild -workspace ios/ThinkDo.xcworkspace -scheme ThinkDo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build',
     },
     'android.debug': {
       type: 'android.apk',

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { usePowerSync } from '@powersync/react';
-import { useTasksByLabel, completeTask } from '@todolist/db';
+import { useTasksByLabel, completeTask } from '@thinkdo/db';
 import { TaskList } from '@/components/tasks/TaskList';
 import { TaskDetailPanel } from '@/components/tasks/TaskDetailPanel';
 

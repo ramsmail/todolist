@@ -1,5 +1,5 @@
 {
-  "extends": "@todolist/config/typescript",
+  "extends": "@thinkdo/config/typescript",
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": [

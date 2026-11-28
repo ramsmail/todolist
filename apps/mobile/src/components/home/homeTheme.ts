@@ -1,5 +1,5 @@
 // Self-contained LIGHT palette for the Home dashboard.
-// The rest of the app is dark (see @todolist/ui `colors`); this screen is
+// The rest of the app is dark (see @thinkdo/ui `colors`); this screen is
 // intentionally light per the design and does not touch the global tokens.
 export const homeColors = {
   page:          '#FAFAFA',

@@ -2,7 +2,7 @@ import type { AbstractPowerSyncDatabase } from '@powersync/common';
 import { useMemo } from 'react';
 import { useQuery } from '@powersync/react';
 import { generateKeyBetween } from 'fractional-indexing';
-import { parseRule, computeNext, quadrantLabel } from '@todolist/core';
+import { parseRule, computeNext, quadrantLabel } from '@thinkdo/core';
 import type { TaskRecord } from '../schema';
 import { deleteRemindersForTask } from './reminders';
 

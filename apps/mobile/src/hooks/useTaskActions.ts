@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { usePowerSync } from '@powersync/react';
-import { completeTask, updateTaskDue } from '@todolist/db';
+import { completeTask, updateTaskDue } from '@thinkdo/db';
 
 // The three handlers every task list needs. Previously copy-pasted verbatim
 // into each tab screen, which meant the completeTask error-handling fix had to

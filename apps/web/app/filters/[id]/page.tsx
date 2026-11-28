@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useSavedFilters, useFilteredTasks, completeTask } from '@todolist/db';
+import { useSavedFilters, useFilteredTasks, completeTask } from '@thinkdo/db';
 import { TaskList } from '@/components/tasks/TaskList';
 import { TaskDetailPanel } from '@/components/tasks/TaskDetailPanel';
 import { usePowerSync } from '@powersync/react';

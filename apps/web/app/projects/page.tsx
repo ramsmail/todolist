@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useProjectsWithStats } from '@todolist/db';
+import { useProjectsWithStats } from '@thinkdo/db';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import Link from 'next/link';
 

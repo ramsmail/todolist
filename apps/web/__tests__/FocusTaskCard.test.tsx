@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { FocusTaskCard } from '@/components/today/FocusTaskCard';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@todolist/db', () => ({
+vi.mock('@thinkdo/db', () => ({
   useLabels: vi.fn(() => ({ data: [
     { name: 'home', color: '#10B981' },
     { name: 'work', color: '#3B82F6' },

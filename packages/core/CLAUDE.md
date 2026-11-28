@@ -28,8 +28,8 @@ Business logic only: task rules, recurrence calculations, filters/sorting, valid
 
 ```typescript
 // ✅ apps/web/components/Dashboard.tsx
-import { getTasks } from '@todolist/db';
-import { filterByPriority } from '@todolist/core';
+import { getTasks } from '@thinkdo/db';
+import { filterByPriority } from '@thinkdo/core';
 
 export function Dashboard() {
   const tasks = getTasks();                    // Get data from DB
@@ -41,7 +41,7 @@ export function Dashboard() {
 **Wrong — core depends on db:**
 ```typescript
 // ❌ packages/core/filters.ts
-import { getTasks } from '@todolist/db';  // VIOLATION
+import { getTasks } from '@thinkdo/db';  // VIOLATION
 export function getHighPriorityTasks() {
   return getTasks().filter(t => t.priority <= 2);
 }
@@ -51,7 +51,7 @@ export function getHighPriorityTasks() {
 
 - Pure functions only — test with `vitest` and plain data (no DB mocks needed)
 - If a test requires mocking `packages/db` or React, that's usually a sign the function violates the boundary
-- Run `pnpm test --filter @todolist/core` before considering a change done
+- Run `pnpm test --filter @thinkdo/core` before considering a change done
 
 ## When Adding the Next Entity Type
 

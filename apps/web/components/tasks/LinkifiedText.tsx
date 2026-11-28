@@ -1,4 +1,4 @@
-import { splitTextWithLinks, toHref } from '@todolist/core';
+import { splitTextWithLinks, toHref } from '@thinkdo/core';
 
 export function LinkifiedText({ text }: { text: string | null | undefined }) {
   const segments = splitTextWithLinks(text ?? '');

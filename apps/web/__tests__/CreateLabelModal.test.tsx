@@ -12,12 +12,12 @@ vi.mock('@/lib/supabase/client', () => ({
   }),
 }));
 
-vi.mock('@todolist/db', async () => {
-  const actual = await vi.importActual<any>('@todolist/db');
+vi.mock('@thinkdo/db', async () => {
+  const actual = await vi.importActual<any>('@thinkdo/db');
   return { ...actual, createLabel: vi.fn().mockResolvedValue('new-label-id') };
 });
 
-import { createLabel } from '@todolist/db';
+import { createLabel } from '@thinkdo/db';
 
 describe('CreateLabelModal', () => {
   beforeEach(() => vi.clearAllMocks());

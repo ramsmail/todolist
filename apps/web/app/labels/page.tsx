@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePowerSync } from '@powersync/react';
-import { useLabelsWithStats, updateLabel, deleteLabel } from '@todolist/db';
+import { useLabelsWithStats, updateLabel, deleteLabel } from '@thinkdo/db';
 import { CreateLabelModal } from '@/components/labels/CreateLabelModal';
 
 const SWATCHES = ['#6366F1', '#10B981', '#EF4444', '#F59E0B', '#3B82F6', '#EC4899', '#14B8A6', '#8B5CF6'];

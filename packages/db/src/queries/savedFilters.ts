@@ -1,7 +1,7 @@
 import type { AbstractPowerSyncDatabase } from '@powersync/common';
 import { useQuery } from '@powersync/react';
 import { generateKeyBetween } from 'fractional-indexing';
-import { parseFilterQuery, type FilterQuery } from '@todolist/core';
+import { parseFilterQuery, type FilterQuery } from '@thinkdo/core';
 import type { SavedFilterRecord, TaskRecord } from '../schema';
 
 export type FilteredTaskRow = Pick<
