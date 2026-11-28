@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { LOGBOOK_QUERY, MATRIX_QUERY, TODAY_QUERY, AGENDA_QUERY, FOCUS_TASKS_QUERY, TOP_PRIORITIES_QUERY, P1_CARDS_QUERY, P1_CARD_LIMIT, groupTasksByPriority, groupAgendaTasks, completeTask, deleteTask, getP1CardTasks } from './tasks';
+import { LOGBOOK_QUERY, MATRIX_QUERY, TODAY_QUERY, AGENDA_QUERY, FOCUS_TASKS_QUERY, TOP_PRIORITIES_QUERY, P1_CARDS_QUERY, P1_CARD_LIMIT, groupTasksByPriority, groupAgendaTasks, completeTask, reopenTask, deleteTask, getP1CardTasks } from './tasks';
 import { quadrantLabel } from '@todolist/core';
 
 function makeMockDb(overrides: Partial<Record<string, any>> = {}) {
@@ -411,5 +411,16 @@ describe('getP1CardTasks', () => {
     const db = makeMockDb({ getAll: vi.fn().mockResolvedValue([]) });
 
     expect(await getP1CardTasks(db)).toEqual([]);
+  });
+});
+
+describe('reopenTask', () => {
+  it('sets a completed task back to active and leaves other statuses alone', async () => {
+    const db = makeMockDb();
+    await reopenTask(db, 'task-1');
+    const [sql, params] = db.execute.mock.calls[0];
+    expect(sql).toContain("SET status = 'active'");
+    expect(sql).toContain("status = 'completed'");
+    expect(params).toEqual([expect.any(String), 'task-1']);
   });
 });

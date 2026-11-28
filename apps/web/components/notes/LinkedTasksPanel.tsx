@@ -1,11 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { usePowerSync } from '@powersync/react';
 import {
-  completeTask, createLinkedTask, linkNoteToTask, unlinkNoteFromTask, useLinkedTasks, useTaskSearch,
+  completeTask, createLinkedTask, linkNoteToTask, reopenTask, unlinkNoteFromTask, useLinkedTasks, useTaskSearch,
 } from '@todolist/db';
 import { SearchPicker } from './SearchPicker';
+
+// A freshly linked row appears under the cursor as the picker closes; ignore stray
+// clicks on checkboxes for a moment so a double-click can't complete the task.
+const LINK_CLICK_GUARD_MS = 600;
 
 interface Props {
   noteId: string;
@@ -30,6 +34,12 @@ export function LinkedTasksPanel({ noteId, userId }: Props) {
   const { data: tasks } = useLinkedTasks(noteId);
   const [mode, setMode] = useState<'idle' | 'link' | 'new'>('idle');
   const [newTitle, setNewTitle] = useState('');
+  const lastLinkedAt = useRef(0);
+
+  const toggle = (taskId: string, done: boolean) => {
+    if (Date.now() - lastLinkedAt.current < LINK_CLICK_GUARD_MS) return;
+    void (done ? reopenTask(db as any, taskId) : completeTask(db as any, taskId));
+  };
 
   const close = () => {
     setMode('idle');
@@ -40,12 +50,14 @@ export function LinkedTasksPanel({ noteId, userId }: Props) {
     const title = newTitle.trim();
     if (!title || !userId) return;
     await createLinkedTask(db as any, { userId, noteId, title });
+    lastLinkedAt.current = Date.now();
     close();
   };
 
   const pick = async (taskId: string) => {
     if (!userId) return;
     await linkNoteToTask(db as any, userId, noteId, taskId);
+    lastLinkedAt.current = Date.now();
     close();
   };
 
@@ -64,8 +76,7 @@ export function LinkedTasksPanel({ noteId, userId }: Props) {
                 <input
                   type="checkbox"
                   checked={done}
-                  disabled={done}
-                  onChange={() => completeTask(db as any, t.id)}
+                  onChange={() => toggle(t.id, done)}
                   aria-label={`Complete ${t.title}`}
                   className="w-4 h-4 flex-shrink-0"
                 />

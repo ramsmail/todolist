@@ -6,13 +6,14 @@ vi.mock('@todolist/db', () => ({
   useLinkedTasks: vi.fn(),
   useTaskSearch: vi.fn(),
   completeTask: vi.fn().mockResolvedValue(undefined),
+  reopenTask: vi.fn().mockResolvedValue(undefined),
   unlinkNoteFromTask: vi.fn().mockResolvedValue(undefined),
   linkNoteToTask: vi.fn().mockResolvedValue(undefined),
   createLinkedTask: vi.fn().mockResolvedValue({ taskId: 't9' }),
 }));
 
 import {
-  useLinkedTasks, useTaskSearch, completeTask, unlinkNoteFromTask, linkNoteToTask, createLinkedTask,
+  useLinkedTasks, useTaskSearch, completeTask, reopenTask, unlinkNoteFromTask, linkNoteToTask, createLinkedTask,
 } from '@todolist/db';
 import { LinkedTasksPanel } from '@/components/notes/LinkedTasksPanel';
 
@@ -45,6 +46,36 @@ describe('LinkedTasksPanel', () => {
     render(<LinkedTasksPanel noteId="n1" userId="u1" />);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Complete Call the bank' }));
     expect(completeTask).toHaveBeenCalledWith(expect.anything(), 't1');
+  });
+
+  it('reopens a completed task when its checkbox is unchecked', () => {
+    render(<LinkedTasksPanel noteId="n1" userId="u1" />);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Complete Pay rent' }));
+    expect(reopenTask).toHaveBeenCalledWith(expect.anything(), 't2');
+    expect(completeTask).not.toHaveBeenCalled();
+  });
+
+  it('linking an existing task never completes it, and stray checkbox clicks right after are ignored', async () => {
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
+    (useTaskSearch as any).mockReturnValue({ data: [{ id: 't9', title: 'Pay the electricity bill' }] });
+    render(<LinkedTasksPanel noteId="n1" userId="u1" />);
+    fireEvent.click(screen.getByRole('button', { name: '+ Link existing' }));
+    fireEvent.change(screen.getByLabelText('Search tasks'), { target: { value: 'bill' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay the electricity bill' }));
+    await waitFor(() => expect(linkNoteToTask).toHaveBeenCalled());
+    expect(completeTask).not.toHaveBeenCalled();
+    expect(reopenTask).not.toHaveBeenCalled();
+
+    // second click of a double-click lands on a checkbox moments after linking
+    now.mockReturnValue(1_000_100);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Complete Call the bank' }));
+    expect(completeTask).not.toHaveBeenCalled();
+
+    // a deliberate click later works
+    now.mockReturnValue(1_002_000);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Complete Call the bank' }));
+    expect(completeTask).toHaveBeenCalledWith(expect.anything(), 't1');
+    now.mockRestore();
   });
 
   it('unlinks without deleting the task', () => {

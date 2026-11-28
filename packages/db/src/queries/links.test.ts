@@ -24,6 +24,15 @@ describe('linkNoteToTask', () => {
     expect(params.slice(1, 7)).toEqual(['u1', 'note', 'n1', 'task', 't1', 'manual']);
   });
 
+  it('only writes to links: linking never changes the task', async () => {
+    const db = fakeDb(null);
+    await linkNoteToTask(db as any, 'u1', 'n1', 't1');
+    expect(db.execute).toHaveBeenCalledTimes(1);
+    const [sql] = db.execute.mock.calls[0];
+    expect(sql).toContain('INSERT INTO links');
+    expect(sql).not.toMatch(/tasks|status/i);
+  });
+
   it('is idempotent: no insert when the link already exists in either direction', async () => {
     const db = fakeDb({ id: 'l1' });
     await linkNoteToTask(db as any, 'u1', 'n1', 't1');

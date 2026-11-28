@@ -355,6 +355,14 @@ export async function createTask(
   return id;
 }
 
+/** Undo a plain completion. Only touches tasks that are currently completed. */
+export async function reopenTask(db: AbstractPowerSyncDatabase, id: string): Promise<void> {
+  await db.execute(
+    `UPDATE tasks SET status = 'active', updated_at = ? WHERE id = ? AND status = 'completed' AND deleted_at IS NULL`,
+    [new Date().toISOString(), id]
+  );
+}
+
 export async function completeTask(db: AbstractPowerSyncDatabase, id: string): Promise<void> {
   const now = new Date().toISOString();
   const task = await db.getOptional<TaskRecord>(
